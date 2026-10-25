@@ -865,7 +865,10 @@ YCOL.push({x0:4.6,x1:6.7,z0:26.65,z1:27.35});
 for(let i=0;i<5;i++)yb(3.3,3.36,.2+i*.24,.24+i*.24,26.6,27.4,M_.metal); // ladder rungs
 cp('Качели',YARD,undefined);for(const x of [7.6,10.4]){yb(x-.06,x+.06,0,2.35,29.9,30.02,M_orange);yb(x-.06,x+.06,0,2.35,30.98,31.1,M_orange);YCOL.push({x0:x-.12,x1:x+.12,z0:29.85,z1:31.15});}
 yb(7.55,10.45,2.3,2.4,30.45,30.55,M_orange);
-for(const x of [8.4,9.6]){for(const dz of [-.18,.18])yb(x-.01,x+.01,.45,2.3,30.5+dz-.01,30.5+dz+.01,M_.metal);yb(x-.22,x+.22,.42,.47,30.3,30.7,mat(0x1d1f24));}
+// each swing hangs from a pivot on the top bar so it can swing along z
+const SWINGS=[];
+for(const x of [8.4,9.6]){const pv=new THREE.Group();pv.position.set(x,2.3,30.5);YARD.add(pv);
+  for(const dx of [-.2,.2])blk(dx-.01,dx+.01,-1.85,0,-.01,.01,M_.metal,{parent:pv});blk(-.22,.22,-1.88,-1.83,-.2,.2,mat(0x1d1f24),{parent:pv});SWINGS.push({pv,x,ang:0,t:0});}
 YCOL.push({x0:8.1,x1:9.9,z0:30.25,z1:30.75});
 cp('Карусель',YARD,undefined);yc(2.9,.05,.35,32.4,1.0,mat(0xd8402f),{seg:24});yc(2.9,.35,1.1,32.4,.05,M_.metal);for(let i=0;i<4;i++){const a=i*Math.PI/2;yb(2.9+Math.cos(a)*.7-.02,2.9+Math.cos(a)*.7+.02,.35,.95,32.4+Math.sin(a)*.7-.02,32.4+Math.sin(a)*.7+.02,M_.yellow);}
 YCOL.push({x0:1.9,x1:3.9,z0:31.4,z1:33.4});
@@ -909,54 +912,67 @@ cp(null,YARD);{const sky=ctex(4,256,(g,w,h)=>{const r=g.createLinearGradient(0,0
 
 /* ---------- underground parking (level −1) ----------
    4 m under the yard. The lift opens on its east wall with the stairs door next to it (that is where Makar
-   comes running in); cars stand in two rows either side of the lane; the exit ramp with a barrier leaves
-   through the west wall. Makar's orange car stands in the south row. Lives in PARK, collides against PCOL. */
+   comes running in); cars stand in rows along three lanes; the exit ramp with a barrier leaves
+   through the far west wall. Makar's orange car stands in the south row. Lives in PARK, collides against PCOL. */
 const YP=YG-4;
 const PARK=new THREE.Group();PARK.position.y=YP;PARK.visible=false;scene.add(PARK);
 const PCOL=[];
 function pb(x0,x1,y0,y1,z0,z1,m,col){const me=blk(x0,x1,y0,y1,z0,z1,m,{parent:PARK});if(col)PCOL.push({x0,x1,z0,z1,tall:col==='tall'});return me;}
+// A huge garage: 50 × 48 m, three lanes along x (z −13, 3, 19) with a row of spaces either side, two cross
+// lanes along z (x −31, −17), pillars, painted lines and strip lights. The exit ramp leaves through the west wall.
+const PX0=-40,PX1=9.45,PZ0=-22,PZ1=26,LANES=[-13,3,19],XLANES=[-31,-17];
 {let k=29;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};
  const texConc=ctex(256,256,(g,w,h)=>{g.fillStyle='#62666b';g.fillRect(0,0,w,h);for(let i=0;i<900;i++){g.fillStyle=`rgba(${rnd()<.5?0:255},${rnd()<.5?0:255},${rnd()<.5?0:255},.05)`;g.fillRect(rnd()*w,rnd()*h,2+rnd()*3,2+rnd()*3);}g.fillStyle='rgba(0,0,0,.12)';g.fillRect(0,0,w,2);g.fillRect(0,0,2,h);});
- const fl=new THREE.PlaneGeometry(16,15.6);fl.rotateX(-Math.PI/2);fl.translate(1.6,0,3);worldUV(fl,2,2);PARK.add(new THREE.Mesh(fl,matT(texConc)));
- const ce=new THREE.PlaneGeometry(16,15.6);ce.rotateX(Math.PI/2);ce.translate(1.6,3,3);PARK.add(new THREE.Mesh(ce,mat(0x5d6166)));}
+ const W=PX1-PX0,D=PZ1-PZ0,cx=(PX0+PX1)/2,cz=(PZ0+PZ1)/2;
+ const fl=new THREE.PlaneGeometry(W,D);fl.rotateX(-Math.PI/2);fl.translate(cx,0,cz);worldUV(fl,2,2);PARK.add(new THREE.Mesh(fl,matT(texConc)));
+ const ce=new THREE.PlaneGeometry(W,D);ce.rotateX(Math.PI/2);ce.translate(cx,3,cz);PARK.add(new THREE.Mesh(ce,mat(0x5d6166)));}
 const M_conc=mat(0x7b8086),M_concD=mat(0x5a5e64),M_line=mat(0xe9e6d6),M_yel=mat(0xe2b23a);
-pb(-6.55,9.75,0,3,-4.8,-4.5,M_conc,'tall');pb(-6.55,9.75,0,3,10.5,10.8,M_conc,'tall');pb(9.45,9.75,0,3,-4.5,10.5,M_conc,'tall');
-pb(-6.55,-6.25,0,3,-4.5,1,M_conc,'tall');pb(-6.55,-6.25,0,3,5,10.5,M_conc,'tall');pb(-6.55,-6.25,2.6,3,1,5,M_conc);
-for(const x of [-2.5,1.5,5.5])for(const z of [.3,5.7]){pb(x-.25,x+.25,0,3,z-.25,z+.25,M_concD,'tall');pb(x-.26,x+.26,0,.5,z-.26,z+.26,M_yel);}
-for(let x=-4.5;x<=7.6;x+=2){pb(x-.04,x+.04,.004,.01,-4.4,-.2,M_line);pb(x-.04,x+.04,.004,.01,6.2,10.4,M_line);}
-pb(-6.2,9.4,.004,.01,2.96,3.04,M_yel);                                         // lane centre line
-for(const x of [-3.5,.5,4.5,8.2])for(const z of [-1.8,3,7.8])pb(x-.6,x+.6,2.94,2.98,z-.06,z+.06,M_.lamp);
-for(const [x,z] of [[-3,3],[1.5,-1.5],[1.5,7.8],[6.5,3]]){const L=new THREE.PointLight(0xe8f0ff,.95,11,2);L.position.set(x,2.7,z);PARK.add(L);}
+const inXLane=(x,w)=>XLANES.some(c=>Math.abs(x-c)<w);
+pb(PX0-.3,PX1+.3,0,3,PZ0-.3,PZ0,M_conc,'tall');pb(PX0-.3,PX1+.3,0,3,PZ1,PZ1+.3,M_conc,'tall');pb(PX1,PX1+.3,0,3,PZ0,PZ1,M_conc,'tall');
+pb(PX0-.3,PX0,0,3,PZ0,1,M_conc,'tall');pb(PX0-.3,PX0,0,3,5,PZ1,M_conc,'tall');pb(PX0-.3,PX0,2.6,3,1,5,M_conc);
+for(const L of LANES){
+  for(let x=-38.5;x<=5.6;x+=4)if(!inXLane(x,3))for(const z of [L-2.7,L+2.7]){pb(x-.25,x+.25,0,3,z-.25,z+.25,M_concD,'tall');pb(x-.26,x+.26,0,.5,z-.26,z+.26,M_yel);}
+  for(let x=-38.5;x<=9;x+=2)if(!inXLane(x,2.6)){pb(x-.04,x+.04,.004,.01,L-6.8,L-2.6,M_line);pb(x-.04,x+.04,.004,.01,L+2.6,L+6.8,M_line);}
+  pb(PX0+.1,PX1-.1,.004,.01,L-.04,L+.04,M_yel);}                               // lane centre lines
+for(const c of XLANES)pb(c-.04,c+.04,.004,.01,PZ0+.1,PZ1-.1,M_yel);
+for(let x=-36;x<=6;x+=6)for(const L of LANES)for(const z of [L-4.6,L,L+4.6])pb(x-.6,x+.6,2.94,2.98,z-.06,z+.06,M_.lamp);
+for(const [x,z] of [[-30,3],[-14,3],[2,3],[-22,-13],[-6,-13],[-22,19],[-6,19],[5,19]]){const L=new THREE.PointLight(0xe8f0ff,.85,20,2);L.position.set(x,2.7,z);PARK.add(L);}
 // lift doors, call panel and the stairs door on the east wall
 pb(9.38,9.45,0,2.05,2.4,2.85,M_.metal);pb(9.38,9.45,0,2.05,2.85,3.3,M_.metal);pb(9.36,9.45,2.05,2.25,2.3,3.4,M_.dark);
 pb(9.33,9.45,1.0,1.3,3.55,3.7,M_.metal);sph(9.33,1.15,3.625,.025,basic(0x3bff7a),{parent:PARK});
 pb(9.39,9.45,0,2.05,4.6,5.4,mat(0x6b5444));
 {const sign=(t,sub,w,h,col)=>new THREE.MeshBasicMaterial({map:ctex(256,Math.round(256*h/w),(g,W,Hh)=>{g.fillStyle='#e9eef3';g.fillRect(0,0,W,Hh);g.strokeStyle=col;g.lineWidth=8;g.strokeRect(4,4,W-8,Hh-8);
    g.fillStyle=col;g.textAlign='center';g.textBaseline='middle';g.font=`900 ${Math.round(Hh*.5)}px Arial Black, Arial`;g.fillText(t,W/2,Hh*.42);g.font=`bold ${Math.round(Hh*.17)}px Arial`;g.fillText(sub,W/2,Hh*.82);},false)});
- const pl=(m,x,y,z,w,h)=>{const me=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);me.position.set(x,y,z);me.rotation.y=-Math.PI/2;PARK.add(me);};
- pl(sign('−1','ПАРКОВКА',.8,.6,'#1f4f9a'),9.37,1.75,1.6,.8,.6);pl(sign('Л','ЛЕСТНИЦА',.5,.3,'#1b8a3c'),9.37,2.3,5.0,.5,.3);}
+ const pl=(m,x,y,z,w,h,ry=-Math.PI/2)=>{const me=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);me.position.set(x,y,z);me.rotation.y=ry;PARK.add(me);};
+ pl(sign('−1','ПАРКОВКА',.8,.6,'#1f4f9a'),9.37,1.75,1.6,.8,.6);pl(sign('Л','ЛЕСТНИЦА',.5,.3,'#1b8a3c'),9.37,2.3,5.0,.5,.3);
+ pl(sign('←','ВЫЕЗД',.9,.45,'#1b8a3c'),PX0+6,2.6,3,.9,.45,Math.PI/2);pl(sign('←','ВЫЕЗД',.9,.45,'#1b8a3c'),-12,2.6,3,.9,.45,Math.PI/2);}
 // the exit ramp and its barrier
-{const L=8.2,a=Math.atan2(3.1,L),geo=new THREE.PlaneGeometry(Math.hypot(L,3.1),4);geo.rotateX(-Math.PI/2);geo.rotateZ(a);geo.translate(-6.25-L/2,1.55,3);PARK.add(new THREE.Mesh(geo,M_concD));
- pb(-14.5,-6.25,0,4.4,.7,1,M_conc);pb(-14.5,-6.25,0,4.4,5,5.3,M_conc);pb(-14.5,-6.25,4.4,4.5,.7,5.3,M_concD);
- const out=new THREE.Mesh(new THREE.PlaneGeometry(4.3,1.6),new THREE.MeshBasicMaterial({color:0xb8c4d0,fog:false}));out.position.set(-14.45,3.9,3);out.rotation.y=Math.PI/2;PARK.add(out);}
+{const L=8.2,a=Math.atan2(3.1,L),geo=new THREE.PlaneGeometry(Math.hypot(L,3.1),4);geo.rotateX(-Math.PI/2);geo.rotateZ(a);geo.translate(PX0-L/2,1.55,3);PARK.add(new THREE.Mesh(geo,M_concD));
+ pb(PX0-8.5,PX0,0,4.4,.7,1,M_conc);pb(PX0-8.5,PX0,0,4.4,5,5.3,M_conc);pb(PX0-8.5,PX0,4.4,4.5,.7,5.3,M_concD);
+ const out=new THREE.Mesh(new THREE.PlaneGeometry(4.3,1.6),new THREE.MeshBasicMaterial({color:0xb8c4d0,fog:false}));out.position.set(PX0-8.45,3.9,3);out.rotation.y=Math.PI/2;PARK.add(out);}
 const BARRIER={pivot:new THREE.Group(),ang:0};
-pb(-5.95,-5.65,0,1.1,.75,1.05,mat(0x2c3238));BARRIER.pivot.position.set(-5.8,1.0,1.0);PARK.add(BARRIER.pivot);
+pb(PX0+.3,PX0+.6,0,1.1,.75,1.05,mat(0x2c3238));BARRIER.pivot.position.set(PX0+.45,1.0,1.0);PARK.add(BARRIER.pivot);
 for(let i=0;i<8;i++)blk(-.04,.04,-.04,.04,i*.5,i*.5+.5,i%2?M_.white:M_.red,{parent:BARRIER.pivot});
-PCOL.push({x0:-6.3,x1:-5.6,z0:1,z1:5});                                      // you can't walk out up the ramp
+PCOL.push({x0:PX0-.05,x1:PX0+.65,z0:1,z1:5});                                // you can't walk out up the ramp
 // cars: length along z, nose towards −z; a plate on both ends
-function parkCar(x,z,ry,color,plate){
-  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;PARK.add(g);const m=mat(color,{shininess:70,specular:0x555555}),gl=mat(0x18202c,{shininess:90,specular:0x666666});
+const CAR_M={},M_carGlass=mat(0x18202c,{shininess:90,specular:0x666666});
+function parkCar(x,z,ry,color,plate,lite){
+  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;PARK.add(g);const m=CAR_M[color]||(CAR_M[color]=mat(color,{shininess:70,specular:0x555555})),gl=M_carGlass;
   blk(-.9,.9,.3,.95,-2.1,2.1,m,{parent:g});blk(-.8,.8,.95,1.45,-1,1.15,gl,{parent:g});blk(-.78,.78,1.45,1.5,-.9,1.05,m,{parent:g});
   for(const [dx,dz] of [[-.86,-1.35],[.86,-1.35],[-.86,1.35],[.86,1.35]])cyl(dx,.0,.64,dz,.32,M_.dark,{parent:g,seg:14}).rotation.z=Math.PI/2;
-  for(const s of [-1,1]){blk(s*.55-.18,s*.55+.18,.62,.76,-2.12,-2.1,basic(0xfff3d0),{parent:g});blk(s*.55-.18,s*.55+.18,.62,.76,2.1,2.12,basic(0xd02018),{parent:g});}
-  const pt=new THREE.MeshBasicMaterial({map:ctex(128,28,(c,w,h)=>{c.fillStyle='#f4f4f0';c.fillRect(0,0,w,h);c.strokeStyle='#111';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);c.fillStyle='#111';c.font='bold 18px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(plate,w/2-8,h/2+1);c.fillStyle='#1f4f9a';c.fillRect(w-22,3,19,h-6);},false)});
-  for(const [zz,ry2] of [[-2.115,Math.PI],[2.115,0]]){const pm=new THREE.Mesh(new THREE.PlaneGeometry(.52,.11),pt);pm.position.set(0,.45,zz);pm.rotation.y=ry2;g.add(pm);}
+  if(!lite)for(const s of [-1,1]){blk(s*.55-.18,s*.55+.18,.62,.76,-2.12,-2.1,basic(0xfff3d0),{parent:g});blk(s*.55-.18,s*.55+.18,.62,.76,2.1,2.12,basic(0xd02018),{parent:g});}
+  if(!lite){const pt=new THREE.MeshBasicMaterial({map:ctex(128,28,(c,w,h)=>{c.fillStyle='#f4f4f0';c.fillRect(0,0,w,h);c.strokeStyle='#111';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);c.fillStyle='#111';c.font='bold 18px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(plate,w/2-8,h/2+1);c.fillStyle='#1f4f9a';c.fillRect(w-22,3,19,h-6);},false)});
+  for(const [zz,ry2] of [[-2.115,Math.PI],[2.115,0]]){const pm=new THREE.Mesh(new THREE.PlaneGeometry(.52,.11),pt);pm.position.set(0,.45,zz);pm.rotation.y=ry2;g.add(pm);}}
   const c=Math.abs(Math.sin(ry))>.5?{x0:x-2.15,x1:x+2.15,z0:z-.95,z1:z+.95}:{x0:x-.95,x1:x+.95,z0:z-2.15,z1:z+2.15};PCOL.push(c);
   return {g,col:c};
 }
 cp('Машина Макара',PARK,1);
 const CAR=Object.assign(parkCar(.5,8.3,0,0xe2512b,'М777АК'),{x:.5,z:8.3});CAR.g.rotation.order='YXZ'; // so it can pitch up the ramp
 cp(null,PARK);parkCar(-3.5,8.3,0,0xe6e6e6,'А123ВС');parkCar(4.5,-2.3,Math.PI,0x2f4f8f,'Е555КХ');parkCar(-1.5,-2.3,Math.PI,0x8a1f24,'О808ОО');
+// fill most of the other spaces (noses towards the lane)
+{let k=41;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};const cols=[0xe6e6e6,0x2f4f8f,0x8a1f24,0x1d1f24,0x9aa3ab,0x3f6f3a,0xc9a23a,0x5a6a8a,0xf2f2ee,0x6b2a5a];
+ const taken=(L,south,x)=>L===3&&(south?[.5,-3.5]:[4.5,-1.5]).includes(x);   // the four cars above
+ for(const L of LANES)for(const [zc,ry,south] of [[L-4.65,Math.PI,false],[L+4.65,0,true]])for(let x=-37.5;x<=8.6;x+=2){if(inXLane(x,3)||taken(L,south,x)||rnd()>.72)continue;parkCar(x,zc,ry,cols[(rnd()*cols.length)|0],'',true);}}
 cp(null,PARK);
 
 const YARD_ROOM={id:'yard',name:'Двор'},STREET_ROOM={id:'street',name:'Улица'},PARK_ROOM={id:'park',name:'Парковка'};
@@ -1173,7 +1189,7 @@ function placeItems(){
 function resetActors(){
   if(P.lv!=='flat'){Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);}
   P.lv='flat';MS.lv='flat';GATE.open=false;setLevel('flat');
-  Object.assign(P,{x:SPAWN.x,z:SPAWN.z,yaw:SPAWN.yaw,pitch:0,crouch:false,hidden:null});
+  if(P.swing)stopSwing();Object.assign(P,{x:SPAWN.x,z:SPAWN.z,yaw:SPAWN.yaw,pitch:0,crouch:false,hidden:null});
   const s=SEATS.desk;Object.assign(MS,{x:s.x,z:s.z,face:s.face,state:'sit',task:'stream',seatKey:'desk',seat:s,sitK:1,wait:18+Math.random()*10,path:[],aware:0,lastSeen:null,knowsHide:false,gaveUp:false,doorT:0,delay:2,sayT:3,lostT:0,hideTarget:null});
   $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;
 }
@@ -1256,6 +1272,8 @@ INTER.push({lv:'yard',x:17,z:43.5,r:1.5,on:()=>!GATE.open,label:()=>'Откры�
   GATE.open=true;gateBtn.material.color.set(0xffffff);tone(1200,.09,'square',.1);tone(1500,.12,'square',.1,0,.12);nz(.15,1800,.06,0,.2);toast('Пик! Калитка открыта, беги!',2);
   setTimeout(()=>announce('Дверь открыта'),350);}});   // the intercom's woman's voice
 INTER.push({lv:'yard',x:ENTR.x,z:ENTR.z+.45,r:1.3,label:()=>'Вернуться в подъезд (на лифте наверх)',act:goUp});
+INTER.push({lv:'yard',x:2.95,z:27,r:1.2,label:()=>'Скатиться с горки',act:rideSlide});
+for(const sw of SWINGS)INTER.push({lv:'yard',x:sw.x,z:31.15,r:1.0,on:()=>!P.swing,label:()=>'Покачаться на качелях',act:()=>startSwing(sw)});
 INTER.push({lv:'park',x:9.2,z:2.85,r:1.3,label:()=>'Лифт наверх, на '+FLOOR+' этаж',act:goUp});
 INTER.push({lv:'park',get x(){return CAR.x-1.05;},get z(){return CAR.z+.2;},r:1.4,label:()=>P.items.carkeys?'Угнать машину Макара':'Машина Макара',act:stealCar});
 /* ---------- inventory ----------
@@ -1333,7 +1351,7 @@ function toggleDoor(d,who){
 }
 let focus=null;
 function updateFocus(){
-  focus=null;if(P.hidden){showPrompt('Вылезти');return;}
+  focus=null;if(P.hidden){showPrompt('Вылезти');return;}if(P.swing){showPrompt('Слезть с качелей');return;}
   const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);let best=1e9;
   for(const it of INTER){if((it.lv||'flat')!==P.lv||(it.on&&!it.on()))continue;const dx=it.x-P.x,dz=it.z-P.z,d=hyp(dx,dz);if(d>it.r)continue;
     const dot=d<.35?1:(dx*fx+dz*fz)/d;if(dot<.5)continue;const sc=d*(2-dot);if(sc<best){best=sc;focus=it;}}
@@ -1344,6 +1362,7 @@ function showPrompt(t){const el=$('prompt');if(!t){el.hidden=true;lastPrompt='';
 function interact(){
   if(state!=='play')return;
   if(P.hidden){exitHide();return;}
+  if(P.swing){stopSwing();return;}
   if(focus)focus.act();
 }
 function enterHide(h){
@@ -1364,8 +1383,35 @@ function heard(x,z,r,kind){
   if(kind==='toilet'||kind==='vacuum')say(pick(LINES[kind]));else if(kind==='flush')say(pick(LINES.flush));else if(Math.random()<.5)say(pick(LINES.hear));
 }
 
+/* ---------- playground: the slide and the swings ---------- */
+// The slide: you climb the ladder and whoosh down it; the game plays it as a short animation.
+let ANIM=null;
+function rideSlide(){
+  if(state!=='play'||P.lv!=='yard')return;state='anim';$('prompt').hidden=true;P.crouch=false;
+  const ease=t=>t*t;
+  ANIM={t:0,dur:2.1,step:t=>{
+    let x,y,e,pitch;
+    if(t<.6){const k=t/.6;x=2.95+k*1.05;y=k*1.3;e=1.15;pitch=.15;}              // up the ladder
+    else{const k=ease((t-.6)/1.5);x=4.6+k*2.15;y=1.3-k*1.2;e=.8;pitch=-.35;}     // and down the slide
+    P.x=x;P.z=27;camera.position.set(x,YG+y+e,27);camera.rotation.set(pitch,-Math.PI/2,0);},
+    done:()=>{Object.assign(P,{x:7.25,z:27,yaw:-Math.PI/2,pitch:0,eye:1.15});}};
+  setTimeout(()=>{if(state==='anim'){nz(.14,1500,1.2,0,0,'bandpass');toast('Уииии!',1.4);}},600);
+}
+function updateAnim(dt){ANIM.t+=dt;ANIM.step(Math.min(ANIM.t,ANIM.dur));if(ANIM.t>=ANIM.dur){const d=ANIM.done;ANIM=null;state='play';d&&d();}}
+// The swings: sit on one and it swings you to and fro, higher and higher, until you get off (E or walk).
+function startSwing(sw){P.swing=sw;sw.t=0;P.yaw=0;P.pitch=0;P.crouch=false;toast('Качаемся! Чтобы слезть, нажми E.',2.2);}
+function stopSwing(){const sw=P.swing;if(!sw)return;P.swing=null;sw.ang=0;sw.pv.rotation.x=0;Object.assign(P,{x:sw.x,z:31.45,eye:1.15});}
+function updateSwing(dt){
+  const sw=P.swing;sw.t+=dt;const A=Math.min(.75,.15+sw.t*.2),prev=sw.ang;sw.ang=A*Math.sin(sw.t*2.3);sw.pv.rotation.x=sw.ang;
+  if(Math.sign(sw.ang-prev)!==Math.sign(sw.lastD||1)&&sw.t>1)nz(.03,2600,.12,0,0,'bandpass');sw.lastD=sw.ang-prev;   // a little creak at the top
+  const sy=2.3-1.85*Math.cos(sw.ang),sz=30.5-1.85*Math.sin(sw.ang);P.x=sw.x;P.z=sz;
+  camera.position.set(sw.x,YG+sy+.75,sz);camera.rotation.set(P.pitch,P.yaw,0);
+  if(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||keys.ArrowUp||keys.ArrowDown||hyp(touchMove.x,touchMove.y)>.5)stopSwing();
+}
+
 /* ---------- player ---------- */
 function updatePlayer(dt){
+  if(P.swing){updateSwing(dt);return;}
   if(P.hidden){const c=P.hidden.cam;camera.position.set(c.x,baseY(P.lv)+c.y,c.z);camera.rotation.set(P.pitch,P.yaw,0);return;}
   let mx=0,mz=0;
   if(keys.KeyW||keys.ArrowUp)mz+=1;if(keys.KeyS||keys.ArrowDown)mz-=1;if(keys.KeyA||keys.ArrowLeft)mx-=1;if(keys.KeyD||keys.ArrowRight)mx+=1;
@@ -1656,7 +1702,7 @@ function pause(){if(state!=='play')return;state='pause';hush();showPause();showH
 function showPause(){panel('Пауза','Макар тоже ждёт.',[['Продолжить',()=>{startPlay();}],[timeLabel(),()=>{toggleTime();showPause();},'ghost'],...(adminOpen()?[['Админ панель',()=>showAdmin(true),'ghost']]:[]),['Заново',()=>begin(),'ghost'],['В меню',showMenu,'ghost']]);}
 function caught(){
   if(state!=='play'||ADMIN.god)return;state='caught';caughtT=0;sfx.caught();lives--;renderLives();
-  if(P.hidden){exitHide();}
+  if(P.hidden){exitHide();}if(P.swing)stopSwing();
   say('Попался!');$('vig').style.opacity=1;unlock();
   setTimeout(()=>{$('vig').style.opacity=0;
     if(lives>0)panel('Макар тебя поймал!',`Он отвёл тебя обратно в комнату родителей и вернулся к стриму. Осталось попыток: ${lives}. Найденные вещи остаются у тебя.`,[['Ещё попытка',()=>{resetActors();startPlay();}],['В меню',showMenu,'ghost']]);
@@ -1697,7 +1743,7 @@ function goUp(){
 /* ---------- ending: you steal Makar's car ----------
    The car pulls out of its spot, turns into the lane, the barrier goes up and it drives up the ramp. */
 let driveT=0,driveSpd=0,engine=null;
-const DRIVE_PATH=[{x:.5,z:3},{x:-5.2,z:3},{x:-14.5,z:3}];
+const DRIVE_PATH=[{x:.5,z:3},{x:PX0+1,z:3},{x:PX0-8.7,z:3}];
 function stealCar(){
   if(state!=='play')return;
   if(!P.items.carkeys){toast('Машина заперта. Ключи от неё Макар спрятал где-то в квартире.');sfx.click();return;}
@@ -1707,18 +1753,18 @@ function stealCar(){
   if(MS.lv==='park')setTimeout(()=>say('Эй! Это моя машина!!!',2.5),700);
 }
 function updateDrive(dt){
-  driveT+=dt;if(driveT<.8){driveSpd=0;}else driveSpd=Math.min(5,driveSpd+dt*2.2);
+  driveT+=dt;if(driveT<.8){driveSpd=0;}else driveSpd=Math.min(9,driveSpd+dt*3);
   const g=CAR.g,tgt=DRIVE_PATH[Math.min(CAR.leg,DRIVE_PATH.length-1)],dx=tgt.x-CAR.x,dz=tgt.z-CAR.z,d=hyp(dx,dz);
   if(d<.4&&CAR.leg<DRIVE_PATH.length-1)CAR.leg++;
   const want=Math.atan2(-dx,-dz);g.rotation.y+=angDiff(want,g.rotation.y)*Math.min(1,dt*3);
   const st=Math.min(d,driveSpd*dt);CAR.x-=Math.sin(g.rotation.y)*st;CAR.z-=Math.cos(g.rotation.y)*st;
-  const up=clamp((-6.25-CAR.x)/8.2,0,1)*3.1;g.position.set(CAR.x,up,CAR.z);g.rotation.x=CAR.x<-6.25&&CAR.x>-14.4?Math.atan2(3.1,8.2):0;
-  if(CAR.x<-1)BARRIER.ang=Math.min(1.45,BARRIER.ang+dt*1.6);BARRIER.pivot.rotation.x=-BARRIER.ang;
+  const up=clamp((PX0-CAR.x)/8.2,0,1)*3.1;g.position.set(CAR.x,up,CAR.z);g.rotation.x=CAR.x<PX0&&CAR.x>PX0-8.15?Math.atan2(3.1,8.2):0;
+  if(CAR.x<PX0+8)BARRIER.ang=Math.min(1.45,BARRIER.ang+dt*1.6);BARRIER.pivot.rotation.x=-BARRIER.ang;
   // camera: behind and above the car, looking at it
   const fx=-Math.sin(g.rotation.y),fz=-Math.cos(g.rotation.y);
   camera.position.set(CAR.x-fx*5.2,YP+up+2.4,CAR.z-fz*5.2);camera.lookAt(CAR.x+fx*2,YP+up+.9,CAR.z+fz*2);
   if(MS.lv==='park'){MS.spd=Math.min(3,MS.spd+dt*2);stepTowardOut(CAR.x,CAR.z,dt);animMakar(dt);}
-  if(CAR.x<-11&&!CAR.fading){CAR.fading=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;
+  if(CAR.x<PX0-5&&!CAR.fading){CAR.fading=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;
     setTimeout(()=>{clearInterval(engine);$('fade').style.opacity=0;$('sub').hidden=true;$('toast').hidden=true;
       endingPanel('car','Ты завёл машину Макара, выехал с подземной парковки и укатил к маме на работу. А Макару теперь придётся ездить на самокате!');},1300);}
 }
@@ -1943,6 +1989,7 @@ let last=performance.now();
 function frame(now){
   const dt=Math.min(.05,(now-last)/1000);last=now;const time=now/1000;
   if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();updateHUD(dt);}
+  else if(state==='anim'){tPlay+=dt;updateAnim(dt);updateMakar(dt);updateHUD(dt);}
   else if(state==='menu'){camera.position.set(3.5+Math.sin(time*.15)*.3,1.15,8.9);camera.rotation.set(-.03,.2+Math.sin(time*.2)*.25,0);MS.spd=0;animMakar(dt);}
   else if(state==='caught'){const a=Math.atan2(-(MS.x-P.x),-(MS.z-P.z));P.yaw+=angDiff(a,P.yaw)*Math.min(1,dt*6);P.pitch+=(.25-P.pitch)*Math.min(1,dt*5);camera.rotation.set(P.pitch,P.yaw,0);if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').hidden=true;}}
   else if(state==='ending')updateEnding(dt);
@@ -1956,7 +2003,7 @@ newGame();showMenu();applyTime();
 MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
-function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else break;updateWorld(dt,tPlay);}return state;}
-window.__game={CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
+window.__game={SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
