@@ -697,7 +697,7 @@ cp('Шкаф');const wardrobe={x0:3.67,x1:4.27,z0:9.95,z1:11.25};
 blk(3.67,4.27,0,2.1,9.95,10.0,M_.wood);blk(3.67,4.27,0,2.1,11.2,11.25,M_.wood);blk(3.67,4.27,2.06,2.1,9.95,11.25,M_.wood);blk(3.67,3.72,0,2.1,9.95,11.25,M_.woodD);
 blk(4.22,4.27,0,2.06,10.0,10.585,M_.wood);blk(4.22,4.27,0,2.06,10.615,11.2,M_.wood);for(const z of [10.5,10.7])blk(4.27,4.3,1.0,1.2,z-.01,z+.01,M_.metal);
 addCol(3.67,4.27,9.95,11.25,{tall:true});
-cp('Кровать');blk(3.67,4.45,0,.42,11.3,13.3,M_.wood,{col:true});blk(3.7,4.42,.42,.55,11.35,13.25,mat(0x3f7fd0));blk(3.77,4.37,.55,.65,11.38,11.65,M_.white);blk(3.67,4.45,.42,.95,11.3,11.35,M_.wood);
+cp('Кровать');blk(3.67,5.67,0,.42,11.3,12.08,M_.wood,{col:true});blk(3.72,5.64,.42,.55,11.33,12.05,mat(0x3f7fd0));blk(3.75,4.02,.55,.65,11.4,11.98,M_.white);blk(3.67,3.72,.42,.95,11.3,12.08,M_.wood);
 cp('Стол с компьютером');blk(4.6,5.9,.72,.76,13.6,14.13,M_.woodL,{col:true});for(const x of [4.65,5.85])blk(x-.03,x+.03,0,.72,13.65,14.1,M_.woodD);
 blk(4.95,5.45,.76,.79,13.85,14.0,M_.dark);blk(5.17,5.23,.79,.95,13.95,14.0,M_.dark);blk(4.9,5.5,.95,1.3,13.94,13.98,M_.dark);onWall('-z',5.2,1.125,13.935,.56,.32,M_.screen);
 blk(4.9,5.4,.76,.78,13.65,13.82,mat(0x222222));cp('Компьютерный стул');chair(5.2,13.2,0);
@@ -711,10 +711,10 @@ cp('Мяч');const ball=sph(4.6,.11,12.6,.11,matT(ctex(64,32,(g,w,h)=>{g.fillSty
 cp('Синий ковёр');blk(4.4,5.9,0,.006,11.0,12.8,mat(0x3c5a8c));
 
 // Parents' room: double bed against the north wall (hide underneath), nightstands, wall carpet, wardrobe on the west wall
-cp('Двуспальная кровать');blk(8.4,10.43,.28,.4,8.57,10.37,M_.woodD);for(const [x,z] of [[8.45,8.62],[10.38,8.62],[8.45,10.32],[10.38,10.32]])blk(x-.04,x+.04,0,.28,z-.04,z+.04,M_.woodD);
-blk(8.42,10.38,.4,.58,8.59,10.35,M_.cream);blk(8.81,10.45,.58,.64,8.55,10.39,mat(0x8a5a8e));blk(10.41,10.45,.12,.64,8.55,10.39,mat(0x8a5a8e));
-blk(8.49,8.86,.58,.72,8.72,9.42,M_.white);blk(8.49,8.86,.58,.72,9.52,10.22,M_.white);blk(8.36,8.43,0,1.15,8.55,10.39,M_.woodD);
-addCol(8.36,10.45,8.55,10.39);
+cp('Двуспальная кровать');blk(8.04,9.8,.28,.4,8.57,10.62,M_.woodD);for(const [x,z] of [[8.09,8.62],[9.75,8.62],[8.09,10.57],[9.75,10.57]])blk(x-.04,x+.04,0,.28,z-.04,z+.04,M_.woodD);
+blk(8.06,9.78,.4,.58,8.59,10.6,M_.cream);blk(8.0,9.84,.58,.64,9.0,10.64,mat(0x8a5a8e));blk(8.0,9.84,.12,.64,10.6,10.64,mat(0x8a5a8e));
+blk(8.15,8.85,.58,.72,8.62,8.99,M_.white);blk(8.95,9.65,.58,.72,8.62,8.99,M_.white);blk(8.0,9.84,0,1.15,8.55,8.62,M_.woodD);
+addCol(8.0,9.84,8.55,10.64);
 cp('Тумбочка');blk(9.95,10.43,0,.52,10.47,10.95,M_.wood,{col:true});cp(null);blk(9.95,10.43,0,.52,12.27,12.75,M_.wood,{col:true});
 cp('Ночник');cyl(10.19,.52,.56,12.51,.08,M_.gold);cyl(10.19,.56,.8,12.51,.015,M_.gold);cyl(10.19,.78,.95,12.51,.13,mat(0xf3e2b6,{emissive:0x553a10}),{r2:.07});
 cp('Ковёр на стену');onWall('-x',wallFace('-x',10.5),1.65,11.3,2.3,1.35,M_.carpet);
@@ -916,7 +916,7 @@ TPL.push({name:'Фигура Макара',make:()=>{const m=buildMakar();scene.
 /* ---------- AI graph ---------- */
 const NODES={liv:[1.5,2.6],livD:[2.9,3.6],kit:[5.2,3.45],kitD:[4.35,3.6],hallLiv:[2.9,4.9],hallKit:[4.35,4.85],wc3:[5.6,4.8],
   hallB2:[2.85,5.27],bath2:[1.4,5.1],hallMid:[3.6,6.4],hallFront:[4.4,7.07],hallB1:[2.85,7.42],bath1:[1.55,7.45],hallS:[2.85,8.0],
-  sis:[2.85,9.2],sis2:[1.8,11.6],vestW:[4.3,9.05],vestE:[6.3,9.05],mine:[6.32,10.4],mine2:[5.0,12.0],par:[7.6,8.97],par2:[7.7,11.4],
+  sis:[2.85,9.2],sis2:[1.8,11.6],vestW:[4.3,9.05],vestE:[6.3,9.05],mine:[6.32,10.4],mine2:[6.2,12.4],par:[7.6,8.97],par2:[7.7,11.4],
   corr1:[5.6,7.07],corr2:[8.25,7.07],corr3:[10.0,7.07],lift1:[8.25,5.5],lift2:[8.4,2.85]};
 const EDGES=[['liv','livD'],['livD','hallLiv','living'],['kit','kitD'],['kitD','hallKit','kitchen'],['hallKit','wc3','wc3'],['hallLiv','hallKit'],
   ['hallLiv','hallB2'],['hallB2','bath2','bath2'],['hallB2','hallMid'],['hallKit','hallMid'],['hallMid','hallFront'],['hallMid','hallB1'],
@@ -997,7 +997,7 @@ const KEY_SPOTS=[
 ];
 const SHOE_SPOTS=[
   {room:'living',x:2.3,y:0,z:3.55},{room:'sisters',x:1.4,y:0,z:11.9},{room:'parents',x:7.75,y:0,z:13.7},
-  {room:'bath1',x:1.75,y:0,z:7.5},{room:'kitchen',x:4.1,y:0,z:3.75},{room:'parents',x:9.0,y:0,z:10.75},
+  {room:'bath1',x:1.75,y:0,z:7.5},{room:'kitchen',x:4.1,y:0,z:3.75},{room:'parents',x:9.0,y:0,z:11.0},
 ];
 function buildKeys(){const g=new THREE.Group();const ring=new THREE.Mesh(new THREE.TorusGeometry(.03,.006,8,20),M_.metal);ring.rotation.x=Math.PI/2;g.add(ring);
   blk(.02,.11,-.004,.004,-.01,.01,M_.gold,{parent:g});blk(.08,.1,-.004,.004,.01,.025,M_.gold,{parent:g});
@@ -1012,7 +1012,7 @@ const HIDES=[
   {id:'tub',room:'bath2',x:1.35,z:5.0,name:'в ванне за шторкой',cam:{x:.42,y:.62,z:5.3,yaw:-Math.PI/2}},
   {id:'tent',room:'sisters',x:3.0,z:12.35,name:'в палатке',cam:{x:3.0,y:.42,z:13.45,yaw:0}},
   {id:'wardrobe',room:'mine',x:4.75,z:10.6,name:'в шкафу',cam:{x:3.92,y:1.12,z:10.6,yaw:-Math.PI/2}},
-  {id:'bed',room:'parents',x:8.0,z:9.47,name:'под кроватью',cam:{x:9.3,y:.17,z:9.47,yaw:Math.PI/2}},
+  {id:'bed',room:'parents',x:7.7,z:9.6,name:'под кроватью',cam:{x:9.4,y:.17,z:9.6,yaw:Math.PI/2}},
 ];
 
 /* ---------- audio ---------- */
