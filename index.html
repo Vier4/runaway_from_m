@@ -72,6 +72,9 @@ button:focus-visible{outline:2px solid var(--crayon);outline-offset:3px}
 .tbtn{width:64px;height:64px;border-radius:50%;background:var(--plate);border:1px solid var(--line);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.1}
 .tbtn.on{background:var(--crayon);color:#1b1606}
 #tUse{grid-column:span 2;width:100%;border-radius:32px;background:rgba(255,210,63,.9);color:#1b1606;font-size:15px}
+/* fly mode on a phone: hold to go up or down, stacked under the pause button */
+#flyBtns{position:absolute;top:calc(216px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:10px;pointer-events:auto}
+#flyBtns .tbtn{width:56px;height:56px;font-size:11px}
 #tPause{position:absolute;top:calc(160px + env(safe-area-inset-top,0px));right:calc(12px + env(safe-area-inset-right,0px));width:44px;height:44px;border-radius:50%;pointer-events:auto;font-size:16px}
 
 /* ---------- menus ---------- */
@@ -151,6 +154,7 @@ h1 em{font-style:normal;color:var(--makar)}
     <button class="tbtn" id="tUse" type="button">Действие</button>
   </div>
   <button class="tbtn" id="tPause" type="button" aria-label="Пауза">II</button>
+  <div id="flyBtns" hidden><button class="tbtn" id="tUp" type="button">▲<br>Вверх</button><button class="tbtn" id="tDown" type="button">▼<br>Вниз</button></div>
 </div>
 
 <div id="overlay">
@@ -1249,7 +1253,7 @@ function updatePlayer(dt){
   if(P.stepAcc>stride){P.stepAcc=0;if(!P.crouch&&!ADMIN.fly)sfx.step();}
   P.bob+=moved*(wantRun?9:11);
   // fly mode: no walls, Space up, C down (under the ceiling indoors, up to 60 m over the yard)
-  if(ADMIN.fly){P.crouch=false;P.eye=clamp(P.eye+((keys.Space?1:0)-(keys.KeyC||keys.ControlLeft?1:0))*3.5*dt,.3,P.lv==='yard'?60:H-.15);}
+  if(ADMIN.fly){P.crouch=false;P.eye=clamp(P.eye+((keys.Space||touchFly>0?1:0)-(keys.KeyC||keys.ControlLeft||touchFly<0?1:0))*3.5*dt,.3,P.lv==='yard'?60:H-.15);}
   else{const eye=P.crouch?.72:1.15;P.eye+=(eye-P.eye)*Math.min(1,dt*10);}
   camera.position.set(P.x,(P.lv==='yard'?YG:0)+P.eye+Math.sin(P.bob)*.035*Math.min(1,moved/dt/2.4||0),P.z);
   camera.rotation.set(P.pitch,P.yaw,0);
@@ -1637,7 +1641,7 @@ function showAdmin(inGame,confirmReset){
   body.appendChild(el('h3',null,'Концовки'));
   const r=el('button','danger',confirmReset?'Точно сбросить? Админ панель закроется':'Сбросить концовки');r.type='button';
   r.addEventListener('click',()=>{if(!confirmReset){showAdmin(inGame,true);return;}gotEnd={};saveEndings();for(const k in ADMIN)ADMIN[k]=false;P.eye=1.15;inGame?showPause():showMenu();});body.appendChild(r);
-  panel('Админ панель',inGame?'Читы работают сразу. Действие закрывает панель и возвращает в игру. Полёт: пробел вверх, C вниз, сквозь стены.':'Читы будут работать в следующей игре. Действия и спавн объектов есть в паузе во время игры.',
+  panel('Админ панель',inGame?'Читы работают сразу. Действие закрывает панель и возвращает в игру. '+(isPhone?'Полёт: держи кнопки ▲ и ▼ справа, летишь сквозь стены.':'Полёт: пробел вверх, C вниз, сквозь стены.'):'Читы будут работать в следующей игре. Действия и спавн объектов есть в паузе во время игры.',
     inGame?[['Вернуться в игру',startPlay],['Назад',showPause,'ghost']]:[['В меню',showMenu,'ghost']],body);
 }
 
@@ -1677,6 +1681,11 @@ canvas.addEventListener('touchend',tEnd);canvas.addEventListener('touchcancel',t
 $('tUse').addEventListener('click',interact);
 $('tRun').addEventListener('pointerdown',()=>{touchRun=true;$('tRun').classList.add('on');});
 for(const ev of ['pointerup','pointerleave','pointercancel'])$('tRun').addEventListener(ev,()=>{touchRun=false;$('tRun').classList.remove('on');});
+// fly buttons: held down = going up (+1) or down (-1)
+let touchFly=0;
+for(const [id,dir] of [['tUp',1],['tDown',-1]]){const b=$(id);
+  b.addEventListener('pointerdown',e=>{e.preventDefault();touchFly=dir;b.classList.add('on');});
+  for(const ev of ['pointerup','pointerleave','pointercancel'])b.addEventListener(ev,()=>{if(touchFly===dir)touchFly=0;b.classList.remove('on');});}
 $('tCrouch').addEventListener('click',()=>{P.crouch=!P.crouch;$('tCrouch').classList.toggle('on',P.crouch);});
 $('tPause').addEventListener('click',pause);
 if(isPhone)$('keysHelp').innerHTML='<kbd>Слева</kbd><span>джойстик: ходить</span><kbd>Справа</kbd><span>води пальцем: смотреть</span><kbd>Кнопки</kbd><span>бег, присесть, действие</span>';
@@ -1696,6 +1705,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(state=
 
 /* ---------- HUD update ---------- */
 function updateHUD(dt){
+  if($('flyBtns').hidden===ADMIN.fly){$('flyBtns').hidden=!ADMIN.fly;touchFly=0;}
   const st=$('status'),txt=$('statusText');let s,cls='';
   if(P.hidden){s='Ты спрятался';cls='hid';if(MS.state==='grab'||MS.state==='check'){s='Макар идёт к укрытию!';cls='alert';}}
   else if(P.lv==='yard'){s='Макар остался наверху';}
