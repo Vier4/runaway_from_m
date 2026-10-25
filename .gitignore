@@ -1,0 +1,6 @@
+# local tooling
+.claude/
+.DS_Store
+
+# photo of the real flat plan the game was modelled on; the game itself doesn't use it
+1000003483.jpg
