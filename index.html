@@ -1599,10 +1599,10 @@ function startPatrol(){
 function startLook(t){MS.state='look';MS.wait=t;MS.lookBase=MS.face;MS.lookT=0;
   if(P.hidden&&D.check>0){const r=roomAt(MS.x,MS.z);if(r&&r.id===P.hidden.room&&Math.random()<D.check*2.5){MS.state='check';MS.hideTarget=P.hidden;MS.path=buildPath(MS.x,MS.z,P.hidden.x,P.hidden.z);say(pick(LINES.check));}}}
 // Makar can't follow you downstairs: once you are in the yard he stays up in the flat.
-// Downstairs Makar comes running after you: out of the entrance into the yard 5 seconds after you, or in
-// through the stairs door of the parking after 7, and chases you, sliding around whatever is in the way.
+// Downstairs: Makar doesn't notice you going out into the yard (there you only meet him when he is out for
+// his walk); into the parking he comes running through the stairs door 7 seconds after you, and chases you, sliding around whatever is in the way.
 // If you ride back up he follows you into the flat 5 s later.
-const OUTSIDE={yard:{delay:5,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:7,x:()=>8.6,z:()=>4.95,face:Math.PI/2}};
+const OUTSIDE={yard:{delay:Infinity,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:7,x:()=>8.6,z:()=>4.95,face:Math.PI/2}};
 function updateMakarOutside(dt){
   if(MS.away){tickAway(dt);if(!MS.away)return;
     if(MS.away.kind!=='walk'||P.lv!=='yard'){MS.spd=0;return;}
@@ -1875,7 +1875,7 @@ function rideDown(lv){
     MS.gaveUp=false;MS.knowsHide=false;
     GATE.open=false;setLevel(lv);state='play';showHUD(true);f.style.opacity=0;tone(988,.4,'sine',.15);
     toast(lv==='park'?(D.blind?'Подземная парковка. Где-то тут машина Макара.':'Подземная парковка! Где-то тут машина Макара. Через 7 секунд Макар прибежит по лестнице!')
-      :(D.blind?'Первый этаж! Беги к калитке в заборе.':'Первый этаж! Беги к калитке: через 5 секунд Макар выбежит из подъезда!'),4.5);
+      :(MS.away&&MS.away.kind==='walk'?'Первый этаж! Осторожно: Макар гуляет во дворе!':'Первый этаж! Макар дома и не заметил, что ты вышел. Беги к калитке!'),4.5);
   },1500);
 }
 // Back up from the yard or the parking: the lift takes you to the 18th floor and lets you out in the lift hall.
@@ -1970,7 +1970,7 @@ function updateEnding(dt){
 function win(){
   if(state!=='play')return;state='win';sfx.win();$('fade').style.background='#fff';$('fade').style.opacity=1;unlock();
   const t=Math.round(tPlay),mm=Math.floor(t/60),ss=String(t%60).padStart(2,'0');
-  setTimeout(()=>{$('fade').style.opacity=0;showHUD(false);endingPanel('escape',`${MS.lv==='yard'?'Калитка захлопнулась прямо перед носом Макара.':'Макар даже не успел выбежать из подъезда.'} Ты на свободе! Время: ${mm}:${ss}. Сложность: ${D.name}.`);},1300);
+  setTimeout(()=>{$('fade').style.opacity=0;showHUD(false);endingPanel('escape',`${MS.lv==='yard'?'Калитка захлопнулась прямо перед носом Макара.':'Макар так и не заметил, что ты сбежал.'} Ты на свободе! Время: ${mm}:${ss}. Сложность: ${D.name}.`);},1300);
 }
 
 /* ---------- endings & admin panel ----------
@@ -2126,6 +2126,7 @@ function updateHUD(dt){
   const st=$('status'),txt=$('statusText');let s,cls='';
   if(MS.away&&!(MS.lv==='yard'&&P.lv==='yard')){const t=Math.max(0,Math.ceil(MS.away.t));s=(MS.away.kind==='walk'?'Макар гуляет':'Макар в магазине')+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
   else if(P.hidden){s='Ты спрятался';cls='hid';if(MS.state==='grab'||MS.state==='check'){s='Макар идёт к укрытию!';cls='alert';}}
+  else if(P.lv==='yard'&&MS.lv!=='yard'){s='Макар дома и тебя не заметил';}
   else if(P.lv!=='flat'&&MS.lv!==P.lv){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
   else if(MS.state==='chase'){s='Макар гонится!';cls='alert';}
   else if(MS.aware>.05){s='Макар что-то заметил';}
