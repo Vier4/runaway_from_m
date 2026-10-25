@@ -669,12 +669,12 @@ cp('Домофон');blk(4.88,4.9,1.4,1.6,7.55,7.65,M_.white);sph(4.88,1.45,7.6,
 cp('Ковёр в холле');blk(2.7,4.5,0,.01,5.2,8.0,mat(0x7a3b2e));
 // building corridor & lift hall props
 // two flats on the landing: ours (the front door) and the neighbours' right opposite it, at the far end of the corridor
-const flatNo=n=>matT(ctex(64,40,(g,w,h)=>{g.fillStyle='#d8b04a';g.fillRect(0,0,w,h);g.fillStyle='#2a1c0c';g.font='bold 26px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText(n,w/2,h/2+1);},false));
-cp(null);onWall('+x',wallFace('+x',4.97),2.32,7.075,.18,.11,flatNo('33'));
+const flatNo=n=>matT(ctex(96,40,(g,w,h)=>{g.fillStyle='#d8b04a';g.fillRect(0,0,w,h);g.fillStyle='#2a1c0c';g.font='bold 26px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText(n,w/2,h/2+1);},false));
+cp(null);onWall('+x',wallFace('+x',4.97),2.32,7.075,.26,.11,flatNo('204'));   // Makar's flat
 cp('Дверь соседей');{const x=10.7-T/2,z=7.075;
  blk(x-.04,x,0,2.06,z-.45,z+.45,mat(0x6b5444));blk(x-.07,x-.04,.95,1.0,z-.33,z-.25,M_.metal);
  cyl(x-.045,1.45,1.47,z,.018,M_.metal).rotation.z=Math.PI/2;
- onWall('-x',wallFace('-x',10.7),2.32,z,.18,.11,flatNo('34'));}
+ onWall('-x',wallFace('-x',10.7),2.32,z,.26,.11,flatNo('203'));}
 
 // Sisters' room: two beds (pink and lilac), tent, desk
 cp('Розовая кровать');blk(.07,1.87,0,.32,9.0,9.8,M_.white,{col:true});blk(.1,1.84,.32,.46,9.03,9.77,M_.pink);blk(.14,.44,.46,.56,9.1,9.7,M_.white);
