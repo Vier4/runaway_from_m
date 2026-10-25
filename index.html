@@ -549,7 +549,7 @@ socket('+x',2.25,6.15,.3,2);                                                    
 socket('+z',8.45,5.9);                                                             // vestibule
 socket('-x',3.6,12.0,.3,2);socket('-z',14.2,.7);                                   // sisters' room
 socket('-z',14.2,4.3,.3,2);socket('-x',6.9,10.5);                                  // my room: by the desk, by the door
-socket('-x',10.5,10.1,.75,2);socket('-x',10.5,12.5,.75,2);socket('+x',6.9,13.8);    // parents: both nightstands, TV
+socket('-x',10.5,10.71,.75,2);socket('-x',10.5,12.5,.75,2);                          // parents: both nightstands
 
 /* ---------- light switches ----------
    One rocker switch by the door of every room, at Russian switch height; it turns that room's lamp on and off. */
@@ -688,34 +688,33 @@ cp('Кукольный домик');blk(2.9,3.53,0,.9,9.0,9.4,M_.pink,{col:true}
 cp('Кубики');for(let i=0;i<6;i++)blk(1.6+i*.18,1.72+i*.18,0,.12,12.0+(i%3)*.2,12.12+(i%3)*.2,[M_.red,M_.yellow,M_.blue,M_.green,M_.pink,M_.yellow][i]);
 cp('Круглый коврик');{const rug=new THREE.Mesh(new THREE.CircleGeometry(.9,32),mat(0xe9a8c4));rug.rotation.x=-Math.PI/2;rug.position.set(2.0,.006,11.8);scene.add(rug);}
 
-// My room: wardrobe (hide), bed, desk with a computer, poster, ball
+// My room: wardrobe (hide), bed next to it, desk with a computer, poster, ball, TV on the east wall
 cp('Шкаф');const wardrobe={x0:3.67,x1:4.27,z0:9.95,z1:11.25};
 blk(3.67,4.27,0,2.1,9.95,10.0,M_.wood);blk(3.67,4.27,0,2.1,11.2,11.25,M_.wood);blk(3.67,4.27,2.06,2.1,9.95,11.25,M_.wood);blk(3.67,3.72,0,2.1,9.95,11.25,M_.woodD);
 blk(4.22,4.27,0,2.06,10.0,10.585,M_.wood);blk(4.22,4.27,0,2.06,10.615,11.2,M_.wood);for(const z of [10.5,10.7])blk(4.27,4.3,1.0,1.2,z-.01,z+.01,M_.metal);
 addCol(3.67,4.27,9.95,11.25,{tall:true});
-cp('Кровать');blk(6.05,6.83,0,.42,11.2,13.2,M_.wood,{col:true});blk(6.08,6.8,.42,.55,11.25,13.15,mat(0x3f7fd0));blk(6.15,6.75,.55,.65,12.85,13.12,M_.white);blk(6.05,6.83,.42,.95,13.15,13.2,M_.wood);
+cp('Кровать');blk(3.67,4.45,0,.42,11.3,13.3,M_.wood,{col:true});blk(3.7,4.42,.42,.55,11.35,13.25,mat(0x3f7fd0));blk(3.77,4.37,.55,.65,12.95,13.22,M_.white);blk(3.67,4.45,.42,.95,13.25,13.3,M_.wood);
 cp('Стол с компьютером');blk(4.6,5.9,.72,.76,13.6,14.13,M_.woodL,{col:true});for(const x of [4.65,5.85])blk(x-.03,x+.03,0,.72,13.65,14.1,M_.woodD);
 blk(4.95,5.45,.76,.79,13.85,14.0,M_.dark);blk(5.17,5.23,.79,.95,13.95,14.0,M_.dark);blk(4.9,5.5,.95,1.3,13.94,13.98,M_.dark);onWall('-z',5.2,1.125,13.935,.56,.32,M_.screen);
 blk(4.9,5.4,.76,.78,13.65,13.82,mat(0x222222));cp('Компьютерный стул');chair(5.2,13.2,0);
-// Makar's streaming setup: ring light, webcam on a tripod, microphone and a neon sign
+// Makar's streaming setup: ring light, webcam on a tripod, microphone
 cp('Кольцевая лампа');cyl(5.78,.76,1.2,13.95,.012,M_.metal);{const ring=new THREE.Mesh(new THREE.TorusGeometry(.15,.022,8,28),basic(0xfff4dc));ring.position.set(5.78,1.32,13.93);scene.add(ring);}
 cp('Веб-камера');for(const a of [0,2.1,4.2])cyl(4.75+Math.sin(a)*.05,.76,.92,13.72+Math.cos(a)*.05,.006,M_.dark);blk(4.68,4.82,.92,1.0,13.66,13.78,M_.dark);cyl(4.75,.94,.98,13.65,.03,mat(0x223344)).rotation.x=Math.PI/2;sph(4.8,.99,13.66,.008,basic(0xff2020));
 cp('Микрофон');cyl(5.6,.76,.79,13.7,.05,M_.dark);cyl(5.6,.79,1.02,13.7,.008,M_.metal);sph(5.6,1.05,13.68,.035,mat(0x333333));
-cp('Вывеска МАКАР TV');onWall('-x',wallFace('-x',6.9),1.75,13.55,.9,.29,new THREE.MeshBasicMaterial({map:ctex(256,82,(g,w,h)=>{g.fillStyle='#1a0f24';g.fillRect(0,0,w,h);g.strokeStyle='#ff4fd8';g.lineWidth=4;g.strokeRect(4,4,w-8,h-8);g.fillStyle='#ff4fd8';g.font='bold 34px Arial Black, Arial';g.textAlign='center';g.textBaseline='middle';g.fillText('МАКАР TV',w/2-24,h/2+2);g.fillStyle='#ff3030';g.beginPath();g.arc(w-34,h/2,10,0,7);g.fill();},false)}));
+cp('Телевизор');blk(6.76,6.82,1.3,1.92,13.05,14.05,M_.dark);onWall('-x',6.755,1.61,13.55,.96,.52,M_.tv);   // TV on the wall where the МАКАР TV sign hung
 cp('Постер КОСМОС');onWall('+x',wallFace('+x',3.6),1.55,12.4,.62,.88,M_.poster);
 cp('Мяч');const ball=sph(4.6,.11,12.6,.11,matT(ctex(64,32,(g,w,h)=>{g.fillStyle='#fff';g.fillRect(0,0,w,h);g.fillStyle='#111';for(let i=0;i<6;i++){g.beginPath();g.arc(i*11+5,(i%2)*14+8,5,0,7);g.fill();}},true)));
 cp('Синий ковёр');blk(4.4,5.9,0,.006,11.0,12.8,mat(0x3c5a8c));
 
-// Parents' room: double bed (hide underneath), nightstands, wall carpet, wardrobe, TV
-cp('Двуспальная кровать');blk(8.4,10.43,.28,.4,10.4,12.2,M_.woodD);for(const [x,z] of [[8.45,10.45],[10.38,10.45],[8.45,12.15],[10.38,12.15]])blk(x-.04,x+.04,0,.28,z-.04,z+.04,M_.woodD);
-blk(8.42,10.38,.4,.58,10.42,12.18,M_.cream);blk(8.36,10.0,.58,.64,10.38,12.22,mat(0x8a5a8e));blk(8.36,8.4,.12,.64,10.38,12.22,mat(0x8a5a8e));
-blk(9.95,10.32,.58,.72,10.55,11.25,M_.white);blk(9.95,10.32,.58,.72,11.35,12.05,M_.white);blk(10.38,10.45,0,1.15,10.38,12.22,M_.woodD);
-addCol(8.36,10.45,10.38,12.22);
-cp('Тумбочка');blk(9.95,10.43,0,.52,9.85,10.33,M_.wood,{col:true});cp(null);blk(9.95,10.43,0,.52,12.27,12.75,M_.wood,{col:true});
+// Parents' room: double bed against the north wall (hide underneath), nightstands, wall carpet, wardrobe on the west wall
+cp('Двуспальная кровать');blk(8.4,10.43,.28,.4,8.57,10.37,M_.woodD);for(const [x,z] of [[8.45,8.62],[10.38,8.62],[8.45,10.32],[10.38,10.32]])blk(x-.04,x+.04,0,.28,z-.04,z+.04,M_.woodD);
+blk(8.42,10.38,.4,.58,8.59,10.35,M_.cream);blk(8.36,10.0,.58,.64,8.55,10.39,mat(0x8a5a8e));blk(8.36,8.4,.12,.64,8.55,10.39,mat(0x8a5a8e));
+blk(9.95,10.32,.58,.72,8.72,9.42,M_.white);blk(9.95,10.32,.58,.72,9.52,10.22,M_.white);blk(10.38,10.45,0,1.15,8.55,10.39,M_.woodD);
+addCol(8.36,10.45,8.55,10.39);
+cp('Тумбочка');blk(9.95,10.43,0,.52,10.47,10.95,M_.wood,{col:true});cp(null);blk(9.95,10.43,0,.52,12.27,12.75,M_.wood,{col:true});
 cp('Ночник');cyl(10.19,.52,.56,12.51,.08,M_.gold);cyl(10.19,.56,.8,12.51,.015,M_.gold);cyl(10.19,.78,.95,12.51,.13,mat(0xf3e2b6,{emissive:0x553a10}),{r2:.07});
 cp('Ковёр на стену');onWall('-x',wallFace('-x',10.5),1.65,11.3,2.3,1.35,M_.carpet);
-cp('Большой шкаф');blk(8.0,10.43,0,2.2,8.52,9.1,M_.wood,{col:true,tall:true});for(const x of [8.8,9.6])blk(x-.005,x+.005,.1,2.1,9.1,9.11,M_.woodD);
-cp('Телевизор');blk(6.97,7.4,0,.5,12.4,13.6,M_.woodD,{col:true});blk(7.0,7.06,.6,1.2,12.45,13.55,M_.dark);onWall('+x',7.065,.9,13.0,1.0,.52,M_.tv);
+cp('Большой шкаф');blk(6.97,7.55,0,2.2,11.68,14.11,M_.wood,{col:true,tall:true});for(const z of [12.49,13.3])blk(7.55,7.56,.1,2.1,z-.005,z+.005,M_.woodD);
 cp('Фиолетовый ковёр');blk(7.4,8.3,0,.006,10.0,12.6,mat(0x6a4a7a));
 
 // Corridor pictures
@@ -987,14 +986,14 @@ function buildPath(fx,fz,tx,tz){
 const KEY_SPOTS=[
   {room:'kitchen',x:5.05,y:.775,z:2.2,where:'на кухонном столе'},
   {room:'living',x:1.95,y:.455,z:1.8,where:'на журнальном столике'},
-  {room:'parents',x:10.19,y:.535,z:10.1,where:'на тумбочке у родителей'},
+  {room:'parents',x:10.19,y:.535,z:10.71,where:'на тумбочке у родителей'},
   {room:'wc3',x:6.69,y:.815,z:4.8,where:'на бачке в Туалете 3'},
   {room:'sisters',x:1.8,y:.775,z:13.85,where:'на столе у систёр'},
   {room:'bath2',x:1.85,y:.875,z:6.0,where:'на раковине в Туалете 2'},
 ];
 const SHOE_SPOTS=[
   {room:'living',x:2.3,y:0,z:3.55},{room:'sisters',x:1.4,y:0,z:11.9},{room:'parents',x:7.75,y:0,z:13.7},
-  {room:'bath1',x:1.75,y:0,z:7.5},{room:'kitchen',x:4.1,y:0,z:3.75},{room:'parents',x:9.0,y:0,z:9.6},
+  {room:'bath1',x:1.75,y:0,z:7.5},{room:'kitchen',x:4.1,y:0,z:3.75},{room:'parents',x:9.0,y:0,z:10.75},
 ];
 function buildKeys(){const g=new THREE.Group();const ring=new THREE.Mesh(new THREE.TorusGeometry(.03,.006,8,20),M_.metal);ring.rotation.x=Math.PI/2;g.add(ring);
   blk(.02,.11,-.004,.004,-.01,.01,M_.gold,{parent:g});blk(.08,.1,-.004,.004,.01,.025,M_.gold,{parent:g});
@@ -1009,7 +1008,7 @@ const HIDES=[
   {id:'tub',room:'bath2',x:1.35,z:5.0,name:'в ванне за шторкой',cam:{x:.42,y:.62,z:5.3,yaw:-Math.PI/2}},
   {id:'tent',room:'sisters',x:3.0,z:12.35,name:'в палатке',cam:{x:3.0,y:.42,z:13.45,yaw:0}},
   {id:'wardrobe',room:'mine',x:4.75,z:10.6,name:'в шкафу',cam:{x:3.92,y:1.12,z:10.6,yaw:-Math.PI/2}},
-  {id:'bed',room:'parents',x:8.0,z:11.3,name:'под кроватью',cam:{x:9.3,y:.17,z:11.3,yaw:Math.PI/2}},
+  {id:'bed',room:'parents',x:8.0,z:9.47,name:'под кроватью',cam:{x:9.3,y:.17,z:9.47,yaw:Math.PI/2}},
 ];
 
 /* ---------- audio ---------- */
