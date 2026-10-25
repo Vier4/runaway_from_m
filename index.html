@@ -162,7 +162,7 @@ h1 em{font-style:normal;color:var(--makar)}
     <div>
       <div class="eyebrow" id="clockLine">Москва · 18-й этаж · 23:40</div>
       <h1>Побег от <em>Макара</em></h1>
-      <p class="story">Макар — блогер. Он запер входную дверь, спрятал ключи и сел вести стрим в твоей комнате. Иногда он отходит покакать или поесть супа на кухне. Найди ключи и кроссовки, выберись в подъезд, спустись на лифте во двор и убеги через калитку. Если Макар тебя заметит, беги, хлопай дверями и прячься: за шторой, в ванне, в палатке, в шкафу, под кроватью, а во дворе — в кофейне или в соседних подъездах.</p>
+      <p class="story">Макар — блогер. Он запер входную дверь, спрятал ключи и сел вести стрим в своей комнате. Иногда он отходит покакать или поесть супа на кухне. Найди ключи и кроссовки, выберись в подъезд, спустись на лифте во двор и убеги через калитку. Если Макар тебя заметит, беги, хлопай дверями и прячься: за шторой, в ванне, в палатке, в шкафу, под кроватью, а во дворе — в кофейне или в соседних подъездах.</p>
       <div class="diff" id="diff">
         <button type="button" data-d="practice" aria-pressed="false">Практика</button>
         <button type="button" data-d="easy" aria-pressed="false">Лёгкий</button>
@@ -237,7 +237,7 @@ const ROOMS=[
   {id:'hall',   name:'Холл',                   x0:2.25,x1:4.97,z0:4.3, z1:8.45,wall:'hall',   floor:'parquet',n:'1',apt:1},
   {id:'vest',   name:'Холл',                   x0:3.6, x1:6.9, z0:8.45,z1:9.7, wall:'hall',   floor:'parquet',apt:1},
   {id:'sisters',name:'Комната систёр',         x0:0,   x1:3.6, z0:8.45,z1:14.2,wall:'sisters',floor:'parquet',n:'7',apt:1},
-  {id:'mine',   name:'Моя комната',            x0:3.6, x1:6.9, z0:9.7, z1:14.2,wall:'mine',   floor:'brown',n:'8',apt:1},
+  {id:'mine',   name:'Комната Макара',          x0:3.6, x1:6.9, z0:9.7, z1:14.2,wall:'mine',   floor:'brown',n:'8',apt:1},
   {id:'parents',name:'Комната родителей',      x0:6.9, x1:10.5,z0:8.45,z1:14.2,wall:'parents',floor:'parquet',n:'9',apt:1},
   {id:'corr',   name:'Коридор подъезда',       x0:4.97,x1:10.7,z0:6.3, z1:7.85,wall:'entr',   floor:'entr'},
   {id:'lift',   name:'Лифтовый холл',          x0:6.85,x1:9.45,z0:0,   z1:6.3, wall:'entr',   floor:'entr',   n:'Л'},
@@ -1716,7 +1716,7 @@ function panel(title,text,btns,body){panelCard.classList.remove('wide');menuCard
   btns.forEach(([label,fn,cls])=>{const e=document.createElement('button');e.type='button';e.className=cls||'play';e.textContent=label;e.addEventListener('click',fn);b.appendChild(e);});}
 function showMenu(){state='menu';hush();$('sub').hidden=true;if(P.lv!=='flat'){P.lv='flat';MS.lv='flat';setLevel('flat');}showHUD(false);overlay.hidden=false;menuCard.hidden=false;panelCard.hidden=true;$('hideShade').hidden=true;$('fade').style.opacity=0;unlock();drawPlan($('plan'),{big:true});}
 function startPlay(){state='play';hush();overlay.hidden=true;showHUD(true);lock();}
-function begin(){initAudio();if(AC&&AC.state==='suspended')AC.resume();newGame();startPlay();toast('Ты в комнате родителей. Макар ведёт стрим в твоей комнате. Найди ключи и кроссовки, выберись из квартиры, спустись на лифте и убеги со двора через калитку.',6);}
+function begin(){initAudio();if(AC&&AC.state==='suspended')AC.resume();newGame();startPlay();toast('Ты в комнате родителей. Макар ведёт стрим в своей комнате. Найди ключи и кроссовки, выберись из квартиры, спустись на лифте и убеги со двора через калитку.',6);}
 function pause(){if(state!=='play')return;state='pause';hush();showPause();showHUD(false);}
 function showPause(){panel('Пауза','Макар тоже ждёт.',[['Продолжить',()=>{startPlay();}],[timeLabel(),()=>{toggleTime();showPause();},'ghost'],...(adminOpen()?[['Админ панель',()=>showAdmin(true),'ghost']]:[]),['Заново',()=>begin(),'ghost'],['В меню',showMenu,'ghost']]);}
 function caught(){
@@ -1805,7 +1805,7 @@ const END_SCRIPT=[
   [11.2,()=>{DOOR.mine.open=false;sfx.door(6.3,9.7);}],
   [11.9,()=>{tone(600,.06,'square',.1);nz(.15,2000,.04,0,.08);toast('Щёлк. Макар запер дверь снаружи.',3);}],
   [14.2,()=>{$('fade').style.opacity=1;}],
-  [15.6,()=>{$('toast').hidden=true;$('sub').hidden=true;endingPanel('caught','Макар запер тебя в твоей комнате. Мама вернулась только утром, а лифт так и уехал без тебя. Попробуй ещё раз: беги тише и прячься.');$('fade').style.opacity=0;}],
+  [15.6,()=>{$('toast').hidden=true;$('sub').hidden=true;endingPanel('caught','Макар запер тебя в своей комнате. Мама вернулась только утром, а лифт так и уехал без тебя. Попробуй ещё раз: беги тише и прячься.');$('fade').style.opacity=0;}],
 ];
 /* The fire alarm: the building's «Рокот-3» voice alarm plays its attention tone and reads out
    its message («Внимание! Пожарная тревога! Срочно покиньте помещение»), twice, while the strobe and the
@@ -1846,7 +1846,7 @@ function win(){
    Every ending you reach is saved in this browser. Reach them all and the admin panel opens:
    cheats you can switch on from the menu or from the pause screen. */
 const ENDINGS=[
-  {id:'caught',title:'Макар тебя поймал',hint:'Попадись Макару столько раз, сколько у тебя попыток (на «Сложном» хватит одного раза, на «Практике» не получится). Макар запрёт тебя в твоей комнате.'},
+  {id:'caught',title:'Макар тебя поймал',hint:'Попадись Макару столько раз, сколько у тебя попыток (на «Сложном» хватит одного раза, на «Практике» не получится). Макар запрёт тебя в своей комнате.'},
   {id:'escape',title:'Побег на свободу',hint:'Найди ключи и кроссовки, открой входную дверь, вызови лифт, спустись во двор и выйди через калитку.'},
   {id:'fire',title:'Пожарная тревога',hint:'Найди ключи и кроссовки и выберись в подъезд. В лифтовом холле на стене висит красная кнопка «ПОЖАР»: нажми её.'},
   {id:'car',title:'Угон машины',hint:'Найди в квартире ключи от машины Макара (🚙), выберись в подъезд, в лифте выбери «−1 — подземная парковка» и угони его оранжевую машину.'},
