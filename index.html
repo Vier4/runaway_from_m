@@ -92,10 +92,6 @@ h1 em{font-style:normal;color:var(--makar)}
 .keys kbd{font-family:var(--display);font-size:10.5px;background:rgba(243,239,230,.1);border:1px solid var(--line);border-radius:5px;padding:3px 7px;white-space:nowrap;justify-self:start}
 .planBox{display:flex;flex-direction:column;gap:10px;min-width:0}
 #plan{width:100%;max-width:252px;height:auto;aspect-ratio:252/329;align-self:center}
-.legend{list-style:none;margin:0;padding:0;display:grid;gap:3px;font-size:12.5px;color:#d8d3c9}
-.legend li{display:flex;gap:8px;align-items:baseline}
-.legend b{flex:none;width:18px;height:18px;border-radius:50%;background:var(--plan);color:#2a0d09;font-size:10.5px;display:inline-flex;align-items:center;justify-content:center;font-family:var(--display)}
-.legend span{color:var(--muted)}
 #panelCard{max-width:460px;text-align:center}
 #panelCard h2{font-family:var(--display);font-weight:800;font-size:28px;margin:0 0 10px;text-wrap:balance}
 #panelCard p{font-size:16px;line-height:1.5;color:#dcd8cf;margin:0 0 20px}
@@ -190,7 +186,6 @@ h1 em{font-style:normal;color:var(--makar)}
     <div class="planBox">
       <div class="eyebrow">План квартиры</div>
       <canvas id="plan" width="504" height="658"></canvas>
-      <ol class="legend" id="legend"></ol>
     </div>
   </div>
   <div class="card" id="panelCard" hidden>
@@ -243,11 +238,6 @@ const ROOMS=[
   {id:'corr',   name:'Коридор подъезда',       x0:4.97,x1:10.7,z0:6.3, z1:7.85,wall:'entr',   floor:'entr'},
   {id:'lift',   name:'Лифтовый холл',          x0:6.85,x1:9.45,z0:0,   z1:6.3, wall:'entr',   floor:'entr',   n:'Л'},
   {id:'cab',    name:'Лифт',                   x0:9.45,x1:10.5,z0:2.1, z1:3.6, wall:'cab',    floor:'cab',    hideOnMap:1},
-];
-const LEGEND=[
-  ['1','Холл','вход из подъезда'],['2','Туалет 2','правая дверь'],['3','Туалет 1','левая дверь, умный унитаз'],
-  ['4','Кухня','справа от туалетов'],['5','Гостиная','диван'],['6','Туалет 3','у кухни'],
-  ['7','Комната систёр','налево'],['8','Моя комната','тут Макар ведёт стрим'],['9','Комната родителей','тут ты начинаешь'],['Л','Лифт','выход'],
 ];
 function roomAt(x,z){for(const r of ROOMS) if(x>=r.x0&&x<=r.x1&&z>=r.z0&&z<=r.z1) return r; return null;}
 
@@ -1482,11 +1472,9 @@ function drawPlan(cv,opt){
   for(const d of DOORS){if(d.open)continue;g.strokeStyle=d.id==='front'&&d.locked?'#ff5a36':'#ffd23f';g.beginPath();g.moveTo(X(d.box.x0+(d.box.x1-d.box.x0>.3?.05:.07)),Z(d.box.z0+(d.box.z1-d.box.z0>.3?.05:.07)));g.lineTo(X(d.box.x1-(d.box.x1-d.box.x0>.3?.05:.07)),Z(d.box.z1-(d.box.z1-d.box.z0>.3?.05:.07)));g.stroke();}
   if(opt.big){
     g.font=`800 ${Math.round(s*.42)}px Unbounded, Arial Black, sans-serif`;g.textAlign='center';g.textBaseline='middle';
-    for(const r of ROOMS){if(!r.n)continue;const cx=X((r.x0+r.x1)/2),cz=Z((r.z0+r.z1)/2);g.fillStyle='#e9877d';g.beginPath();g.arc(cx,cz,s*.36,0,7);g.fill();g.fillStyle='#2a0d09';g.fillText(r.n,cx,cz+1);}
     g.fillStyle='#ff5a36';g.font=`800 ${Math.round(s*.36)}px Nunito, sans-serif`;g.fillText('вход →',X(5.95),Z(6.85));
   }
 }
-$('legend').innerHTML=LEGEND.map(([n,a,b])=>`<li><b>${n}</b>${a} <span>· ${b}</span></li>`).join('');
 
 /* ---------- flow ---------- */
 const overlay=$('overlay'),menuCard=$('menuCard'),panelCard=$('panelCard');
