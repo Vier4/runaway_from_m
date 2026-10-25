@@ -1289,7 +1289,7 @@ INTER.push({lv:'yard',x:17,z:43.5,r:1.5,on:()=>!GATE.open,label:()=>'Откры�
   setTimeout(()=>announce('Дверь открыта'),350);}});   // the intercom's woman's voice
 INTER.push({lv:'yard',x:ENTR.x,z:ENTR.z+.45,r:1.3,label:()=>'Вернуться в подъезд (на лифте наверх)',act:goUp});
 INTER.push({x:5.72,z:13.4,r:1.1,on:()=>GECKO.mode!=='floor',label:()=>GECKO.mode==='held'?'Посадить эублефара в террариум':'Взять эублефара на руки',act:()=>GECKO.mode==='held'?geckoRelease(true):geckoPickUp()});
-INTER.push({x:6.15,z:13.6,r:.9,on:()=>GECKO.mode==='terr'&&!GECKO.cricket,label:()=>'Покормить эублефара кузнечиком',act:feedGecko});
+INTER.push({get x(){return jarAt.x;},get z(){return jarAt.z;},get lv(){return jarAt.lv;},r:1.0,on:()=>canFeed(),label:()=>'Покормить эублефара кузнечиком',act:feedGecko});
 INTER.push({get x(){return GECKO.x;},get z(){return GECKO.z;},get lv(){return GECKO.lv;},r:1.0,on:()=>GECKO.mode==='floor',label:()=>'Взять эублефара на руки',act:geckoPickUp});
 INTER.push({lv:'yard',x:2.95,z:27,r:1.2,label:()=>'Скатиться с горки',act:rideSlide});
 for(const sw of SWINGS)INTER.push({lv:'yard',x:sw.x,z:31.15,r:1.0,on:()=>!P.swing,label:()=>'Покачаться на качелях',act:()=>startSwing(sw)});
@@ -1769,23 +1769,37 @@ function buildGecko(){
 }
 const GECKO=Object.assign(buildGecko(),{mode:'terr',lv:'flat',x:5.72,z:13.88,tx:5.72,tz:13.88,face:0,fed:0,cricket:null,home:{}});
 function geckoBase(){return GECKO.mode==='terr'?TERR.y:baseY(GECKO.lv)+.005;}
-function resetGecko(){if(GECKO.mode==='held')scene.attach(GECKO.g);Object.assign(GECKO,{mode:'terr',lv:'flat',x:5.72,z:13.88,tx:5.72,tz:13.88});GECKO.g.rotation.set(0,0,0);if(GECKO.cricket){scene.remove(GECKO.cricket.g);GECKO.cricket=null;}}
+// The grasshopper jar as one movable group (it goes wherever the gecko starts the game).
+const JAR=new THREE.Group();scene.add(JAR);for(const m of TPL.find(t=>t.name==='Банка с кузнечиками').meshes)JAR.attach(m);
+const JAR_HOME={x:6.15,z:13.75};let jarAt={x:6.15,z:13.75,lv:'flat'};
+// Where the gecko and its grasshoppers start a game: usually in the terrarium in Makar's room, now and then
+// out in the yard (10%), and very rarely down in the parking (5%), wandering on the ground with the jar beside it.
+const GECKO_OUT={yard:[[16.5,20.6],[2.3,33],[18.2,37.4],[5,36]],park:[[-20,3],[-8,-13],[4,19],[-30,-1]]};
+function resetGecko(){
+  if(GECKO.mode==='held')scene.attach(GECKO.g);GECKO.g.rotation.set(0,0,0);if(GECKO.cricket){scene.remove(GECKO.cricket.g);GECKO.cricket=null;}
+  const r=Math.random(),lv=r<.85?'flat':r<.95?'yard':'park';
+  if(lv==='flat'){Object.assign(GECKO,{mode:'terr',lv:'flat',x:5.72,z:13.88,tx:5.72,tz:13.88});jarAt={...JAR_HOME,lv:'flat'};JAR.position.set(0,0,0);}
+  else{const [x,z]=pick(GECKO_OUT[lv]);Object.assign(GECKO,{mode:'floor',lv,x,z,tx:x,tz:z,home:{x,z}});jarAt={x:x+.55,z:z+.35,lv};JAR.position.set(jarAt.x-JAR_HOME.x,baseY(lv),jarAt.z-JAR_HOME.z);}
+}
 function geckoPickUp(){if(GECKO.mode==='held')return;scene.add(camera);camera.add(GECKO.g);GECKO.g.position.set(.17,-.22,-.45);GECKO.g.rotation.set(.2,2.3,0);GECKO.mode='held';
   if(GECKO.cricket){scene.remove(GECKO.cricket.g);GECKO.cricket=null;}sfx.pick();toast('Эублефар у тебя на руках! Можно носить его куда угодно. R — отпустить.',3.2);renderInv();}
 function geckoRelease(intoTerr){if(GECKO.mode!=='held')return;scene.attach(GECKO.g);GECKO.g.rotation.set(0,0,0);
   if(intoTerr){Object.assign(GECKO,{mode:'terr',lv:'flat',x:5.72,z:13.88});toast('Эублефар снова в террариуме.',1.8);}
   else{const x=P.x-Math.sin(P.yaw)*.7,z=P.z-Math.cos(P.yaw)*.7;Object.assign(GECKO,{mode:'floor',lv:P.lv,x,z,home:{x,z}});toast('Эублефар гуляет. Подойди и нажми E, чтобы взять его снова.',2.6);}
   GECKO.tx=GECKO.x;GECKO.tz=GECKO.z;sfx.click();renderInv();}
+// the jar is close enough to feed it: the gecko in its terrarium, or wandering near the jar
+const canFeed=()=>!GECKO.cricket&&(GECKO.mode==='terr'&&jarAt.lv==='flat'||GECKO.mode==='floor'&&GECKO.lv===jarAt.lv&&hyp(GECKO.x-jarAt.x,GECKO.z-jarAt.z)<4);
 function feedGecko(){
-  if(GECKO.mode!=='terr'||GECKO.cricket)return;
+  if(!canFeed())return;
+  GECKO.cb=GECKO.mode==='terr'?TERR:{x0:GECKO.x-.6,x1:GECKO.x+.6,z0:GECKO.z-.6,z1:GECKO.z+.6,y:baseY(GECKO.lv)};const B=GECKO.cb;
   const c=new THREE.Group();blk(-.006,.006,0,.008,-.016,.016,mat(0x5aa83a),{parent:c});for(const s of [-1,1])blk(s*.008-.002,s*.008+.002,0,.012,-.02,-.004,mat(0x3d7d2a),{parent:c});
-  c.position.set(TERR.x0+.05,TERR.y,TERR.z1-.05);scene.add(c);GECKO.cricket={g:c,x:c.position.x,z:c.position.z,t:0};toast('Ты бросил кузнечика 🦗',1.6);
+  c.position.set(B.x0+.05,B.y,B.z1-.05);scene.add(c);GECKO.cricket={g:c,x:c.position.x,z:c.position.z,t:0};toast('Ты бросил кузнечика 🦗',1.6);
 }
 function updateGecko(dt,time){
   const G_=GECKO;if(G_.mode==='held'){G_.g.position.y=-.22+Math.sin(time*2)*.004;G_.tail.rotation.y=Math.sin(time*1.6)*.3;return;}
   const cr=G_.cricket;
-  if(cr){cr.t-=dt;if(cr.t<=0){cr.t=.5+Math.random()*.7;cr.x=clamp(cr.x+(Math.random()-.5)*.18,TERR.x0,TERR.x1);cr.z=clamp(cr.z+(Math.random()-.5)*.18,TERR.z0,TERR.z1);}
-    cr.g.position.x+=(cr.x-cr.g.position.x)*Math.min(1,dt*8);cr.g.position.z+=(cr.z-cr.g.position.z)*Math.min(1,dt*8);cr.g.position.y=TERR.y+Math.max(0,Math.sin(cr.t*6))*.03;
+  if(cr){cr.t-=dt;if(cr.t<=0){cr.t=.5+Math.random()*.7;const B=G_.cb||TERR;cr.x=clamp(cr.x+(Math.random()-.5)*.18,B.x0,B.x1);cr.z=clamp(cr.z+(Math.random()-.5)*.18,B.z0,B.z1);}
+    cr.g.position.x+=(cr.x-cr.g.position.x)*Math.min(1,dt*8);cr.g.position.z+=(cr.z-cr.g.position.z)*Math.min(1,dt*8);cr.g.position.y=(G_.cb||TERR).y+Math.max(0,Math.sin(cr.t*6))*.03;
     G_.tx=cr.g.position.x;G_.tz=cr.g.position.z;
     if(hyp(G_.x-G_.tx,G_.z-G_.tz)<.05){scene.remove(cr.g);G_.cricket=null;G_.fed++;nz(.12,2400,.12,panFor(G_.x,G_.z),0,'bandpass');nz(.1,2000,.1,panFor(G_.x,G_.z),.15,'bandpass');
       toast(G_.fed>1?`Ням! Эублефар съел уже ${G_.fed} кузнечиков 🦗`:'Ням! Эублефар съел кузнечика 🦗',2.2);}}
