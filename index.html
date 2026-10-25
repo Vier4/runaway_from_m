@@ -871,11 +871,64 @@ cp(null,YARD);{const sky=ctex(4,256,(g,w,h)=>{const r=g.createLinearGradient(0,0
  const t=texMoscow.clone();t.needsUpdate=true;t.wrapS=THREE.RepeatWrapping;t.repeat.set(5,1);
  const ring=new THREE.Mesh(new THREE.CylinderGeometry(300,300,110,48,1,true),new THREE.MeshBasicMaterial({map:t,side:THREE.BackSide,fog:false}));ring.position.y=50;YARD.add(ring);SKY.ring=ring;SKY.nightRing=t;}
 
-const YARD_ROOM={id:'yard',name:'Двор'},STREET_ROOM={id:'street',name:'Улица'};
-const FOG={flat:[0x07080c,10,26],yard:[0x0c1020,40,190]};
-function setLevel(lv){const [c,n,f]=FOG[lv];scene.fog.color.setHex(c);scene.fog.near=n;scene.fog.far=f;scene.background.setHex(c);YARD.visible=lv==='yard';
+/* ---------- underground parking (level −1) ----------
+   4 m under the yard. The lift opens on its east wall with the stairs door next to it (that is where Makar
+   comes running in); cars stand in two rows either side of the lane; the exit ramp with a barrier leaves
+   through the west wall. Makar's orange car stands in the south row. Lives in PARK, collides against PCOL. */
+const YP=YG-4;
+const PARK=new THREE.Group();PARK.position.y=YP;PARK.visible=false;scene.add(PARK);
+const PCOL=[];
+function pb(x0,x1,y0,y1,z0,z1,m,col){const me=blk(x0,x1,y0,y1,z0,z1,m,{parent:PARK});if(col)PCOL.push({x0,x1,z0,z1,tall:col==='tall'});return me;}
+{let k=29;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};
+ const texConc=ctex(256,256,(g,w,h)=>{g.fillStyle='#62666b';g.fillRect(0,0,w,h);for(let i=0;i<900;i++){g.fillStyle=`rgba(${rnd()<.5?0:255},${rnd()<.5?0:255},${rnd()<.5?0:255},.05)`;g.fillRect(rnd()*w,rnd()*h,2+rnd()*3,2+rnd()*3);}g.fillStyle='rgba(0,0,0,.12)';g.fillRect(0,0,w,2);g.fillRect(0,0,2,h);});
+ const fl=new THREE.PlaneGeometry(16,15.6);fl.rotateX(-Math.PI/2);fl.translate(1.6,0,3);worldUV(fl,2,2);PARK.add(new THREE.Mesh(fl,matT(texConc)));
+ const ce=new THREE.PlaneGeometry(16,15.6);ce.rotateX(Math.PI/2);ce.translate(1.6,3,3);PARK.add(new THREE.Mesh(ce,mat(0x5d6166)));}
+const M_conc=mat(0x7b8086),M_concD=mat(0x5a5e64),M_line=mat(0xe9e6d6),M_yel=mat(0xe2b23a);
+pb(-6.55,9.75,0,3,-4.8,-4.5,M_conc,'tall');pb(-6.55,9.75,0,3,10.5,10.8,M_conc,'tall');pb(9.45,9.75,0,3,-4.5,10.5,M_conc,'tall');
+pb(-6.55,-6.25,0,3,-4.5,1,M_conc,'tall');pb(-6.55,-6.25,0,3,5,10.5,M_conc,'tall');pb(-6.55,-6.25,2.6,3,1,5,M_conc);
+for(const x of [-2.5,1.5,5.5])for(const z of [.3,5.7]){pb(x-.25,x+.25,0,3,z-.25,z+.25,M_concD,'tall');pb(x-.26,x+.26,0,.5,z-.26,z+.26,M_yel);}
+for(let x=-4.5;x<=7.6;x+=2){pb(x-.04,x+.04,.004,.01,-4.4,-.2,M_line);pb(x-.04,x+.04,.004,.01,6.2,10.4,M_line);}
+pb(-6.2,9.4,.004,.01,2.96,3.04,M_yel);                                         // lane centre line
+for(const x of [-3.5,.5,4.5,8.2])for(const z of [-1.8,3,7.8])pb(x-.6,x+.6,2.94,2.98,z-.06,z+.06,M_.lamp);
+for(const [x,z] of [[-3,3],[1.5,-1.5],[1.5,7.8],[6.5,3]]){const L=new THREE.PointLight(0xe8f0ff,.95,11,2);L.position.set(x,2.7,z);PARK.add(L);}
+// lift doors, call panel and the stairs door on the east wall
+pb(9.38,9.45,0,2.05,2.4,2.85,M_.metal);pb(9.38,9.45,0,2.05,2.85,3.3,M_.metal);pb(9.36,9.45,2.05,2.25,2.3,3.4,M_.dark);
+pb(9.33,9.45,1.0,1.3,3.55,3.7,M_.metal);sph(9.33,1.15,3.625,.025,basic(0x3bff7a),{parent:PARK});
+pb(9.39,9.45,0,2.05,4.6,5.4,mat(0x6b5444));
+{const sign=(t,sub,w,h,col)=>new THREE.MeshBasicMaterial({map:ctex(256,Math.round(256*h/w),(g,W,Hh)=>{g.fillStyle='#e9eef3';g.fillRect(0,0,W,Hh);g.strokeStyle=col;g.lineWidth=8;g.strokeRect(4,4,W-8,Hh-8);
+   g.fillStyle=col;g.textAlign='center';g.textBaseline='middle';g.font=`900 ${Math.round(Hh*.5)}px Arial Black, Arial`;g.fillText(t,W/2,Hh*.42);g.font=`bold ${Math.round(Hh*.17)}px Arial`;g.fillText(sub,W/2,Hh*.82);},false)});
+ const pl=(m,x,y,z,w,h)=>{const me=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);me.position.set(x,y,z);me.rotation.y=-Math.PI/2;PARK.add(me);};
+ pl(sign('−1','ПАРКОВКА',.8,.6,'#1f4f9a'),9.37,1.75,1.6,.8,.6);pl(sign('Л','ЛЕСТНИЦА',.5,.3,'#1b8a3c'),9.37,2.3,5.0,.5,.3);}
+// the exit ramp and its barrier
+{const L=8.2,a=Math.atan2(3.1,L),geo=new THREE.PlaneGeometry(Math.hypot(L,3.1),4);geo.rotateX(-Math.PI/2);geo.rotateZ(a);geo.translate(-6.25-L/2,1.55,3);PARK.add(new THREE.Mesh(geo,M_concD));
+ pb(-14.5,-6.25,0,4.4,.7,1,M_conc);pb(-14.5,-6.25,0,4.4,5,5.3,M_conc);pb(-14.5,-6.25,4.4,4.5,.7,5.3,M_concD);
+ const out=new THREE.Mesh(new THREE.PlaneGeometry(4.3,1.6),new THREE.MeshBasicMaterial({color:0xb8c4d0,fog:false}));out.position.set(-14.45,3.9,3);out.rotation.y=Math.PI/2;PARK.add(out);}
+const BARRIER={pivot:new THREE.Group(),ang:0};
+pb(-5.95,-5.65,0,1.1,.75,1.05,mat(0x2c3238));BARRIER.pivot.position.set(-5.8,1.0,1.0);PARK.add(BARRIER.pivot);
+for(let i=0;i<8;i++)blk(-.04,.04,-.04,.04,i*.5,i*.5+.5,i%2?M_.white:M_.red,{parent:BARRIER.pivot});
+PCOL.push({x0:-6.3,x1:-5.6,z0:1,z1:5});                                      // you can't walk out up the ramp
+// cars: length along z, nose towards −z; a plate on both ends
+function parkCar(x,z,ry,color,plate){
+  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;PARK.add(g);const m=mat(color,{shininess:70,specular:0x555555}),gl=mat(0x18202c,{shininess:90,specular:0x666666});
+  blk(-.9,.9,.3,.95,-2.1,2.1,m,{parent:g});blk(-.8,.8,.95,1.45,-1,1.15,gl,{parent:g});blk(-.78,.78,1.45,1.5,-.9,1.05,m,{parent:g});
+  for(const [dx,dz] of [[-.86,-1.35],[.86,-1.35],[-.86,1.35],[.86,1.35]])cyl(dx,.0,.64,dz,.32,M_.dark,{parent:g,seg:14}).rotation.z=Math.PI/2;
+  for(const s of [-1,1]){blk(s*.55-.18,s*.55+.18,.62,.76,-2.12,-2.1,basic(0xfff3d0),{parent:g});blk(s*.55-.18,s*.55+.18,.62,.76,2.1,2.12,basic(0xd02018),{parent:g});}
+  const pt=new THREE.MeshBasicMaterial({map:ctex(128,28,(c,w,h)=>{c.fillStyle='#f4f4f0';c.fillRect(0,0,w,h);c.strokeStyle='#111';c.lineWidth=2;c.strokeRect(1,1,w-2,h-2);c.fillStyle='#111';c.font='bold 18px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText(plate,w/2-8,h/2+1);c.fillStyle='#1f4f9a';c.fillRect(w-22,3,19,h-6);},false)});
+  for(const [zz,ry2] of [[-2.115,Math.PI],[2.115,0]]){const pm=new THREE.Mesh(new THREE.PlaneGeometry(.52,.11),pt);pm.position.set(0,.45,zz);pm.rotation.y=ry2;g.add(pm);}
+  const c=Math.abs(Math.sin(ry))>.5?{x0:x-2.15,x1:x+2.15,z0:z-.95,z1:z+.95}:{x0:x-.95,x1:x+.95,z0:z-2.15,z1:z+2.15};PCOL.push(c);
+  return {g,col:c};
+}
+cp('Машина Макара',PARK,1);
+const CAR=Object.assign(parkCar(.5,8.3,0,0xe2512b,'М777АК'),{x:.5,z:8.3});CAR.g.rotation.order='YXZ'; // so it can pitch up the ramp
+cp(null,PARK);parkCar(-3.5,8.3,0,0xe6e6e6,'А123ВС');parkCar(4.5,-2.3,Math.PI,0x2f4f8f,'Е555КХ');parkCar(-1.5,-2.3,Math.PI,0x8a1f24,'О808ОО');
+cp(null,PARK);
+
+const YARD_ROOM={id:'yard',name:'Двор'},STREET_ROOM={id:'street',name:'Улица'},PARK_ROOM={id:'park',name:'Парковка'};
+const baseY=lv=>lv==='yard'?YG:lv==='park'?YP:0;
+const FOG={flat:[0x07080c,10,26],yard:[0x0c1020,40,190],park:[0x0c0e11,9,34]};
+function setLevel(lv){const [c,n,f]=FOG[lv];scene.fog.color.setHex(c);scene.fog.near=n;scene.fog.far=f;scene.background.setHex(c);YARD.visible=lv==='yard';PARK.visible=lv==='park';
   // by day the sun shines only outside (it would light the flat through the walls), indoors it is just a bit brighter
-  SUN.intensity=isDay&&lv==='yard'?.75:0;HEMI.intensity=isDay?(lv==='yard'?1.0:.62):.5;}
+  SUN.intensity=isDay&&lv==='yard'?.75:0;HEMI.intensity=lv==='park'?.42:isDay?(lv==='yard'?1.0:.62):.5;}
 // Each window shows a snapshot of what really lies outside it: the bedrooms look down into the yard.
 function renderWindowViews(){
   setLevel('yard');
@@ -964,7 +1017,7 @@ function segBox(ax,az,bx,bz,x0,x1,z0,z1){
 function doorSolid(d){return !d.open;}
 function liftSolid(){return LIFT.open<.9;}
 function sightClear(ax,az,bx,bz){
-  if(MS.lv==='yard'){for(const c of YCOL)if(c.tall&&segBox(ax,az,bx,bz,c.x0,c.x1,c.z0,c.z1))return false;return true;}
+  if(MS.lv!=='flat'){for(const c of colsOf(MS.lv))if(c.tall&&segBox(ax,az,bx,bz,c.x0,c.x1,c.z0,c.z1))return false;return true;}
   for(const c of COL)if((c.wall||c.tall)&&segBox(ax,az,bx,bz,c.x0,c.x1,c.z0,c.z1))return false;
   for(const d of DOORS)if(doorSolid(d)&&segBox(ax,az,bx,bz,d.box.x0,d.box.x1,d.box.z0,d.box.z1))return false;
   return true;
@@ -982,6 +1035,7 @@ function pushOut(p,r,x0,x1,z0,z1){
 }
 function collide(p,r){
   if(p.lv==='yard'){for(let it=0;it<3;it++){for(const c of YCOL)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);if(!GATE.open)pushOut(p,r,GATE.x0,GATE.x1,GATE.z-.06,GATE.z+.06);}return;}
+  if(p.lv==='park'){for(let it=0;it<3;it++)for(const c of PCOL)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);return;}
   for(let it=0;it<3;it++){
     for(const c of COL)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);
     for(const d of DOORS)if(doorSolid(d))pushOut(p,r,d.box.x0,d.box.x1,d.box.z0,d.box.z1);
@@ -1028,7 +1082,10 @@ function buildKeys(){const g=new THREE.Group();const ring=new THREE.Mesh(new THR
   blk(.02,.11,-.004,.004,-.01,.01,M_.gold,{parent:g});blk(.08,.1,-.004,.004,.01,.025,M_.gold,{parent:g});
   const k2=blk(-.1,-.02,-.004,.004,-.01,.01,M_.metal,{parent:g});blk(-.05,-.03,-.004,.004,.01,.03,M_.red,{parent:g});g.scale.setScalar(1.6);scene.add(g);return g;}
 function buildShoes(){const g=new THREE.Group();for(const s of [-1,1]){blk(s*.07-.045,s*.07+.045,0,.035,-.13,.13,M_.white,{parent:g});blk(s*.07-.042,s*.07+.042,.035,.1,-.12,.07,mat(0x2f6fd6),{parent:g});blk(s*.07-.035,s*.07+.035,.1,.12,-.12,-.02,mat(0x2f6fd6),{parent:g});}g.rotation.y=.6;scene.add(g);return g;}
-const ITEMS={keys:{mesh:buildKeys(),name:'Ключи'},shoes:{mesh:buildShoes(),name:'Кроссовки'}};
+// Makar's car key: a black fob with a metal blade and a red button
+function buildCarKey(){const g=new THREE.Group();blk(-.025,.025,0,.016,-.05,.03,mat(0x1a1a1e,{shininess:60}),{parent:g});blk(-.007,.007,.004,.012,.03,.1,M_.metal,{parent:g});
+  sph(0,.017,-.02,.008,basic(0xe02424),{parent:g});cyl(0,.004,.012,-.065,.012,M_.metal,{parent:g}).rotation.x=Math.PI/2;g.scale.setScalar(1.7);scene.add(g);return g;}
+const ITEMS={keys:{mesh:buildKeys(),name:'Ключи'},shoes:{mesh:buildShoes(),name:'Кроссовки'},carkeys:{mesh:buildCarKey(),name:'Ключи от машины'}};
 TPL.push({name:'Ключи (не настоящие)',meshes:[ITEMS.keys.mesh]},{name:'Кроссовки (не настоящие)',meshes:[ITEMS.shoes.mesh]});
 for(const k in ITEMS){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:texSpark,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));sp.scale.set(.35,.35,1);scene.add(sp);ITEMS[k].spark=sp;}
 
@@ -1073,24 +1130,25 @@ const keys={};let touchMove={x:0,y:0},touchRun=false;
 function placeItems(){
   keySpot=pick(KEY_SPOTS);shoeSpot=pick(SHOE_SPOTS.filter(s=>s.room!==keySpot.room));
   ITEMS.keys.spot=keySpot;ITEMS.shoes.spot=shoeSpot;
+  ITEMS.carkeys.spot=pick(KEY_SPOTS.filter(s=>s!==keySpot&&s.room!==shoeSpot.room));
   for(const k in ITEMS){const it=ITEMS[k];it.taken=false;it.mesh.visible=true;it.spark.visible=true;it.mesh.position.set(it.spot.x,it.spot.y+.01,it.spot.z);}
 }
 function resetActors(){
-  if(P.lv==='yard'){Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);}
+  if(P.lv!=='flat'){Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);}
   P.lv='flat';MS.lv='flat';GATE.open=false;setLevel('flat');
   Object.assign(P,{x:SPAWN.x,z:SPAWN.z,yaw:SPAWN.yaw,pitch:0,crouch:false,hidden:null});
   const s=SEATS.desk;Object.assign(MS,{x:s.x,z:s.z,face:s.face,state:'sit',task:'stream',seatKey:'desk',seat:s,sitK:1,wait:18+Math.random()*10,path:[],aware:0,lastSeen:null,knowsHide:false,doorT:0,delay:2,sayT:3,lostT:0,hideTarget:null});
   $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;
 }
 function newGame(){
-  D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false};
+  D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false};
   for(const d of DOORS){d.open=false;d.ang=0;d.hold=0;if(d.id==='front')d.locked=true;}
   DOOR.kitchen.open=true;DOOR.living.open=true;
   Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);
   placeItems();resetInv();for(const pk of PICKS)if(pk.item)centerPick(pk);resetActors();tPlay=0;toiletCD=0;flushCD=0;
   Object.assign(VAC,{x:VAC.dock.x,z:VAC.dock.z,a:VAC.dock.a,mode:'dock'});
   for(const r in ROOM_LAMP)setRoomLight(r,true);
-  clearSpawned();
+  clearSpawned();resetCar();
   renderLives();
 }
 
@@ -1161,18 +1219,20 @@ INTER.push({lv:'yard',x:17,z:43.5,r:1.5,on:()=>!GATE.open,label:()=>'Откры�
   GATE.open=true;gateBtn.material.color.set(0xffffff);tone(1200,.09,'square',.1);tone(1500,.12,'square',.1,0,.12);nz(.15,1800,.06,0,.2);toast('Пик! Калитка открыта, беги!',2);
   setTimeout(()=>announce('Дверь открыта'),350);}});   // the intercom's woman's voice
 INTER.push({lv:'yard',x:ENTR.x,z:ENTR.z+.45,r:1.3,label:()=>'Вернуться в подъезд (на лифте наверх)',act:goUp});
+INTER.push({lv:'park',x:9.2,z:2.85,r:1.3,label:()=>'Лифт наверх, на '+FLOOR+' этаж',act:goUp});
+INTER.push({lv:'park',get x(){return CAR.x-1.05;},get z(){return CAR.z+.2;},r:1.4,label:()=>P.items.carkeys?'Угнать машину Макара':'Машина Макара',act:stealCar});
 /* ---------- inventory ----------
    Six slots, always on screen while you play. Keys, shoes, small things around the flat and everything
    spawned from the admin panel can be picked up (E) and dropped in front of you again (Q). A pick moves
    as one object together with the colliders under it. */
 const INV_SIZE=6,INV=[],PICKS=[];let invSel=0;
-const ICONS=[['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
+const ICONS=[['Ключи от машины','🚙'],['Машина Макара','🚙'],['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
   ['Ночник','🏮'],['Кольцевая','💡'],['Люстр','💡'],['Лампа','💡'],['пылесос','🤖'],['Станция','🤖'],['нитаз','🚽'],['Ванна','🛁'],['ровать','🛏️'],['Диван','🛋️'],
   ['Телевизор','📺'],['Холодильник','🧊'],['Розетк','🔌'],['Выключатель','🔌'],['Дверь','🚪'],['дверь','🚪'],['Окно','🪟'],['Палатк','⛺'],['Самокат','🛴'],['Фонарь','🏮'],
   ['Дерев','🌳'],['Ель','🌲'],['Берёз','🌳'],['Машин','🚗'],['Макар','🧍'],['Стиральн','🫧'],['Раковин','🚰'],['Шкаф','🗄️'],['Зеркало','🪞'],['Ковёр','🟥'],['коврик','🟥'],['Пожарн','🚨'],
   ['Рокот','📢'],['Мигалк','🚨'],['Датчик','🔴'],['ящик','📦'],['тул','🪑'],['Скамейк','🪑'],['тол','🪑'],['Качели','🎠'],['Карусель','🎠'],['Горка','🛝'],['Песочниц','🏖️']];
 const iconFor=n=>(ICONS.find(([k])=>n.includes(k))||[0,'📦'])[1];
-const colsOf=lv=>lv==='yard'?YCOL:COL;
+const colsOf=lv=>lv==='yard'?YCOL:lv==='park'?PCOL:COL;
 const boxOf=o=>new THREE.Box3().setFromObject(o);
 function centerPick(pk){const b=boxOf(pk.obj);pk.cx=(b.min.x+b.max.x)/2;pk.cz=(b.min.z+b.max.z)/2;}
 function addPick(pk){
@@ -1193,14 +1253,14 @@ function pickUp(pk){
   pk.held=true;pk.obj.visible=false;const a=colsOf(pk.lv);for(const c of pk.cols){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}
   INV.push(pk);invSel=INV.length-1;sfx.pick();
   if(pk.item){const k=pk.item;ITEMS[k].taken=true;ITEMS[k].spark.visible=false;P.items[k]=true;
-    toast(k==='keys'?'Ключи найдены! '+(P.items.shoes?'Теперь к входной двери.':'Осталось найти кроссовки.'):'Кроссовки надеты! '+(P.items.keys?'Теперь к входной двери.':'Осталось найти ключи.'));}
+    toast(k==='carkeys'?'Ключи от машины Макара! Его машина стоит на подземной парковке: в лифте выбери −1.':k==='keys'?'Ключи найдены! '+(P.items.shoes?'Теперь к входной двери.':'Осталось найти кроссовки.'):'Кроссовки надеты! '+(P.items.keys?'Теперь к входной двери.':'Осталось найти ключи.'));}
   else toast('Взято: '+pk.name,1.4);
   renderInv(true);return true;
 }
 function dropSel(){
   const pk=INV[invSel];if(!pk||state!=='play')return;if(P.hidden){toast('Сначала вылези из укрытия.');return;}
   pk.obj.visible=true;const b=boxOf(pk.obj),sx=b.max.x-b.min.x,sz=b.max.z-b.min.z;
-  const d=.7+Math.min(3,Math.max(sx,sz)/2),tx=P.x-Math.sin(P.yaw)*d,tz=P.z-Math.cos(P.yaw)*d,base=P.lv==='yard'?YG:0;
+  const d=.7+Math.min(3,Math.max(sx,sz)/2),tx=P.x-Math.sin(P.yaw)*d,tz=P.z-Math.cos(P.yaw)*d,base=baseY(P.lv);
   const dx=tx-(b.min.x+b.max.x)/2,dz=tz-(b.min.z+b.max.z)/2,dy=base+.005-b.min.y;
   pk.obj.position.x+=dx;pk.obj.position.y+=dy;pk.obj.position.z+=dz;pk.off.x+=dx;pk.off.y+=dy;pk.off.z+=dz;
   for(const c of pk.cols){c.x0+=dx;c.x1+=dx;c.z0+=dz;c.z1+=dz;}pk.lv=P.lv;colsOf(pk.lv).push(...pk.cols);
@@ -1259,7 +1319,7 @@ function exitHide(){const h=P.hidden;P.hidden=null;P.x=h.x;P.z=h.z;$('hideShade'
 
 /* ---------- noise / hearing ---------- */
 function heard(x,z,r,kind){
-  if(P.lv==='yard')return;
+  if(P.lv!=='flat')return;
   if(MS.delay>0&&kind!=='toilet'&&kind!=='vacuum')return;
   const d=hyp(MS.x-x,MS.z-z);if(d>r*D.hear)return;
   if(MS.state==='chase'||MS.state==='grab'||MS.state==='check')return;
@@ -1284,11 +1344,11 @@ function updatePlayer(dt){
   if(P.stepAcc>stride){P.stepAcc=0;if(!P.crouch&&!ADMIN.fly)sfx.step();}
   P.bob+=moved*(wantRun?9:11);
   // fly mode: no walls, Space up, C down (under the ceiling indoors, up to 60 m over the yard)
-  if(ADMIN.fly){P.crouch=false;P.eye=clamp(P.eye+((keys.Space||touchFly>0?1:0)-(keys.KeyC||keys.ControlLeft||touchFly<0?1:0))*3.5*dt,.3,P.lv==='yard'?60:H-.15);}
+  if(ADMIN.fly){P.crouch=false;P.eye=clamp(P.eye+((keys.Space||touchFly>0?1:0)-(keys.KeyC||keys.ControlLeft||touchFly<0?1:0))*3.5*dt,.3,P.lv==='yard'?60:P.lv==='park'?2.8:H-.15);}
   else{const eye=P.crouch?.72:1.15;P.eye+=(eye-P.eye)*Math.min(1,dt*10);}
-  camera.position.set(P.x,(P.lv==='yard'?YG:0)+P.eye+Math.sin(P.bob)*.035*Math.min(1,moved/dt/2.4||0),P.z);
+  camera.position.set(P.x,baseY(P.lv)+P.eye+Math.sin(P.bob)*.035*Math.min(1,moved/dt/2.4||0),P.z);
   camera.rotation.set(P.pitch,P.yaw,0);
-  const r=P.lv==='yard'?(P.z>GATE.z?STREET_ROOM:YARD_ROOM):roomAt(P.x,P.z);if(r&&r!==P.room){P.room=r;
+  const r=P.lv==='yard'?(P.z>GATE.z?STREET_ROOM:YARD_ROOM):P.lv==='park'?PARK_ROOM:roomAt(P.x,P.z);if(r&&r!==P.room){P.room=r;
     if(r.id==='bath1')toast('Умный унитаз: «Добрый вечер! Хотите музыку?»');
     if(r.id==='cab'&&state==='play')enterLift();}
   if(P.lv==='yard'&&P.z>GATE.z+.45&&state==='play')win();
@@ -1368,11 +1428,13 @@ function startPatrol(){
 function startLook(t){MS.state='look';MS.wait=t;MS.lookBase=MS.face;MS.lookT=0;
   if(P.hidden&&D.check>0){const r=roomAt(MS.x,MS.z);if(r&&r.id===P.hidden.room&&Math.random()<D.check*2.5){MS.state='check';MS.hideTarget=P.hidden;MS.path=buildPath(MS.x,MS.z,P.hidden.x,P.hidden.z);say(pick(LINES.check));}}}
 // Makar can't follow you downstairs: once you are in the yard he stays up in the flat.
-// In the yard Makar comes running out of the entrance 5 seconds after you and chases you to the gate,
-// sliding around whatever is in the way. If you ride back up he follows you into the flat 5 s later.
-function updateMakarYard(dt){
-  if(MS.lv!=='yard'){MS.spd=0;yardT-=dt;
-    if(yardT<=0){Object.assign(MS,{lv:'yard',x:ENTR.x,z:ENTR.z+.9,face:0,path:[],seat:null,sitK:0,lookBase:0,lookT:0,aware:1,state:D.blind?'look':'chase'});
+// Downstairs Makar comes running after you: out of the entrance into the yard 5 seconds after you, or in
+// through the stairs door of the parking after 7, and chases you, sliding around whatever is in the way.
+// If you ride back up he follows you into the flat 5 s later.
+const OUTSIDE={yard:{delay:5,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:7,x:()=>8.6,z:()=>4.95,face:Math.PI/2}};
+function updateMakarOutside(dt){
+  if(MS.lv!==P.lv){MS.spd=0;yardT-=dt;
+    if(yardT<=0){const o=OUTSIDE[P.lv];Object.assign(MS,{lv:P.lv,x:o.x(),z:o.z(),face:o.face,path:[],seat:null,sitK:0,lookBase:0,lookT:0,aware:1,state:D.blind?'look':'chase'});
       if(D.blind)say('Эй! Куда он делся?');else{say(pick(LINES.yard));sfx.sting();}}
     return;}
   const dP=hyp(P.x-MS.x,P.z-MS.z);
@@ -1392,8 +1454,8 @@ function updateMakarYard(dt){
   animMakar(dt);
 }
 function updateMakar(dt){
-  if(P.lv==='yard'){updateMakarYard(dt);return;}
-  if(MS.lv==='yard'){MS.spd=0;upT-=dt;if(upT<=0){Object.assign(MS,{lv:'flat',x:4.4,z:7.07,face:Math.PI/2,path:[],state:'search',wait:4,lookBase:Math.PI/2,lookT:0,aware:.4});say('Ты куда? Я тебя всё равно найду!');}return;}
+  if(P.lv!=='flat'){updateMakarOutside(dt);return;}
+  if(MS.lv!=='flat'){MS.spd=0;upT-=dt;if(upT<=0){Object.assign(MS,{lv:'flat',x:4.4,z:7.07,face:Math.PI/2,path:[],state:'search',wait:4,lookBase:Math.PI/2,lookT:0,aware:.4});say('Ты куда? Я тебя всё равно найду!');}return;}
   if(ADMIN.freeze){MS.spd=0;animMakar(dt);return;}
   const g=MK.g;
   if(MS.delay>0){MS.delay-=dt;MS.spd=0;animMakar(dt);return;}
@@ -1446,7 +1508,7 @@ function updateMakar(dt){
   animMakar(dt);
 }
 function animMakar(dt){
-  const g=MK.g,base=MS.lv==='yard'?YG:0;g.position.set(MS.x,base,MS.z);g.rotation.y=MS.face;
+  const g=MK.g,base=baseY(MS.lv);g.position.set(MS.x,base,MS.z);g.rotation.y=MS.face;
   const sp=MS.spd;MS.phase+=dt*sp*3.4;const amp=Math.min(1,sp/2)*.65;
   MK.legL.rotation.x=Math.sin(MS.phase)*amp;MK.legR.rotation.x=-Math.sin(MS.phase)*amp;
   const reach=MS.state==='chase'?-1.25:0;
@@ -1555,20 +1617,27 @@ function caught(){
     showHUD(false);},1500);
 }
 /* The lift doesn't really ride: the screen goes dark and you step out on the ground floor, into the yard. */
+// Inside the cab the lift asks where to go: the ground floor (the yard) or the underground parking.
 function enterLift(){
-  if(state!=='play')return;state='ride';sfx.chime();
-  const f=$('fade');f.style.background='#000';f.style.opacity=1;toast('Лифт едет вниз… 15… 9… 3…',2);
+  if(state!=='play')return;state='liftmenu';sfx.chime();unlock();showHUD(false);hush();
+  panel('Лифт','Куда поедем?',[['1 — первый этаж, двор',()=>rideDown('yard')],['−1 — подземная парковка',()=>rideDown('park')],['Выйти из лифта',leaveCab,'ghost']]);
+}
+function leaveCab(){Object.assign(P,{x:8.6,z:2.85,yaw:Math.PI/2,room:null});startPlay();}
+function rideDown(lv){
+  if(state!=='liftmenu'&&state!=='play')return;overlay.hidden=true;state='ride';lock();
+  const f=$('fade');f.style.background='#000';f.style.opacity=1;toast(lv==='park'?'Лифт едет вниз… 15… 9… 3… −1':'Лифт едет вниз… 15… 9… 3…',2);
   setTimeout(()=>{
     if(state!=='ride')return;
-    P.lv='yard';Object.assign(P,{x:ENTR.x,z:ENTR.z+.95,yaw:Math.PI,pitch:-.04,crouch:false,room:null});
-    if(MS.lv!=='yard')yardT=5;GATE.open=false;setLevel('yard');
-    state='play';f.style.opacity=0;tone(988,.4,'sine',.15);
-    toast(D.blind?'Первый этаж! Беги к калитке в заборе.':'Первый этаж! Беги к калитке: через 5 секунд Макар выбежит из подъезда!',4.5);
+    P.lv=lv;Object.assign(P,lv==='park'?{x:8.6,z:2.85,yaw:Math.PI/2}:{x:ENTR.x,z:ENTR.z+.95,yaw:Math.PI},{pitch:-.04,crouch:false,room:null});
+    if(MS.lv!==lv){MS.lv='flat';yardT=OUTSIDE[lv].delay;}   // he is on the stairs
+    GATE.open=false;setLevel(lv);state='play';showHUD(true);f.style.opacity=0;tone(988,.4,'sine',.15);
+    toast(lv==='park'?(D.blind?'Подземная парковка. Где-то тут машина Макара.':'Подземная парковка! Где-то тут машина Макара. Через 7 секунд Макар прибежит по лестнице!')
+      :(D.blind?'Первый этаж! Беги к калитке в заборе.':'Первый этаж! Беги к калитке: через 5 секунд Макар выбежит из подъезда!'),4.5);
   },1500);
 }
-// Back up from the yard: the lift takes you to the 18th floor and lets you out in the lift hall.
+// Back up from the yard or the parking: the lift takes you to the 18th floor and lets you out in the lift hall.
 function goUp(){
-  if(state!=='play'||P.lv!=='yard')return;state='ride';sfx.chime();
+  if(state!=='play'||P.lv==='flat')return;state='ride';sfx.chime();
   const f=$('fade');f.style.background='#000';f.style.opacity=1;toast('Лифт едет наверх… 3… 9… 15…',2);
   setTimeout(()=>{
     if(state!=='ride')return;
@@ -1577,6 +1646,38 @@ function goUp(){
     state='play';f.style.opacity=0;tone(988,.4,'sine',.15);toast(`${FLOOR} этаж. Ты снова в подъезде.`,3);
   },1500);
 }
+/* ---------- ending: you steal Makar's car ----------
+   The car pulls out of its spot, turns into the lane, the barrier goes up and it drives up the ramp. */
+let driveT=0,driveSpd=0,engine=null;
+const DRIVE_PATH=[{x:.5,z:3},{x:-5.2,z:3},{x:-14.5,z:3}];
+function stealCar(){
+  if(state!=='play')return;
+  if(!P.items.carkeys){toast('Машина заперта. Ключи от неё Макар спрятал где-то в квартире.');sfx.click();return;}
+  state='drive';driveT=0;driveSpd=0;CAR.leg=0;unlock();showHUD(false);hush();$('prompt').hidden=true;
+  nz(.25,400,.5);tone(90,.6,'sawtooth',.08,140);toast('Врум! Ты завёл машину Макара!',3);
+  engine=setInterval(()=>tone(48+driveSpd*14,.24,'sawtooth',.045,0,0),180);
+  if(MS.lv==='park')setTimeout(()=>say('Эй! Это моя машина!!!',2.5),700);
+}
+function updateDrive(dt){
+  driveT+=dt;if(driveT<.8){driveSpd=0;}else driveSpd=Math.min(5,driveSpd+dt*2.2);
+  const g=CAR.g,tgt=DRIVE_PATH[Math.min(CAR.leg,DRIVE_PATH.length-1)],dx=tgt.x-CAR.x,dz=tgt.z-CAR.z,d=hyp(dx,dz);
+  if(d<.4&&CAR.leg<DRIVE_PATH.length-1)CAR.leg++;
+  const want=Math.atan2(-dx,-dz);g.rotation.y+=angDiff(want,g.rotation.y)*Math.min(1,dt*3);
+  const st=Math.min(d,driveSpd*dt);CAR.x-=Math.sin(g.rotation.y)*st;CAR.z-=Math.cos(g.rotation.y)*st;
+  const up=clamp((-6.25-CAR.x)/8.2,0,1)*3.1;g.position.set(CAR.x,up,CAR.z);g.rotation.x=CAR.x<-6.25&&CAR.x>-14.4?Math.atan2(3.1,8.2):0;
+  if(CAR.x<-1)BARRIER.ang=Math.min(1.45,BARRIER.ang+dt*1.6);BARRIER.pivot.rotation.x=-BARRIER.ang;
+  // camera: behind and above the car, looking at it
+  const fx=-Math.sin(g.rotation.y),fz=-Math.cos(g.rotation.y);
+  camera.position.set(CAR.x-fx*5.2,YP+up+2.4,CAR.z-fz*5.2);camera.lookAt(CAR.x+fx*2,YP+up+.9,CAR.z+fz*2);
+  if(MS.lv==='park'){MS.spd=Math.min(3,MS.spd+dt*2);stepTowardOut(CAR.x,CAR.z,dt);animMakar(dt);}
+  if(CAR.x<-11&&!CAR.fading){CAR.fading=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;
+    setTimeout(()=>{clearInterval(engine);$('fade').style.opacity=0;$('sub').hidden=true;$('toast').hidden=true;
+      endingPanel('car','Ты завёл машину Макара, выехал с подземной парковки и укатил к маме на работу. А Макару теперь придётся ездить на самокате!');},1300);}
+}
+// Makar running after the car on foot (he can't catch it)
+function stepTowardOut(tx,tz,dt){const a=Math.atan2(tx-MS.x,tz-MS.z),ox=MS.x,oz=MS.z;MS.state='chase';MS.x+=Math.sin(a)*D.chase*.8*dt;MS.z+=Math.cos(a)*D.chase*.8*dt;collide(MS,MR);turnTo(a,dt);MS.spd=hyp(MS.x-ox,MS.z-oz)/dt;}
+function resetCar(){Object.assign(CAR,{x:.5,z:8.3,leg:0,fading:false});CAR.g.position.set(.5,0,8.3);CAR.g.rotation.set(0,0,0);BARRIER.ang=0;BARRIER.pivot.rotation.x=0;}
+
 /* ---------- ending: Makar caught you for good ---------- */
 const END_SCRIPT=[
   [0,()=>{
@@ -1635,6 +1736,7 @@ const ENDINGS=[
   {id:'caught',title:'Макар тебя поймал',hint:'Попадись Макару столько раз, сколько у тебя попыток (на «Сложном» хватит одного раза, на «Практике» не получится). Макар запрёт тебя в твоей комнате.'},
   {id:'escape',title:'Побег на свободу',hint:'Найди ключи и кроссовки, открой входную дверь, вызови лифт, спустись во двор и выйди через калитку.'},
   {id:'fire',title:'Пожарная тревога',hint:'Найди ключи и кроссовки и выберись в подъезд. В лифтовом холле на стене висит красная кнопка «ПОЖАР»: нажми её.'},
+  {id:'car',title:'Угон машины',hint:'Найди в квартире ключи от машины Макара (🚙), выберись в подъезд, в лифте выбери «−1 — подземная парковка» и угони его оранжевую машину.'},
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
 const endCount=()=>ENDINGS.filter(e=>gotEnd[e.id]).length;
@@ -1660,7 +1762,7 @@ const ADMIN={freeze:false,god:false,fast:false,fly:false};
 const ADMIN_TOGGLES=[['freeze','Макар замер'],['god','Макар не ловит'],['fast','Супер-бег'],['fly','Режим полёта']];
 function tp(x,z){if(P.hidden){P.hidden=null;$('hideShade').hidden=true;}if(P.lv!=='flat'){P.lv='flat';setLevel('flat');}P.x=x;P.z=z;P.room=null;}
 const ADMIN_ACTIONS=[
-  ['Дать ключи и кроссовки',()=>{for(const pk of PICKS)if(pk.item&&!pk.held&&!pickUp(pk))return;toast('Ключи и кроссовки у тебя!');}],
+  ['Дать все ключи и кроссовки',()=>{for(const pk of PICKS)if(pk.item&&!pk.held&&!pickUp(pk))return;toast('Все ключи и кроссовки у тебя!');}],
   ['Открыть входную дверь',()=>{DOOR.front.locked=false;DOOR.front.open=true;toast('Входная дверь открыта.');}],
   ['Вызвать лифт',()=>{LIFT.state='open';liftBtn.material.color.set(0xffd23f);toast('Лифт уже ждёт тебя.');}],
   ['Телепорт: моя комната',()=>tp(5.0,11.8)],
@@ -1668,7 +1770,8 @@ const ADMIN_ACTIONS=[
   ['Телепорт: кухня',()=>tp(5.0,3.4)],
   ['Телепорт: гостиная',()=>tp(1.8,3.0)],
   ['Телепорт: к лифту',()=>{if(DOOR.front.locked){DOOR.front.locked=false;DOOR.front.open=true;}tp(8.3,4.6);}],
-  ['Телепорт: во двор',()=>{if(P.lv==='flat')setTimeout(enterLift,0);}],
+  ['Телепорт: во двор',()=>{if(P.lv==='flat')setTimeout(()=>rideDown('yard'),0);}],
+  ['Телепорт: на парковку',()=>{if(P.lv==='flat')setTimeout(()=>rideDown('park'),0);}],
 ];
 /* Spawn: a copy of any recorded object appears in front of you, standing on the floor (wall and
    ceiling things keep their height). Solid things get a collider so you and Makar bump into them. */
@@ -1680,8 +1783,8 @@ function spawnObj(t){
   const sx=box.max.x-box.min.x,sz=box.max.z-box.min.z,cx=(box.min.x+box.max.x)/2,cz=(box.min.z+box.max.z)/2;
   const d=1+Math.min(4,Math.max(sx,sz)/2),tx=P.x-Math.sin(P.yaw)*d,tz=P.z-Math.cos(P.yaw)*d;
   const y0=box.min.y>.25&&box.max.y-box.min.y<1.6?box.min.y:0;
-  h.position.set(tx-cx,(P.lv==='yard'?YG:0)+y0-box.min.y,tz-cz);scene.add(h);
-  if(y0===0&&box.max.y-box.min.y>.3&&sx>.15&&sz>.15){const c={x0:tx-sx/2,x1:tx+sx/2,z0:tz-sz/2,z1:tz+sz/2};h.userData.col=c;h.userData.cols=P.lv==='yard'?YCOL:COL;h.userData.cols.push(c);}
+  h.position.set(tx-cx,baseY(P.lv)+y0-box.min.y,tz-cz);scene.add(h);
+  if(y0===0&&box.max.y-box.min.y>.3&&sx>.15&&sz>.15){const c={x0:tx-sx/2,x1:tx+sx/2,z0:tz-sz/2,z1:tz+sz/2};h.userData.col=c;h.userData.cols=colsOf(P.lv);h.userData.cols.push(c);}
   SPAWNED.push(h);addPick({name:t.name,obj:h,lv:P.lv,cols:h.userData.col?[h.userData.col]:[],spawned:true});toast('Создано: '+t.name,1.6);
 }
 function clearSpawned(){
@@ -1773,7 +1876,7 @@ function updateHUD(dt){
   if($('flyBtns').hidden===ADMIN.fly){$('flyBtns').hidden=!ADMIN.fly;touchFly=0;}
   const st=$('status'),txt=$('statusText');let s,cls='';
   if(P.hidden){s='Ты спрятался';cls='hid';if(MS.state==='grab'||MS.state==='check'){s='Макар идёт к укрытию!';cls='alert';}}
-  else if(P.lv==='yard'&&MS.lv!=='yard'){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
+  else if(P.lv!=='flat'&&MS.lv!==P.lv){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
   else if(MS.state==='chase'){s='Макар гонится!';cls='alert';}
   else if(MS.aware>.05){s='Макар что-то заметил';}
   else if(MS.state==='investigate'){s='Макар идёт на шум';}
@@ -1795,6 +1898,7 @@ function frame(now){
   else if(state==='menu'){camera.position.set(3.5+Math.sin(time*.15)*.3,1.15,8.9);camera.rotation.set(-.03,.2+Math.sin(time*.2)*.25,0);MS.spd=0;animMakar(dt);}
   else if(state==='caught'){const a=Math.atan2(-(MS.x-P.x),-(MS.z-P.z));P.yaw+=angDiff(a,P.yaw)*Math.min(1,dt*6);P.pitch+=(.25-P.pitch)*Math.min(1,dt*5);camera.rotation.set(P.pitch,P.yaw,0);if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').hidden=true;}}
   else if(state==='ending')updateEnding(dt);
+  else if(state==='drive')updateDrive(dt);
   else if(state==='win'){camera.position.x-=Math.sin(P.yaw)*dt*.8;camera.position.z-=Math.cos(P.yaw)*dt*.8;}
   updateWorld(dt,time);
   renderer.render(scene,camera);
@@ -1804,7 +1908,7 @@ newGame();showMenu();applyTime();
 MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
-function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else break;updateWorld(dt,tPlay);}return state;}
-window.__game={P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else break;updateWorld(dt,tPlay);}return state;}
+window.__game={CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
