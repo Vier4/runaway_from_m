@@ -697,12 +697,14 @@ blk(4.22,4.27,0,2.06,10.0,10.585,M_.wood);blk(4.22,4.27,0,2.06,10.615,11.2,M_.wo
 addCol(3.67,4.27,9.95,11.25,{tall:true});
 cp('Кровать');blk(3.67,5.67,0,.42,11.3,12.08,M_.wood,{col:true});blk(3.72,5.64,.42,.55,11.33,12.05,mat(0x3f7fd0));blk(3.75,4.02,.55,.65,11.4,11.98,M_.white);blk(3.67,3.72,.42,.95,11.3,12.08,M_.wood);
 cp('Стол с компьютером');blk(4.6,5.9,.72,.76,13.6,14.13,M_.woodL,{col:true});for(const x of [4.65,5.85])blk(x-.03,x+.03,0,.72,13.65,14.1,M_.woodD);
-blk(4.95,5.45,.76,.79,13.85,14.0,M_.dark);blk(5.17,5.23,.79,.95,13.95,14.0,M_.dark);blk(4.9,5.5,.95,1.3,13.94,13.98,M_.dark);onWall('-z',5.2,1.125,13.935,.56,.32,M_.screen);
-blk(4.9,5.4,.76,.78,13.65,13.82,mat(0x222222));cp('Компьютерный стул');chair(5.2,13.2,0);
+cp('Монитор');blk(4.95,5.45,.76,.79,13.85,14.0,M_.dark);blk(5.17,5.23,.79,.95,13.95,14.0,M_.dark);blk(4.9,5.5,.95,1.3,13.94,13.98,M_.dark);onWall('-z',5.2,1.125,13.935,.56,.32,M_.screen);
+cp('Клавиатура');blk(4.9,5.4,.76,.78,13.65,13.82,mat(0x222222));for(let i=0;i<4;i++)blk(4.93,5.37,.78,.785,13.67+i*.037,13.69+i*.037,mat(0x3a3a3a));
+cp('Мышка');blk(5.43,5.5,.76,.785,13.66,13.78,mat(0x1d1d22,{shininess:60}));blk(5.462,5.468,.785,.79,13.69,13.72,mat(0x555555));
+cp('Компьютерный стул');chair(5.2,13.2,0);
 // Makar's streaming setup: ring light, webcam on a tripod, microphone
 cp('Кольцевая лампа');cyl(4.66,.76,1.2,13.98,.012,M_.metal);{const ring=new THREE.Mesh(new THREE.TorusGeometry(.15,.022,8,28),basic(0xfff4dc));ring.position.set(4.66,1.32,13.96);scene.add(ring);}
 cp('Веб-камера');for(const a of [0,2.1,4.2])cyl(4.75+Math.sin(a)*.05,.76,.92,13.72+Math.cos(a)*.05,.006,M_.dark);blk(4.68,4.82,.92,1.0,13.66,13.78,M_.dark);cyl(4.75,.94,.98,13.65,.03,mat(0x223344)).rotation.x=Math.PI/2;sph(4.8,.99,13.66,.008,basic(0xff2020));
-cp('Микрофон');cyl(5.47,.76,.79,13.7,.05,M_.dark);cyl(5.47,.79,1.02,13.7,.008,M_.metal);sph(5.47,1.05,13.68,.035,mat(0x333333));
+cp('Микрофон');cyl(4.84,.76,.79,14.03,.05,M_.dark);cyl(4.84,.79,1.02,14.03,.008,M_.metal);sph(4.84,1.05,14.0,.035,mat(0x333333));
 // the leopard gecko's terrarium on the left end of Makar's desk, a jar of grasshoppers on the floor by it
 cp('Террариум');blk(5.54,5.89,.76,.79,13.66,14.1,M_.dark);blk(5.56,5.87,.79,.82,13.68,14.08,mat(0xd9b77a));
 for(const [x0,x1,z0,z1] of [[5.54,5.89,13.66,13.675],[5.54,5.89,14.085,14.1],[5.54,5.555,13.66,14.1],[5.875,5.89,13.66,14.1]])blk(x0,x1,.82,1.06,z0,z1,M_.glass);
@@ -1041,7 +1043,7 @@ function buildMakar(){
     const brow=blk(s*.09-.05,s*.09+.05,.235,.255,.16,.172,hair,{parent:head});brow.rotation.z=s*.32;}
   const mouth=blk(-.06,.06,.08,.1,.16,.17,mat(0x6a2a22),{parent:head});
   const hp=mat(0x1b1b22);blk(-.19,.19,.39,.42,-.03,.03,hp,{parent:head});for(const s of [-1,1]){blk(s*.17-.02,s*.17+.02,.24,.4,-.03,.03,hp,{parent:head});blk(s*.18-.025,s*.18+.025,.12,.26,-.06,.06,mat(0xff4fd8),{parent:head});}
-  return {g,legL,legR,armL,armR,head,pupil,mouth};
+  return {g,legL,legR,armL,armR,head,pupil,mouth,skin};
 }
 const MK=buildMakar();
 TPL.push({name:'Фигура Макара',make:()=>{const m=buildMakar();scene.remove(m.g);return m.g;}}); // a fresh one, standing, not in Makar's current pose
@@ -1142,7 +1144,10 @@ function buildCarKey(){const g=new THREE.Group();blk(-.025,.025,0,.016,-.05,.03,
 // door keys of the other two houses: a long blade and a coloured tag (blue for 2, green for 3)
 function buildDoorKey(c){const g=new THREE.Group();const ring=new THREE.Mesh(new THREE.TorusGeometry(.028,.006,8,20),M_.metal);ring.rotation.x=Math.PI/2;g.add(ring);
   blk(.02,.13,-.004,.004,-.008,.008,M_.metal,{parent:g});blk(.1,.12,-.004,.004,.008,.024,M_.metal,{parent:g});blk(-.09,-.03,-.006,.006,-.02,.02,mat(c),{parent:g});g.scale.setScalar(1.7);scene.add(g);return g;}
-const ITEMS={keys:{mesh:buildKeys(),name:'Ключи'},shoes:{mesh:buildShoes(),name:'Кроссовки'},carkeys:{mesh:buildCarKey(),name:'Ключи от машины'},
+// a flattened cardboard box with brown tape
+function buildCardboard(){const g=new THREE.Group(),m=mat(0xb98a55);blk(-.3,.3,0,.03,-.22,.22,m,{parent:g});blk(-.3,.3,.03,.034,-.03,.03,mat(0x8a6236),{parent:g});blk(-.12,.12,.03,.033,.08,.18,mat(0xe9e2d6),{parent:g});g.rotation.y=.4;scene.add(g);return g;}
+const CARD_SPOTS=[{room:'hall',x:3.2,y:0,z:8.1},{room:'living',x:.7,y:0,z:.75},{room:'kitchen',x:4.1,y:0,z:3.6},{room:'parents',x:10.0,y:0,z:13.6},{room:'sisters',x:.7,y:0,z:13.5},{room:'bath1',x:1.7,y:0,z:7.2},{room:'vest',x:6.4,y:0,z:9.3}];
+const ITEMS={cardboard:{mesh:buildCardboard(),name:'Картон'},keys:{mesh:buildKeys(),name:'Ключи'},shoes:{mesh:buildShoes(),name:'Кроссовки'},carkeys:{mesh:buildCarKey(),name:'Ключи от машины'},
   key2:{mesh:buildDoorKey(0x2f6fd6),name:'Ключ от подъезда 2',lv:'yard'},key3:{mesh:buildDoorKey(0x3fbf5a),name:'Ключ от подъезда 3',lv:'yard'}};
 // places in the yard where the two door keys can lie (y is the height above the ground)
 const YARD_KEY_SPOTS=[{x:13.2,y:.48,z:21.3},{x:4.8,y:.21,z:23.8},{x:6.2,y:.05,z:28.6},{x:16.4,y:.06,z:21.5},{x:1.05,y:.06,z:33.5},{x:12,y:.03,z:16.4},
@@ -1194,6 +1199,7 @@ function placeItems(){
   keySpot=pick(KEY_SPOTS);shoeSpot=pick(SHOE_SPOTS.filter(s=>s.room!==keySpot.room));
   ITEMS.keys.spot=keySpot;ITEMS.shoes.spot=shoeSpot;
   ITEMS.carkeys.spot=pick(KEY_SPOTS.filter(s=>s!==keySpot&&s.room!==shoeSpot.room));
+  ITEMS.cardboard.spot=pick(CARD_SPOTS.filter(s=>s.room!==shoeSpot.room));
   const ys=YARD_KEY_SPOTS.slice().sort(()=>Math.random()-.5);ITEMS.key2.spot={...ys[0],y:YG+ys[0].y};ITEMS.key3.spot={...ys[1],y:YG+ys[1].y};
   for(const k in ITEMS){const it=ITEMS[k];it.taken=false;it.withMakar=false;it.mesh.visible=true;it.spark.visible=true;it.mesh.position.set(it.spot.x,it.spot.y+.01,it.spot.z);}
 }
@@ -1206,7 +1212,7 @@ function resetActors(){
   $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;
 }
 function newGame(){
-  D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false,key2:false,key3:false};
+  D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false,key2:false,key3:false,cardboard:false};
   for(const d of DOORS){d.open=false;d.ang=0;d.hold=0;if(d.id==='front')d.locked=true;}
   DOOR.kitchen.open=true;DOOR.living.open=true;
   Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);
@@ -1214,7 +1220,7 @@ function newGame(){
   Object.assign(VAC,{x:VAC.dock.x,z:VAC.dock.z,a:VAC.dock.a,mode:'dock'});
   for(const r in ROOM_LAMP)setRoomLight(r,true);
   for(const f of FLY)f.pk.flying=false;FLY.length=0;MS.stun=0;
-  clearSpawned();resetCar();resetGecko();
+  clearSpawned();resetCar();resetGecko();resetBoom();
   renderLives();
 }
 
@@ -1300,7 +1306,7 @@ INTER.push({lv:'park',get x(){return clamp(P.x,CAR.x-.95,CAR.x+.95);},get z(){re
    spawned from the admin panel can be picked up (E) and dropped in front of you again (Q). A pick moves
    as one object together with the colliders under it. */
 const INV_SIZE=6,INV=[],PICKS=[];let invSel=0;
-const ICONS=[['Эндер','🐉'],['Террариум','🦎'],['кузнечик','🦗'],['подъезда','🗝️'],['Чипсы','🍟'],['Ключи от машины','🚙'],['Машина Макара','🚙'],['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
+const ICONS=[['Картон','📦'],['Монитор','🖥️'],['Клавиатура','⌨️'],['Мышка','🖱️'],['Эндер','🐉'],['Террариум','🦎'],['кузнечик','🦗'],['подъезда','🗝️'],['Чипсы','🍟'],['Ключи от машины','🚙'],['Машина Макара','🚙'],['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
   ['Ночник','🏮'],['Кольцевая','💡'],['Люстр','💡'],['Лампа','💡'],['пылесос','🤖'],['Станция','🤖'],['нитаз','🚽'],['Ванна','🛁'],['ровать','🛏️'],['Диван','🛋️'],
   ['Телевизор','📺'],['Холодильник','🧊'],['Розетк','🔌'],['Выключатель','🔌'],['Дверь','🚪'],['дверь','🚪'],['Окно','🪟'],['Палатк','⛺'],['Самокат','🛴'],['Фонарь','🏮'],
   ['Дерев','🌳'],['Ель','🌲'],['Берёз','🌳'],['Машин','🚗'],['Макар','🧍'],['Стиральн','🫧'],['Раковин','🚰'],['Шкаф','🗄️'],['Зеркало','🪞'],['Ковёр','🟥'],['коврик','🟥'],['Пожарн','🚨'],
@@ -1320,7 +1326,7 @@ function propPick(name){
   const b=boxOf(g).expandByScalar(.06),cols=COL.filter(c=>!c.wall&&c.x0>=b.min.x&&c.x1<=b.max.x&&c.z0>=b.min.z&&c.z1<=b.max.z);
   addPick({name,obj:g,lv:'flat',cols,prop:true});
 }
-for(const n of ['Плюшевый Эндер-дракон','Мяч','Чашка','Тарелка борща','Туалетная бумага','Кубики','Микрофон','Веб-камера','Кольцевая лампа','Ночник','Стул','Компьютерный стул'])propPick(n);
+for(const n of ['Монитор','Клавиатура','Мышка','Плюшевый Эндер-дракон','Мяч','Чашка','Тарелка борща','Туалетная бумага','Кубики','Микрофон','Веб-камера','Кольцевая лампа','Ночник','Стул','Компьютерный стул'])propPick(n);
 for(const k in ITEMS)addPick({name:ITEMS[k].name,obj:ITEMS[k].mesh,lv:ITEMS[k].lv||'flat',homeLv:ITEMS[k].lv||'flat',item:k});
 // chip packets lying all over the parking (you can pick them up like anything else)
 {let k=53;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};
@@ -1331,14 +1337,50 @@ for(const k in ITEMS)addPick({name:ITEMS[k].name,obj:ITEMS[k].mesh,lv:ITEMS[k].l
    const x=onLane?PX0+2+rnd()*(PX1-PX0-5):XLANES[(rnd()*2)|0]+(rnd()-.5)*3,z=onLane?LANES[(rnd()*3)|0]+(rnd()-.5)*3.6:PZ0+2+rnd()*(PZ1-PZ0-4);
    const g=new THREE.Group();g.position.set(x,YP,z);g.rotation.y=rnd()*6.28;scene.add(g);const bag=blk(-.09,.09,0,.04,-.13,.13,mats[f],{parent:g});bag.rotation.z=(rnd()-.5)*.3;
    addPick({name:'Чипсы '+FLAV[f][0],obj:g,lv:'park',homeLv:'park',prop:true});}}
+/* The cardboard trick: with the monitor, keyboard, mouse and microphone from Makar's desk and the cardboard
+   all in your inventory, everything turns into cardboard, and Makar gets so angry he blows up (like a
+   balloon) — ending 5. */
+const CARD_SET=['Монитор','Клавиатура','Мышка','Микрофон'];
+function checkCardboard(){
+  if(state!=='play'||!P.items.cardboard||!CARD_SET.every(n=>INV.some(p=>p.name===n)))return;
+  const CARD_NAME={Монитор:'Картонный монитор',Клавиатура:'Картонная клавиатура',Мышка:'Картонная мышка',Микрофон:'Картонный микрофон'};
+  for(const pk of INV)if(CARD_NAME[pk.name]){pk.origName=pk.name;pk.name=CARD_NAME[pk.name];pk.icon='📦';}
+  renderInv(true);toast('Всё стало картонным! 📦',3);setTimeout(makarBoom,1400);
+}
+let boomT=0,BOOM=[];
+function makarBoom(){
+  if(state!=='play')return;state='boom';boomT=0;unlock();showHUD(false);hush();$('prompt').hidden=true;if(P.hidden)exitHide();if(P.swing)stopSwing();
+  if(MS.away||MS.lv!==P.lv){MS.away=null;MS.lv=P.lv;MS.x=P.x-Math.sin(P.yaw)*2.6;MS.z=P.z-Math.cos(P.yaw)*2.6;MK.g.visible=true;}
+  standUp();Object.assign(MS,{state:'boom',spd:0,sitK:0,face:Math.atan2(P.x-MS.x,P.z-MS.z)});
+  say('ЧТО?! Мой компьютер… стал КАРТОННЫМ?!',2.6);
+}
+function updateBoom(dt){
+  boomT+=dt;const base=baseY(MS.lv),hx=MS.x,hz=MS.z;
+  camera.position.set(P.x,baseY(P.lv)+1.15,P.z);camera.lookAt(hx,base+1.5,hz);
+  if(boomT<3.2){const k=boomT/3.2,sh=.02+k*.06;MK.g.position.set(hx+(Math.random()-.5)*sh,base+(Math.random()-.5)*sh*.5,hz+(Math.random()-.5)*sh);
+    MK.g.scale.setScalar(1+k*.5);MK.skin.emissive.setRGB(.6*k,0,0);MK.pupil.color.set(0xff2a10);MK.armL.rotation.x=MK.armR.rotation.x=-2.6+Math.sin(boomT*20)*.3;
+    if(!updateBoom.said&&boomT>1.6){updateBoom.said=true;say('Я… СЕЙЧАС… ВЗОРВУСЬ!!!',1.6);}}
+  else if(!BOOM.length&&MK.g.visible){   // Бабах!
+    MK.g.visible=false;hush();$('sub').hidden=true;toast('БАБАХ! 💥',2.5);
+    nz(.6,300,1.4);nz(.4,1200,.6);tone(60,1.2,'sawtooth',.25,25);const f=$('fade');f.style.background='#fff';f.style.opacity=.8;setTimeout(()=>f.style.opacity=0,250);
+    const cols=[0xe2512b,0xe7b48f,0x2f4a7a,0xb98a55,0xffd23f,0xff4fd8];
+    for(let i=0;i<46;i++){const m=new THREE.Mesh(new THREE.BoxGeometry(.06,.06,.06),basic(cols[i%cols.length]));m.position.set(hx,base+1.1,hz);scene.add(m);
+      BOOM.push({m,v:new THREE.Vector3((Math.random()-.5)*7,2+Math.random()*5,(Math.random()-.5)*7)});}
+    // all that is left of him: his headphones
+    MK.g.visible=false;}
+  for(const b of BOOM){b.v.y-=9.8*dt;b.m.position.addScaledVector(b.v,dt);if(b.m.position.y<base+.03){b.m.position.y=base+.03;b.v.multiplyScalar(.4);b.v.y*=-.3;}b.m.rotation.x+=dt*6;b.m.rotation.y+=dt*4;}
+  if(boomT>6&&!updateBoom.done){updateBoom.done=true;endingPanel('boom','Макар так разозлился из-за картонного компьютера, что раздулся и лопнул, как воздушный шарик. БАБАХ! По комнате разлетелось конфетти, а от Макара остались только наушники. Не волнуйся: мама его потом надует обратно.');}
+}
+function resetBoom(){for(const b of BOOM)scene.remove(b.m);BOOM=[];updateBoom.said=updateBoom.done=false;MK.g.scale.setScalar(1);MK.g.visible=true;MK.skin.emissive.setHex(0);
+  for(const pk of PICKS)if(pk.origName){pk.name=pk.origName;pk.icon=iconFor(pk.name);delete pk.origName;}}
 function pickUp(pk){
   if(INV.length>=INV_SIZE){toast('Инвентарь полон: 6 из 6. Выбрось что-нибудь (Q).');return false;}
   pk.held=true;pk.obj.visible=false;const a=colsOf(pk.lv);for(const c of pk.cols){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}
   INV.push(pk);invSel=INV.length-1;sfx.pick();
   if(pk.item){const k=pk.item;ITEMS[k].taken=true;ITEMS[k].spark.visible=false;P.items[k]=true;
-    toast(k==='key2'||k==='key3'?`Ключ от подъезда ${k[3]}! Теперь можно спрятаться за его дверью.`:k==='carkeys'?'Ключи от машины Макара! Его машина стоит на подземной парковке: в лифте выбери −1.':k==='keys'?'Ключи найдены! '+(P.items.shoes?'Теперь к входной двери.':'Осталось найти кроссовки.'):'Кроссовки надеты! '+(P.items.keys?'Теперь к входной двери.':'Осталось найти ключи.'));}
+    toast(k==='cardboard'?'Картон! Интересно, что будет, если собрать с ним монитор, клавиатуру, мышку и микрофон Макара…':k==='key2'||k==='key3'?`Ключ от подъезда ${k[3]}! Теперь можно спрятаться за его дверью.`:k==='carkeys'?'Ключи от машины Макара! Его машина стоит на подземной парковке: в лифте выбери −1.':k==='keys'?'Ключи найдены! '+(P.items.shoes?'Теперь к входной двери.':'Осталось найти кроссовки.'):'Кроссовки надеты! '+(P.items.keys?'Теперь к входной двери.':'Осталось найти ключи.'));}
   else toast('Взято: '+pk.name,1.4);
-  renderInv(true);return true;
+  renderInv(true);checkCardboard();return true;
 }
 /* Throwing: a packet of chips from the inventory flies where you look (left click or T; on a phone tap
    the selected slot again). If it hits Makar he is stunned for 3 seconds; then it drops to the floor and
@@ -2021,6 +2063,7 @@ const ENDINGS=[
   {id:'escape',title:'Побег на свободу',hint:'Найди ключи и кроссовки, открой входную дверь, вызови лифт, спустись во двор и выйди через калитку.'},
   {id:'fire',title:'Пожарная тревога',hint:'Найди ключи и кроссовки и выберись в подъезд. В лифтовом холле на стене висит красная кнопка «ПОЖАР»: нажми её.'},
   {id:'car',title:'Угон машины',hint:'Найди в квартире ключи от машины Макара (🚙), выберись в подъезд, в лифте выбери «−1 — подземная парковка» и угони его оранжевую машину.'},
+  {id:'boom',title:'Макар взорвался',hint:'Укради со стола Макара монитор, клавиатуру, мышку и микрофон, найди в квартире картон 📦 и собери всё это в инвентаре.'},
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
 const endCount=()=>ENDINGS.filter(e=>gotEnd[e.id]).length;
@@ -2191,6 +2234,7 @@ function frame(now){
   else if(state==='caught'){const a=Math.atan2(-(MS.x-P.x),-(MS.z-P.z));P.yaw+=angDiff(a,P.yaw)*Math.min(1,dt*6);P.pitch+=(.25-P.pitch)*Math.min(1,dt*5);camera.rotation.set(P.pitch,P.yaw,0);if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').hidden=true;}}
   else if(state==='ending')updateEnding(dt);
   else if(state==='drive')updateDrive(dt);
+  else if(state==='boom')updateBoom(dt);
   else if(state==='win'){camera.position.x-=Math.sin(P.yaw)*dt*.8;camera.position.z-=Math.cos(P.yaw)*dt*.8;}
   updateWorld(dt,time);
   renderer.render(scene,camera);
@@ -2200,7 +2244,7 @@ newGame();showMenu();applyTime();
 MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
-function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
+function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
 window.__game={GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
