@@ -465,7 +465,7 @@ cp(null);windowAt('+z',5.0,wallFace('+z',0),1.1);          // kitchen
 windowAt('-z',1.8,wallFace('-z',14.2),1.2);       // sisters
 windowAt('-z',5.35,wallFace('-z',14.2),1.1);      // mine (red mark on the plan)
 windowAt('-z',8.7,wallFace('-z',14.2),1.2);       // parents
-windowAt('+z',8.1,wallFace('+z',0),1.0);          // lift hall
+windowAt('+z',8.1,wallFace('+z',0),1.0,true);     // lift hall (no radiator)
 
 /* ---------- doors ---------- */
 const DOORS=[];
@@ -508,7 +508,7 @@ const liftDisplay=onWall('-x',9.37,2.17,2.85,.22,.12,basic(0x220000));
    g.fillStyle='#1f4f9a';g.textAlign='center';g.textBaseline='middle';g.font=`900 ${Math.round(h*.56)}px Arial Black, Arial`;g.fillText(String(FLOOR),w/2,h*.42);
    g.font=`bold ${Math.round(h*.17)}px Arial`;g.fillText('ЭТАЖ',w/2,h*.82);},false);
  const big=new THREE.MeshBasicMaterial({map:texFloor(256,192,true)}),small=new THREE.MeshBasicMaterial({map:texFloor(128,96,false)});
- onWall('+x',wallFace('+x',6.85),1.75,1.7,.72,.54,big);          // lift hall, over the bench
+ onWall('+x',wallFace('+x',6.85),1.75,1.7,.72,.54,big);          // lift hall
  onWall('-x',9.36,2.45,2.85,.26,.195,small);                      // over the lift door
  onWall('-z',8.25,1.65,wallFace('-z',7.85),.6,.45,big);}          // corridor, on the wall facing the lift hall
 blk(9.3,9.38,1.0,1.3,3.55,3.7,M_.metal);const liftBtn=sph(9.3,1.15,3.625,.025,basic(0xff5533));
@@ -586,10 +586,7 @@ cp('Пожарная кнопка');{const x=wallFace('+x',6.85);blk(x,x+.05,1.3
  onWall('+x',x+.052,1.45,5.0,.22,.22,new THREE.MeshBasicMaterial({map:ctex(64,64,(g,w,h)=>{g.fillStyle='#d2231c';g.fillRect(0,0,w,h);g.fillStyle='#fff';g.font='bold 12px Arial';g.textAlign='center';g.fillText('ПОЖАР',32,14);
    g.fillStyle='#f2f2f2';g.fillRect(12,19,40,34);g.fillStyle='#a3150f';g.beginPath();g.arc(32,36,10,0,7);g.fill();g.fillStyle='#fff';g.font='bold 8px Arial';g.fillText('НАЖАТЬ',32,62);},false)}));
 cp('Мигалка'); blk(x,x+.06,2.05,2.17,4.94,5.06,M_.white);sph(x+.07,2.11,5.0,.05,M_STROBE);
-cp('Рокот-3'); // «Рокот-3»: the voice alarm unit with its built-in speaker that reads out the evacuation message
- blk(x,x+.07,1.95,2.3,4.05,4.55,mat(0xf1f1ee));
- onWall('+x',x+.072,2.125,4.3,.48,.33,matT(ctex(96,66,(g,w,h)=>{g.fillStyle='#f1f1ee';g.fillRect(0,0,w,h);g.fillStyle='#9a9a94';for(let y=8;y<44;y+=5)for(let x=10;x<w-8;x+=5){g.beginPath();g.arc(x,y,1.4,0,7);g.fill();}
-   g.fillStyle='#2a2a2a';g.font='bold 11px Arial';g.textAlign='center';g.fillText('РОКОТ-3',w/2,58);g.fillStyle='#2bb24c';g.beginPath();g.arc(w-10,57,3,0,7);g.fill();},false)));}
+}
 
 /* ---------- furniture ---------- */
 // Living room: sofa against the partition (the "Диван" on the plan), TV on the black wall, coffee table, curtains
@@ -597,7 +594,6 @@ cp('Диван');blk(2.7,3.52,0,.42,.8,3.0,M_.sofa,{col:true});blk(3.22,3.52,.42
 addCol(2.7,3.52,.65,3.15);
 for(const z of [1.3,2.4])blk(2.76,3.18,.42,.55,z-.48,z+.48,mat(0x3b6cc0));
 blk(2.95,3.15,.55,.9,1.2,1.6,M_.yellow);
-cp('Журнальный столик');blk(1.6,2.3,.4,.44,1.4,2.2,M_.woodL,{col:true});for(const [x,z] of [[1.65,1.45],[2.25,1.45],[1.65,2.15],[2.25,2.15]])blk(x-.03,x+.03,0,.4,z-.03,z+.03,M_.woodD);
 // the TV wall: painted black, with the TV hanging on it (no stand)
 cp(null);onWall('+x',wallFace('+x',0)+.002,H/2,(T/2+4.3-T/2)/2,4.3-T,H,mat(0x18181b,{shininess:12}));
 cp('Телевизор в гостиной');blk(.076,.12,.98,1.67,1.27,2.53,mat(0x3a3b42,{shininess:50}));onWall('+x',.125,1.325,1.9,1.15,.6,M_.tv);
@@ -630,6 +626,7 @@ blk(5.8,6.4,.92,.93,.12,.6,M_.dark);for(const [x,z] of [[5.95,.25],[6.25,.25],[5
 cyl(6.25,.95,1.15,.25,.09,M_.red);
 blk(6.3,6.7,.89,.93,3.0,3.45,M_.metal);cyl(6.72,.93,1.2,3.22,.015,M_.metal);
 blk(5.6,6.78,1.5,2.2,.07,.4,M_.woodL);blk(6.45,6.78,1.5,2.2,.4,3.6,M_.woodL);
+for(const z0 of [.2,1.05]){blk(3.75,4.45,.72,.76,z0,z0+.7,M_.oil);addCol(3.75,4.45,z0,z0+.7);for(const [x,z] of [[3.8,z0+.05],[4.4,z0+.05],[3.8,z0+.65],[4.4,z0+.65]])blk(x-.03,x+.03,0,.72,z-.03,z+.03,M_.woodD);}
 cp('Кухонный стол');blk(4.6,5.6,.72,.76,1.8,2.7,M_.oil);addCol(4.6,5.6,1.8,2.7);for(const [x,z] of [[4.65,1.85],[5.55,1.85],[4.65,2.65],[5.55,2.65]])blk(x-.03,x+.03,0,.72,z-.03,z+.03,M_.woodD);
 function chair(x,z,ry){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;scene.add(g);blk(-.2,.2,.44,.48,-.2,.2,M_.wood,{parent:g});blk(-.2,.2,.48,.95,-.2,-.17,M_.wood,{parent:g});for(const [a,b] of [[-.17,-.17],[.17,-.17],[-.17,.17],[.17,.17]])blk(a-.02,a+.02,0,.44,b-.02,b+.02,M_.woodD,{parent:g});addCol(x-.22,x+.22,z-.22,z+.22);}
 cp('Стул');chair(4.3,2.25,Math.PI/2);cp(null);chair(5.1,1.5,0);chair(5.9,2.25,-Math.PI/2);
@@ -676,9 +673,6 @@ cp('Дверь соседей');{const x=10.7-T/2,z=7.075;
  blk(x-.04,x,0,2.06,z-.45,z+.45,mat(0x6b5444));blk(x-.07,x-.04,.95,1.0,z-.33,z-.25,M_.metal);
  cyl(x-.045,1.45,1.47,z,.018,M_.metal).rotation.z=Math.PI/2;
  onWall('-x',wallFace('-x',10.7),2.32,z,.18,.11,flatNo('34'));}
-cp('Красный ящик');blk(9.4,9.65,0,.55,7.53,7.78,M_.red,{col:true});
-cp('Скамейка в холле');blk(7.0,7.6,0,.45,1.0,2.4,M_.woodD,{col:true}); // bench in lift hall
-cp('Табличка');onWall('+x',wallFace('+x',6.85),1.6,3.6,.5,.5,matT(ctex(64,64,(g,w,h)=>{g.fillStyle='#1f5fbf';g.fillRect(0,0,w,h);g.fillStyle='#fff';g.beginPath();g.arc(30,14,5,0,7);g.fill();g.lineWidth=5;g.strokeStyle='#fff';g.beginPath();g.moveTo(28,20);g.lineTo(28,36);g.lineTo(42,36);g.lineTo(46,50);g.stroke();g.beginPath();g.arc(28,42,12,.6,3.6);g.stroke();},false)));
 
 // Sisters' room: two beds (pink and lilac), tent, desk
 cp('Розовая кровать');blk(.07,1.87,0,.32,9.0,9.8,M_.white,{col:true});blk(.1,1.84,.32,.46,9.03,9.77,M_.pink);blk(.14,.44,.46,.56,9.1,9.7,M_.white);
@@ -992,7 +986,7 @@ function buildPath(fx,fz,tx,tz){
 /* ---------- items & hiding places ---------- */
 const KEY_SPOTS=[
   {room:'kitchen',x:5.05,y:.775,z:2.2,where:'на кухонном столе'},
-  {room:'living',x:1.95,y:.455,z:1.8,where:'на журнальном столике'},
+  {room:'living',x:2.97,y:.555,z:2.2,where:'на диване'},
   {room:'parents',x:10.19,y:.535,z:10.71,where:'на тумбочке у родителей'},
   {room:'wc3',x:6.69,y:.815,z:4.8,where:'на бачке в Туалете 3'},
   {room:'sisters',x:1.8,y:.775,z:13.85,where:'на столе у систёр'},
@@ -1161,7 +1155,7 @@ function propPick(name){
   const b=boxOf(g).expandByScalar(.06),cols=COL.filter(c=>!c.wall&&c.x0>=b.min.x&&c.x1<=b.max.x&&c.z0>=b.min.z&&c.z1<=b.max.z);
   addPick({name,obj:g,lv:'flat',cols,prop:true});
 }
-for(const n of ['Мяч','Чашка','Тарелка борща','Туалетная бумага','Кубики','Микрофон','Веб-камера','Кольцевая лампа','Ночник','Стул','Компьютерный стул','Красный ящик'])propPick(n);
+for(const n of ['Мяч','Чашка','Тарелка борща','Туалетная бумага','Кубики','Микрофон','Веб-камера','Кольцевая лампа','Ночник','Стул','Компьютерный стул'])propPick(n);
 for(const k in ITEMS)addPick({name:ITEMS[k].name,obj:ITEMS[k].mesh,lv:'flat',item:k});
 function pickUp(pk){
   if(INV.length>=INV_SIZE){toast('Инвентарь полон: 6 из 6. Выбрось что-нибудь (Q).');return false;}
@@ -1534,7 +1528,7 @@ const END_SCRIPT=[
   [14.2,()=>{$('fade').style.opacity=1;}],
   [15.6,()=>{$('toast').hidden=true;$('sub').hidden=true;endingPanel('caught','Макар запер тебя в твоей комнате. Мама вернулась только утром, а лифт так и уехал без тебя. Попробуй ещё раз: беги тише и прячься.');$('fade').style.opacity=0;}],
 ];
-/* The fire alarm: the «Рокот-3» voice alarm in the lift hall plays its attention tone and reads out
+/* The fire alarm: the building's «Рокот-3» voice alarm plays its attention tone and reads out
    its message («Внимание! Пожарная тревога! Срочно покиньте помещение»), twice, while the strobe and the
    smoke detectors flash; then the fire-alarm ending. */
 let fireOn=false;
