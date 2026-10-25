@@ -127,7 +127,8 @@ h1 em{font-style:normal;color:var(--makar)}
   .card{padding:20px}
   #status{top:auto;bottom:calc(282px + env(safe-area-inset-bottom,0px));font-size:12px}
   #inv{bottom:calc(196px + env(safe-area-inset-bottom,0px))}
-  .islot{width:40px;height:40px;font-size:20px}
+  .islot{width:36px;height:36px;font-size:18px}
+  #invBar{gap:4px;padding:5px}
 }
 @media (prefers-reduced-motion:reduce){.islot.pop{animation:none}#fade{transition:none}}
 </style>
@@ -185,7 +186,7 @@ h1 em{font-style:normal;color:var(--makar)}
         <kbd>C</kbd><span>присесть: тише и незаметнее</span>
         <kbd>E</kbd><span>двери, предметы, спрятаться, умный унитаз</span>
         <kbd>M</kbd><span>звук вкл/выкл · <b>Esc</b> пауза</span>
-        <kbd>1–6 · Q</kbd><span>инвентарь: выбрать вещь · выбросить</span>
+        <kbd>1–7 · Q</kbd><span>инвентарь: выбрать вещь · выбросить</span>
         <kbd>N</kbd><span>день / ночь</span>
       </div>
     </div>
@@ -1302,10 +1303,10 @@ INTER.push({lv:'park',x:9.2,z:2.85,r:1.3,label:()=>'Лифт наверх, на 
 // the point of the car nearest to you, so you can open it from whichever side you walk up to
 INTER.push({lv:'park',get x(){return clamp(P.x,CAR.x-.95,CAR.x+.95);},get z(){return clamp(P.z,CAR.z-2.15,CAR.z+2.15);},r:1.0,on:()=>CAR.g.visible&&!CAR.leaving,label:()=>P.items.carkeys?'Угнать машину Макара':'Машина Макара',act:stealCar});
 /* ---------- inventory ----------
-   Six slots, always on screen while you play. Keys, shoes, small things around the flat and everything
+   Seven slots, always on screen while you play. Keys, shoes, small things around the flat and everything
    spawned from the admin panel can be picked up (E) and dropped in front of you again (Q). A pick moves
    as one object together with the colliders under it. */
-const INV_SIZE=6,INV=[],PICKS=[];let invSel=0;
+const INV_SIZE=7,INV=[],PICKS=[];let invSel=0;
 const ICONS=[['Картон','📦'],['Монитор','🖥️'],['Клавиатура','⌨️'],['Мышка','🖱️'],['Эндер','🐉'],['Террариум','🦎'],['кузнечик','🦗'],['подъезда','🗝️'],['Чипсы','🍟'],['Ключи от машины','🚙'],['Машина Макара','🚙'],['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
   ['Ночник','🏮'],['Кольцевая','💡'],['Люстр','💡'],['Лампа','💡'],['пылесос','🤖'],['Станция','🤖'],['нитаз','🚽'],['Ванна','🛁'],['ровать','🛏️'],['Диван','🛋️'],
   ['Телевизор','📺'],['Холодильник','🧊'],['Розетк','🔌'],['Выключатель','🔌'],['Дверь','🚪'],['дверь','🚪'],['Окно','🪟'],['Палатк','⛺'],['Самокат','🛴'],['Фонарь','🏮'],
@@ -1374,7 +1375,7 @@ function updateBoom(dt){
 function resetBoom(){for(const b of BOOM)scene.remove(b.m);BOOM=[];updateBoom.said=updateBoom.done=false;MK.g.scale.setScalar(1);MK.g.visible=true;MK.skin.emissive.setHex(0);
   for(const pk of PICKS)if(pk.origName){pk.name=pk.origName;pk.icon=iconFor(pk.name);delete pk.origName;}}
 function pickUp(pk){
-  if(INV.length>=INV_SIZE){toast('Инвентарь полон: 6 из 6. Выбрось что-нибудь (Q).');return false;}
+  if(INV.length>=INV_SIZE){toast(`Инвентарь полон: ${INV_SIZE} из ${INV_SIZE}. Выбрось что-нибудь (Q).`);return false;}
   pk.held=true;pk.obj.visible=false;const a=colsOf(pk.lv);for(const c of pk.cols){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}
   INV.push(pk);invSel=INV.length-1;sfx.pick();
   if(pk.item){const k=pk.item;ITEMS[k].taken=true;ITEMS[k].spark.visible=false;P.items[k]=true;
@@ -2154,7 +2155,7 @@ addEventListener('keydown',e=>{
   keys[e.code]=true;
   if(state==='play'){
     if(e.code==='KeyE'||e.code==='KeyF')interact();
-    if(/^Digit[1-6]$/.test(e.code))selectSlot(+e.code[5]-1);
+    if(/^Digit[1-7]$/.test(e.code))selectSlot(+e.code[5]-1);
     if(e.code==='KeyQ'||e.code==='KeyG')dropSel();
     if(e.code==='KeyR')geckoRelease(false);
     if(e.code==='KeyT')throwChips();
