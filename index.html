@@ -681,12 +681,6 @@ cp('Розовая кровать');blk(.07,1.87,0,.32,9.0,9.8,M_.white,{col:tru
 blk(.07,.13,.32,1.0,9.0,9.8,M_.white);blk(1.81,1.87,.32,.6,9.0,9.8,M_.white);
 cp('Сиреневая кровать');blk(.07,1.87,0,.36,10.3,11.1,M_.woodL,{col:true});blk(.1,1.84,.36,.5,10.33,11.07,mat(0xb48fe0));blk(.14,.44,.5,.6,10.4,11.0,mat(0xfff3c4));
 blk(.07,.13,.36,1.1,10.3,11.1,M_.woodL);
-// the leopard gecko's terrarium on a low cabinet by the door, with a jar of grasshoppers on the floor
-cp('Террариум');blk(2.95,3.55,0,.62,9.0,9.9,M_.woodL,{col:true});blk(2.97,3.53,.62,.66,9.05,9.85,M_.dark);blk(2.99,3.51,.66,.7,9.07,9.83,mat(0xd9b77a));
-for(const [x0,x1,z0,z1] of [[2.97,3.53,9.05,9.07],[2.97,3.53,9.83,9.85],[2.97,2.99,9.05,9.85],[3.51,3.53,9.05,9.85]])blk(x0,x1,.7,1.05,z0,z1,M_.glass);
-blk(2.97,3.53,1.05,1.07,9.05,9.85,mat(0x2a2a2a));cyl(3.35,1.07,1.15,9.7,.06,M_.dark);cyl(3.35,1.06,1.07,9.7,.045,basic(0xff9a3a));
-sph(3.1,.72,9.65,.08,mat(0x8a8580,{flatShading:true}));cyl(3.4,.7,.73,9.2,.05,mat(0x3a6fc4));
-cp('Банка с кузнечиками');cyl(3.3,0,.2,10.1,.07,M_.glass);cyl(3.3,.2,.23,10.1,.072,mat(0x3a7a37));for(let i=0;i<4;i++)sph(3.27+(i%2)*.06,.05+i*.035,10.08+(i>>1)*.04,.012,mat(0x6aa83a));
 cp('Палатка');const tentG=new THREE.Group();tentG.position.set(3.0,0,13.35);scene.add(tentG);
 {const th=Math.atan2(1.02,.46),L=hyp(.46,1.02);
  for(const s of [-1,1]){const geo=new THREE.PlaneGeometry(L,1.1);geo.rotateX(-Math.PI/2);geo.rotateZ(s<0?th:-th);geo.translate(s*.23,.51,0);tentG.add(new THREE.Mesh(geo,s<0?M_.tent:M_.tent2));}
@@ -707,9 +701,15 @@ cp('Стол с компьютером');blk(4.6,5.9,.72,.76,13.6,14.13,M_.woodL
 blk(4.95,5.45,.76,.79,13.85,14.0,M_.dark);blk(5.17,5.23,.79,.95,13.95,14.0,M_.dark);blk(4.9,5.5,.95,1.3,13.94,13.98,M_.dark);onWall('-z',5.2,1.125,13.935,.56,.32,M_.screen);
 blk(4.9,5.4,.76,.78,13.65,13.82,mat(0x222222));cp('Компьютерный стул');chair(5.2,13.2,0);
 // Makar's streaming setup: ring light, webcam on a tripod, microphone
-cp('Кольцевая лампа');cyl(5.78,.76,1.2,13.95,.012,M_.metal);{const ring=new THREE.Mesh(new THREE.TorusGeometry(.15,.022,8,28),basic(0xfff4dc));ring.position.set(5.78,1.32,13.93);scene.add(ring);}
+cp('Кольцевая лампа');cyl(4.66,.76,1.2,13.98,.012,M_.metal);{const ring=new THREE.Mesh(new THREE.TorusGeometry(.15,.022,8,28),basic(0xfff4dc));ring.position.set(4.66,1.32,13.96);scene.add(ring);}
 cp('Веб-камера');for(const a of [0,2.1,4.2])cyl(4.75+Math.sin(a)*.05,.76,.92,13.72+Math.cos(a)*.05,.006,M_.dark);blk(4.68,4.82,.92,1.0,13.66,13.78,M_.dark);cyl(4.75,.94,.98,13.65,.03,mat(0x223344)).rotation.x=Math.PI/2;sph(4.8,.99,13.66,.008,basic(0xff2020));
-cp('Микрофон');cyl(5.6,.76,.79,13.7,.05,M_.dark);cyl(5.6,.79,1.02,13.7,.008,M_.metal);sph(5.6,1.05,13.68,.035,mat(0x333333));
+cp('Микрофон');cyl(5.47,.76,.79,13.7,.05,M_.dark);cyl(5.47,.79,1.02,13.7,.008,M_.metal);sph(5.47,1.05,13.68,.035,mat(0x333333));
+// the leopard gecko's terrarium on the left end of Makar's desk, a jar of grasshoppers on the floor by it
+cp('Террариум');blk(5.54,5.89,.76,.79,13.66,14.1,M_.dark);blk(5.56,5.87,.79,.82,13.68,14.08,mat(0xd9b77a));
+for(const [x0,x1,z0,z1] of [[5.54,5.89,13.66,13.675],[5.54,5.89,14.085,14.1],[5.54,5.555,13.66,14.1],[5.875,5.89,13.66,14.1]])blk(x0,x1,.82,1.06,z0,z1,M_.glass);
+blk(5.54,5.89,1.06,1.075,13.66,14.1,mat(0x2a2a2a));cyl(5.8,1.075,1.13,14.0,.04,M_.dark);cyl(5.8,1.07,1.075,14.0,.03,basic(0xff9a3a));
+sph(5.64,.83,14.0,.05,mat(0x8a8580,{flatShading:true}));cyl(5.8,.82,.84,13.75,.032,mat(0x3a6fc4));
+cp('Банка с кузнечиками');cyl(6.15,0,.2,13.75,.07,M_.glass);cyl(6.15,.2,.23,13.75,.072,mat(0x3a7a37));for(let i=0;i<4;i++)sph(6.12+(i%2)*.06,.05+i*.035,13.73+(i>>1)*.04,.012,mat(0x6aa83a));
 cp('Телевизор');blk(6.76,6.82,1.3,1.92,13.05,14.05,M_.dark);onWall('-x',6.755,1.61,13.55,.96,.52,M_.tv);   // TV on the wall where the МАКАР TV sign hung
 cp('Постер КОСМОС');onWall('+x',wallFace('+x',3.6),1.55,12.4,.62,.88,M_.poster);
 // a plush Ender dragon from Minecraft on Makar's bed: black blocky body, purple eyes, wide wings
@@ -1323,8 +1323,8 @@ INTER.push({lv:'yard',x:17,z:43.5,r:1.5,on:()=>!GATE.open,label:()=>'Откры�
   GATE.open=true;gateBtn.material.color.set(0xffffff);tone(1200,.09,'square',.1);tone(1500,.12,'square',.1,0,.12);nz(.15,1800,.06,0,.2);toast('Пик! Калитка открыта, беги!',2);
   setTimeout(()=>announce('Дверь открыта'),350);}});   // the intercom's woman's voice
 INTER.push({lv:'yard',x:ENTR.x,z:ENTR.z+.45,r:1.3,label:()=>'Вернуться в подъезд (на лифте наверх)',act:goUp});
-INTER.push({x:2.7,z:9.45,r:1.1,on:()=>GECKO.mode!=='floor',label:()=>GECKO.mode==='held'?'Посадить эублефара в террариум':'Взять эублефара на руки',act:()=>GECKO.mode==='held'?geckoRelease(true):geckoPickUp()});
-INTER.push({x:3.3,z:10.15,r:1.0,on:()=>GECKO.mode==='terr'&&!GECKO.cricket,label:()=>'Покормить эублефара кузнечиком',act:feedGecko});
+INTER.push({x:5.72,z:13.4,r:1.1,on:()=>GECKO.mode!=='floor',label:()=>GECKO.mode==='held'?'Посадить эублефара в террариум':'Взять эублефара на руки',act:()=>GECKO.mode==='held'?geckoRelease(true):geckoPickUp()});
+INTER.push({x:6.15,z:13.6,r:.9,on:()=>GECKO.mode==='terr'&&!GECKO.cricket,label:()=>'Покормить эублефара кузнечиком',act:feedGecko});
 INTER.push({get x(){return GECKO.x;},get z(){return GECKO.z;},get lv(){return GECKO.lv;},r:1.0,on:()=>GECKO.mode==='floor',label:()=>'Взять эублефара на руки',act:geckoPickUp});
 INTER.push({lv:'yard',x:2.95,z:27,r:1.2,label:()=>'Скатиться с горки',act:rideSlide});
 for(const sw of SWINGS)INTER.push({lv:'yard',x:sw.x,z:31.15,r:1.0,on:()=>!P.swing,label:()=>'Покачаться на качелях',act:()=>startSwing(sw)});
@@ -1750,10 +1750,10 @@ function updateVac(dt,time){
 
 /* ---------- doors, lift, items, toilet ---------- */
 /* ---------- the leopard gecko (эублефар) ----------
-   Lives in the terrarium in the sisters' room and wanders about on the sand. Feed it a grasshopper from
+   Lives in the terrarium on Makar's desk and wanders about on the sand. Feed it a grasshopper from
    the jar; pick it up and carry it anywhere (even outside), put it down on the floor (R) and it wanders
    there, or put it back in its terrarium. */
-const TERR={x0:3.04,x1:3.46,z0:9.13,z1:9.77,y:.7};
+const TERR={x0:5.6,x1:5.83,z0:13.74,z1:14.02,y:.82};
 function buildGecko(){
   const g=new THREE.Group(),yel=mat(0xf2c84b,{shininess:30}),spot=mat(0x5a3a1c),dark=basic(0x111111);
   const body=sph(0,.03,0,.05,yel,{parent:g,seg:14});body.scale.set(.9,.55,1.6);
@@ -1763,15 +1763,15 @@ function buildGecko(){
   const tail=new THREE.Group();tail.position.set(0,.028,-.075);g.add(tail);
   [[.03,-.02],[.028,-.06],[.02,-.095],[.012,-.12]].forEach(([r,z],i)=>{const t=sph(0,0,z,r,i%2?spot:yel,{parent:tail,seg:10});t.scale.set(1,.7,1.3);});
   const legs=[];for(const [x,z] of [[-.045,.045],[.045,.045],[-.045,-.04],[.045,-.04]]){const l=blk(x-.008,x+.008,0,.03,z-.008,z+.008,yel,{parent:g});legs.push(l);}
-  g.scale.setScalar(1.1);scene.add(g);return {g,tail,legs};
+  g.scale.setScalar(.85);scene.add(g);return {g,tail,legs};
 }
-const GECKO=Object.assign(buildGecko(),{mode:'terr',lv:'flat',x:3.25,z:9.45,tx:3.25,tz:9.45,face:0,fed:0,cricket:null,home:{}});
+const GECKO=Object.assign(buildGecko(),{mode:'terr',lv:'flat',x:5.72,z:13.88,tx:5.72,tz:13.88,face:0,fed:0,cricket:null,home:{}});
 function geckoBase(){return GECKO.mode==='terr'?TERR.y:baseY(GECKO.lv)+.005;}
-function resetGecko(){if(GECKO.mode==='held')scene.attach(GECKO.g);Object.assign(GECKO,{mode:'terr',lv:'flat',x:3.25,z:9.45,tx:3.25,tz:9.45});GECKO.g.rotation.set(0,0,0);if(GECKO.cricket){scene.remove(GECKO.cricket.g);GECKO.cricket=null;}}
+function resetGecko(){if(GECKO.mode==='held')scene.attach(GECKO.g);Object.assign(GECKO,{mode:'terr',lv:'flat',x:5.72,z:13.88,tx:5.72,tz:13.88});GECKO.g.rotation.set(0,0,0);if(GECKO.cricket){scene.remove(GECKO.cricket.g);GECKO.cricket=null;}}
 function geckoPickUp(){if(GECKO.mode==='held')return;scene.add(camera);camera.add(GECKO.g);GECKO.g.position.set(.17,-.22,-.45);GECKO.g.rotation.set(.2,2.3,0);GECKO.mode='held';
   if(GECKO.cricket){scene.remove(GECKO.cricket.g);GECKO.cricket=null;}sfx.pick();toast('Эублефар у тебя на руках! Можно носить его куда угодно. R — отпустить.',3.2);renderInv();}
 function geckoRelease(intoTerr){if(GECKO.mode!=='held')return;scene.attach(GECKO.g);GECKO.g.rotation.set(0,0,0);
-  if(intoTerr){Object.assign(GECKO,{mode:'terr',lv:'flat',x:3.25,z:9.45});toast('Эублефар снова в террариуме.',1.8);}
+  if(intoTerr){Object.assign(GECKO,{mode:'terr',lv:'flat',x:5.72,z:13.88});toast('Эублефар снова в террариуме.',1.8);}
   else{const x=P.x-Math.sin(P.yaw)*.7,z=P.z-Math.cos(P.yaw)*.7;Object.assign(GECKO,{mode:'floor',lv:P.lv,x,z,home:{x,z}});toast('Эублефар гуляет. Подойди и нажми E, чтобы взять его снова.',2.6);}
   GECKO.tx=GECKO.x;GECKO.tz=GECKO.z;sfx.click();renderInv();}
 function feedGecko(){
