@@ -784,10 +784,38 @@ cp(null,YARD);YCOL.push({x0:12.4,x1:14.8,z0:14.9,z1:15.8});
 // lawns with trees
 const M_grass=mat(0x2c5530),M_curb=mat(0x9a9d9f);
 function lawn(x0,x1,z0,z1){yflat(x0,x1,z0,z1,.05,M_grass);for(const [a,b,c,d] of [[x0,x1,z0-.06,z0+.06],[x0,x1,z1-.06,z1+.06],[x0-.06,x0+.06,z0,z1],[x1-.06,x1+.06,z0,z1]])yb(a,b,0,.12,c,d,M_curb);}
-const M_bark=mat(0x5a3d28),M_birch=mat(0xe8e6df),M_leaf=mat(0x2f6b34),M_leaf2=mat(0x3d7d3a);
-function tree(x,z,s,birch){yc(x,0,2.4*s,z,.13*s,birch?M_birch:M_bark,{seg:8});sph(x,2.6*s+.9*s,z,1.35*s,M_leaf,{parent:YARD,seg:12});sph(x+.5*s,2.4*s+1.4*s,z-.3*s,.9*s,M_leaf2,{parent:YARD,seg:10});YCOL.push({x0:x-.22,x1:x+.22,z0:z-.22,z1:z+.22});}
+// Trees: a tapered barked trunk with a few boughs and a crown of lumpy, flat-shaded leaf clusters;
+// birches have white bark with black marks and a lighter drooping crown, spruces are stacked dark cones.
+// They use their own random numbers so the rest of the yard stays as it was.
+let treeSeed=17;const trnd=()=>{treeSeed=(treeSeed*16807)%2147483647;return (treeSeed-1)/2147483646;};
+const M_barkT=matT(ctex(64,256,(g,w,h)=>{g.fillStyle='#4d3524';g.fillRect(0,0,w,h);for(let i=0;i<70;i++){g.fillStyle=trnd()<.5?'#3a281b':'#614632';g.fillRect(trnd()*w,trnd()*h,2+trnd()*3,20+trnd()*50);}}));
+const M_birchT=matT(ctex(64,256,(g,w,h)=>{g.fillStyle='#ecebe4';g.fillRect(0,0,w,h);for(let i=0;i<45;i++){g.fillStyle=i%5?'#2b2b28':'#7a776c';g.fillRect(trnd()*w,trnd()*h,6+trnd()*24,2+trnd()*4);}}));
+const LEAF=[0x2f6b34,0x3a7a37,0x285c2c,0x447f3a].map(c=>mat(c,{flatShading:true}));
+const BLEAF=[0x6f9a3a,0x5e8a33,0x7ea544].map(c=>mat(c,{flatShading:true}));
+const NEEDLE=[0x1f4a2a,0x24532f].map(c=>mat(c,{flatShading:true}));
+// a leaf cluster: an icosahedron pushed in and out by its own position, so shared corners stay together
+function lump(r){const geo=new THREE.IcosahedronGeometry(r,1),p=geo.attributes.position;
+  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),k=1+.2*Math.sin(x*9.1/r+y*3.3)*Math.cos(z*7.7/r+y*2.1);p.setXYZ(i,x*k,y*k,z*k);}
+  geo.computeVertexNormals();return geo;}
+function tree(x,z,s,kind='oak'){
+  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=trnd()*6.28;YARD.add(g);
+  if(kind==='spruce'){
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(.07*s,.16*s,1.4*s,8),M_barkT);tr.position.y=.7*s;g.add(tr);
+    for(let i=0;i<5;i++){const r=(1.45-i*.25)*s,hh=(1.6-i*.2)*s,c=new THREE.Mesh(new THREE.ConeGeometry(r,hh,10),NEEDLE[i%2]);c.position.y=(.9+i*.78)*s+hh/2;c.rotation.y=trnd()*3;g.add(c);}
+  }else{
+    const birch=kind==='birch',H=(birch?3.5:2.7)*s,rb=(birch?.1:.18)*s,bark=birch?M_birchT:M_barkT;
+    const tr=new THREE.Mesh(new THREE.CylinderGeometry(rb*.5,rb,H,9),bark);tr.position.y=H/2;g.add(tr);
+    for(let i=0;i<3;i++){const a=i*2.1+trnd(),len=(.9+trnd()*.5)*s,b=new THREE.Mesh(new THREE.CylinderGeometry(rb*.22,rb*.42,len,6),bark);
+      b.position.set(Math.cos(a)*len*.35,H*(.6+i*.09),Math.sin(a)*len*.35);b.rotation.set(Math.sin(a)*.9,0,-Math.cos(a)*.9);g.add(b);}
+    const pal=birch?BLEAF:LEAF,n=birch?8:10,cy=H*(birch?.8:.95),cr=(birch?1.0:1.4)*s;
+    for(let i=0;i<n;i++){const a=trnd()*6.28,d=trnd()*cr*.75,r=(birch?.55:.72)*s*(.7+trnd()*.6),m=new THREE.Mesh(lump(r),pal[(trnd()*pal.length)|0]);
+      m.position.set(Math.cos(a)*d,cy+(trnd()-.3)*cr*.8,Math.sin(a)*d);m.scale.y=birch?1.3:.85;m.rotation.y=trnd()*3;g.add(m);}
+  }
+  YCOL.push({x0:x-.22,x1:x+.22,z0:z-.22,z1:z+.22});
+}
 lawn(13.6,21.4,17.2,25.4);lawn(13.6,21.4,30.6,40.8);lawn(.2,1.9,17.2,40.8);
-cp('Дерево',YARD,3);tree(15.2,19.2,1);cp('Берёза',YARD,3);tree(19.6,22.6,1.15,true);cp(null,YARD);tree(16.6,24.2,.85);tree(15.2,33.2,1.1,true);tree(19.8,36,1);tree(16,39.4,.9);tree(1.05,19,1.05);tree(1.05,29.5,.95,true);tree(1.05,38.6,1.1);
+cp('Дерево',YARD,1);tree(15.2,19.2,1);cp('Берёза',YARD,1);tree(19.6,22.6,1.15,'birch');cp('Ель',YARD,1);tree(16.6,24.2,.95,'spruce');cp(null,YARD);
+tree(15.2,33.2,1.1,'birch');tree(19.8,36,1);tree(16,39.4,.95,'spruce');tree(1.05,19,1.05);tree(1.05,29.5,.95,'birch');tree(1.05,38.6,1,'spruce');
 
 // playground: rubber surface, slide tower, swings, carousel, sandbox
 {const s=new THREE.Mesh(new THREE.CircleGeometry(5.3,40),mat(0x2f7fb8));s.rotation.x=-Math.PI/2;s.position.set(6.2,.04,28);YARD.add(s);
@@ -1039,7 +1067,7 @@ const sfx={
 const SPAWN={x:7.8,z:11.6,yaw:0};
 const P={lv:'flat',x:SPAWN.x,z:SPAWN.z,yaw:0,pitch:0,eye:1.15,crouch:false,hidden:null,items:{keys:false,shoes:false},bob:0,stepAcc:0,noiseT:0,room:null};
 const MS={lv:'flat',side:1,x:5.2,z:13.2,face:0,state:'sit',task:'stream',seat:null,seatKey:'desk',sitK:0,patrolLeft:0,path:[],wait:0,aware:0,lastSeen:null,knowsHide:false,doorT:0,delay:4,sayT:12,phase:0,stepAcc:0,stuckT:0,chkX:0,chkZ:0,lostT:0,repathT:0,lookBase:0,lookT:0,spd:0,hideTarget:null,heartT:0};
-let state='menu',endT=0,endStep=0,lives=2,tStart=0,tPlay=0,toiletCD=0,flushCD=0,keySpot=null,shoeSpot=null,winT=0,caughtT=0;
+let state='menu',yardT=0,upT=0,endT=0,endStep=0,lives=2,tStart=0,tPlay=0,toiletCD=0,flushCD=0,keySpot=null,shoeSpot=null,winT=0,caughtT=0;
 const keys={};let touchMove={x:0,y:0},touchRun=false;
 
 function placeItems(){
@@ -1100,6 +1128,7 @@ const LINES={
   soup:['Ммм, вкусный суп!','Хлюп-хлюп!','Борщ со сметаной — топ!','Ещё ложечку… и ещё одну…','Суп — еда блогеров!'],
   leave:{poop:'Чат, я отойду покакать. Не переключайтесь!',soup:'Так, чат, я пошёл жрать суп. Скоро вернусь!',patrol:'Чат, пойду проверю, где там мелкий.'},
   back:['Всё, чат, я вернулся!','Ну что, на чём мы остановились?','Я снова в эфире!'],
+  yard:['Стой! По лестнице я быстрее лифта!','Со двора ты не убежишь!','Я тебя вижу, мелкий!'],
 };
 
 /* ---------- interactions ---------- */
@@ -1129,7 +1158,9 @@ INTER.push({x:wallFace('+x',6.85),z:5.0,r:1.2,label:()=>'Нажать пожар
 INTER.push({x:9.15,z:3.62,r:1.2,label:()=>LIFT.state==='idle'?'Вызвать лифт':LIFT.state==='coming'?'Лифт едет…':'Заходи в лифт!',act:()=>{
   if(LIFT.state!=='idle')return;LIFT.state='coming';LIFT.t=0;LIFT.floor=1;liftBtn.material.color.set(0xffd23f);sfx.click();toast('Лифт вызван. Он едет с 1-го этажа, продержись!');}});
 INTER.push({lv:'yard',x:17,z:43.5,r:1.5,on:()=>!GATE.open,label:()=>'Открыть калитку',act:()=>{
-  GATE.open=true;gateBtn.material.color.set(0xffffff);tone(1200,.09,'square',.1);tone(1500,.12,'square',.1,0,.12);nz(.15,1800,.06,0,.2);toast('Пик! Калитка открыта, беги!',2);}});
+  GATE.open=true;gateBtn.material.color.set(0xffffff);tone(1200,.09,'square',.1);tone(1500,.12,'square',.1,0,.12);nz(.15,1800,.06,0,.2);toast('Пик! Калитка открыта, беги!',2);
+  setTimeout(()=>announce('Дверь открыта'),350);}});   // the intercom's woman's voice
+INTER.push({lv:'yard',x:ENTR.x,z:ENTR.z+.45,r:1.3,label:()=>'Вернуться в подъезд (на лифте наверх)',act:goUp});
 /* ---------- inventory ----------
    Six slots, always on screen while you play. Keys, shoes, small things around the flat and everything
    spawned from the admin panel can be picked up (E) and dropped in front of you again (Q). A pick moves
@@ -1138,7 +1169,7 @@ const INV_SIZE=6,INV=[],PICKS=[];let invSel=0;
 const ICONS=[['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
   ['Ночник','🏮'],['Кольцевая','💡'],['Люстр','💡'],['Лампа','💡'],['пылесос','🤖'],['Станция','🤖'],['нитаз','🚽'],['Ванна','🛁'],['ровать','🛏️'],['Диван','🛋️'],
   ['Телевизор','📺'],['Холодильник','🧊'],['Розетк','🔌'],['Выключатель','🔌'],['Дверь','🚪'],['дверь','🚪'],['Окно','🪟'],['Палатк','⛺'],['Самокат','🛴'],['Фонарь','🏮'],
-  ['Дерев','🌳'],['Берёз','🌳'],['Машин','🚗'],['Макар','🧍'],['Стиральн','🫧'],['Раковин','🚰'],['Шкаф','🗄️'],['Зеркало','🪞'],['Ковёр','🟥'],['коврик','🟥'],['Пожарн','🚨'],
+  ['Дерев','🌳'],['Ель','🌲'],['Берёз','🌳'],['Машин','🚗'],['Макар','🧍'],['Стиральн','🫧'],['Раковин','🚰'],['Шкаф','🗄️'],['Зеркало','🪞'],['Ковёр','🟥'],['коврик','🟥'],['Пожарн','🚨'],
   ['Рокот','📢'],['Мигалк','🚨'],['Датчик','🔴'],['ящик','📦'],['тул','🪑'],['Скамейк','🪑'],['тол','🪑'],['Качели','🎠'],['Карусель','🎠'],['Горка','🛝'],['Песочниц','🏖️']];
 const iconFor=n=>(ICONS.find(([k])=>n.includes(k))||[0,'📦'])[1];
 const colsOf=lv=>lv==='yard'?YCOL:COL;
@@ -1337,9 +1368,32 @@ function startPatrol(){
 function startLook(t){MS.state='look';MS.wait=t;MS.lookBase=MS.face;MS.lookT=0;
   if(P.hidden&&D.check>0){const r=roomAt(MS.x,MS.z);if(r&&r.id===P.hidden.room&&Math.random()<D.check*2.5){MS.state='check';MS.hideTarget=P.hidden;MS.path=buildPath(MS.x,MS.z,P.hidden.x,P.hidden.z);say(pick(LINES.check));}}}
 // Makar can't follow you downstairs: once you are in the yard he stays up in the flat.
-function updateMakarYard(dt){MS.spd=0;}
+// In the yard Makar comes running out of the entrance 5 seconds after you and chases you to the gate,
+// sliding around whatever is in the way. If you ride back up he follows you into the flat 5 s later.
+function updateMakarYard(dt){
+  if(MS.lv!=='yard'){MS.spd=0;yardT-=dt;
+    if(yardT<=0){Object.assign(MS,{lv:'yard',x:ENTR.x,z:ENTR.z+.9,face:0,path:[],seat:null,sitK:0,lookBase:0,lookT:0,aware:1,state:D.blind?'look':'chase'});
+      if(D.blind)say('Эй! Куда он делся?');else{say(pick(LINES.yard));sfx.sting();}}
+    return;}
+  const dP=hyp(P.x-MS.x,P.z-MS.z);
+  if(D.blind||ADMIN.freeze){MS.state='look';MS.spd=0;MS.lookT+=dt;MS.face=MS.lookBase+Math.sin(MS.lookT*1.4)*1.1;}
+  else{
+    MS.state='chase';const a=Math.atan2(P.x-MS.x,P.z-MS.z),step=D.chase*dt;MS.spd=0;
+    for(const off of [0,MS.side*.7,MS.side*1.4,-MS.side*.7,-MS.side*1.4]){
+      const ox=MS.x,oz=MS.z;MS.x+=Math.sin(a+off)*step;MS.z+=Math.cos(a+off)*step;collide(MS,MR);
+      const m=hyp(MS.x-ox,MS.z-oz);
+      if(m>step*.6){turnTo(a+off,dt);MS.spd=m/dt;if(off)MS.side=Math.sign(off);break;}
+      MS.x=ox;MS.z=oz;
+    }
+    if(dP<.78&&!(ADMIN.fly&&P.eye>1.9))caught();
+  }
+  MS.heartT-=dt;const near=MS.state==='chase'?1:clamp(1-dP/7,0,1);
+  if(near>.05&&MS.heartT<=0){sfx.heart(.4+near*.6);MS.heartT=MS.state==='chase'?.45:1.1-near*.5;}
+  animMakar(dt);
+}
 function updateMakar(dt){
   if(P.lv==='yard'){updateMakarYard(dt);return;}
+  if(MS.lv==='yard'){MS.spd=0;upT-=dt;if(upT<=0){Object.assign(MS,{lv:'flat',x:4.4,z:7.07,face:Math.PI/2,path:[],state:'search',wait:4,lookBase:Math.PI/2,lookT:0,aware:.4});say('Ты куда? Я тебя всё равно найду!');}return;}
   if(ADMIN.freeze){MS.spd=0;animMakar(dt);return;}
   const g=MK.g;
   if(MS.delay>0){MS.delay-=dt;MS.spd=0;animMakar(dt);return;}
@@ -1507,9 +1561,20 @@ function enterLift(){
   setTimeout(()=>{
     if(state!=='ride')return;
     P.lv='yard';Object.assign(P,{x:ENTR.x,z:ENTR.z+.95,yaw:Math.PI,pitch:-.04,crouch:false,room:null});
-    MS.lv='flat';GATE.open=false;setLevel('yard');
+    if(MS.lv!=='yard')yardT=5;GATE.open=false;setLevel('yard');
     state='play';f.style.opacity=0;tone(988,.4,'sine',.15);
-    toast('Первый этаж! Макар остался наверху. Беги к калитке в заборе!',4.5);
+    toast(D.blind?'Первый этаж! Беги к калитке в заборе.':'Первый этаж! Беги к калитке: через 5 секунд Макар выбежит из подъезда!',4.5);
+  },1500);
+}
+// Back up from the yard: the lift takes you to the 18th floor and lets you out in the lift hall.
+function goUp(){
+  if(state!=='play'||P.lv!=='yard')return;state='ride';sfx.chime();
+  const f=$('fade');f.style.background='#000';f.style.opacity=1;toast('Лифт едет наверх… 3… 9… 15…',2);
+  setTimeout(()=>{
+    if(state!=='ride')return;
+    P.lv='flat';Object.assign(P,{x:8.3,z:3.4,yaw:Math.PI/2,pitch:0,crouch:false,room:null});
+    Object.assign(LIFT,{state:'open',open:1,floor:FLOOR});upT=5;setLevel('flat');
+    state='play';f.style.opacity=0;tone(988,.4,'sine',.15);toast(`${FLOOR} этаж. Ты снова в подъезде.`,3);
   },1500);
 }
 /* ---------- ending: Makar caught you for good ---------- */
@@ -1560,7 +1625,7 @@ function updateEnding(dt){
 function win(){
   if(state!=='play')return;state='win';sfx.win();$('fade').style.background='#fff';$('fade').style.opacity=1;unlock();
   const t=Math.round(tPlay),mm=Math.floor(t/60),ss=String(t%60).padStart(2,'0');
-  setTimeout(()=>{$('fade').style.opacity=0;showHUD(false);endingPanel('escape',`Макар так и остался в квартире. Ты на свободе! Время: ${mm}:${ss}. Сложность: ${D.name}.`);},1300);
+  setTimeout(()=>{$('fade').style.opacity=0;showHUD(false);endingPanel('escape',`${MS.lv==='yard'?'Калитка захлопнулась прямо перед носом Макара.':'Макар даже не успел выбежать из подъезда.'} Ты на свободе! Время: ${mm}:${ss}. Сложность: ${D.name}.`);},1300);
 }
 
 /* ---------- endings & admin panel ----------
@@ -1708,7 +1773,7 @@ function updateHUD(dt){
   if($('flyBtns').hidden===ADMIN.fly){$('flyBtns').hidden=!ADMIN.fly;touchFly=0;}
   const st=$('status'),txt=$('statusText');let s,cls='';
   if(P.hidden){s='Ты спрятался';cls='hid';if(MS.state==='grab'||MS.state==='check'){s='Макар идёт к укрытию!';cls='alert';}}
-  else if(P.lv==='yard'){s='Макар остался наверху';}
+  else if(P.lv==='yard'&&MS.lv!=='yard'){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
   else if(MS.state==='chase'){s='Макар гонится!';cls='alert';}
   else if(MS.aware>.05){s='Макар что-то заметил';}
   else if(MS.state==='investigate'){s='Макар идёт на шум';}
