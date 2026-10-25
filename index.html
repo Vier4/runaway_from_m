@@ -975,7 +975,7 @@ CAR.mark=new THREE.Sprite(new THREE.SpriteMaterial({map:texSpark,blending:THREE.
 cp(null,PARK);parkCar(-3.5,8.3,0,0xe6e6e6,'А123ВС');parkCar(4.5,-2.3,Math.PI,0x2f4f8f,'Е555КХ');parkCar(-1.5,-2.3,Math.PI,0x8a1f24,'О808ОО');
 // fill most of the other spaces (noses towards the lane)
 {let k=41;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};const cols=[0xe6e6e6,0x2f4f8f,0x8a1f24,0x1d1f24,0x9aa3ab,0x3f6f3a,0xc9a23a,0x5a6a8a,0xf2f2ee,0x6b2a5a];
- const taken=(L,south,x)=>L===3&&(south?[.5,-3.5]:[4.5,-1.5]).includes(x);   // the four cars above
+ const taken=(L,south,x)=>L===3&&(south?[.5,-3.5,-1.5]:[4.5,-1.5]).includes(x);   // the four cars above, and the space by Makar's driver door
  for(const L of LANES)for(const [zc,ry,south] of [[L-4.65,Math.PI,false],[L+4.65,0,true]])for(let x=-37.5;x<=8.6;x+=2){if(inXLane(x,3)||taken(L,south,x)||rnd()>.72)continue;parkCar(x,zc,ry,cols[(rnd()*cols.length)|0],'',true);}}
 cp(null,PARK);
 
@@ -1294,7 +1294,8 @@ INTER.push({get x(){return GECKO.x;},get z(){return GECKO.z;},get lv(){return GE
 INTER.push({lv:'yard',x:2.95,z:27,r:1.2,label:()=>'Скатиться с горки',act:rideSlide});
 for(const sw of SWINGS)INTER.push({lv:'yard',x:sw.x,z:31.15,r:1.0,on:()=>!P.swing,label:()=>'Покачаться на качелях',act:()=>startSwing(sw)});
 INTER.push({lv:'park',x:9.2,z:2.85,r:1.3,label:()=>'Лифт наверх, на '+FLOOR+' этаж',act:goUp});
-INTER.push({lv:'park',get x(){return CAR.x-1.05;},get z(){return CAR.z+.2;},r:1.4,on:()=>CAR.g.visible,label:()=>P.items.carkeys?'Угнать машину Макара':'Машина Макара',act:stealCar});
+// the point of the car nearest to you, so you can open it from whichever side you walk up to
+INTER.push({lv:'park',get x(){return clamp(P.x,CAR.x-.95,CAR.x+.95);},get z(){return clamp(P.z,CAR.z-2.15,CAR.z+2.15);},r:1.0,on:()=>CAR.g.visible&&!CAR.leaving,label:()=>P.items.carkeys?'Угнать машину Макара':'Машина Макара',act:stealCar});
 /* ---------- inventory ----------
    Six slots, always on screen while you play. Keys, shoes, small things around the flat and everything
    spawned from the admin panel can be picked up (E) and dropped in front of you again (Q). A pick moves
@@ -1559,20 +1560,42 @@ function arrive(){if(MS.task==='walk'||MS.task==='shop')leaveHome();else sitDown
 function leaveHome(){
   const kind=MS.task;MS.away={kind,t:120+Math.random()*60};sfx.door(4.97,7.07);standUp();
   let missing=false;for(const k of kind==='shop'?['keys','carkeys']:['keys']){const it=ITEMS[k];if(it.taken)missing=true;else{it.withMakar=true;it.mesh.visible=false;it.spark.visible=false;}}
-  if(kind==='shop'){CAR.g.visible=false;CAR.glow.visible=false;const i=PCOL.indexOf(CAR.col);if(i>=0)PCOL.splice(i,1);}
+  if(kind==='shop')Object.assign(MS.away,{phase:'toCar',pt:25,wp:0});   // 25 s down the stairs and across the parking to his car
   Object.assign(MS,{lv:'away',state:'away',spd:0,path:[]});MK.g.visible=false;
-  toast(kind==='walk'?'Макар ушёл гулять во двор и забрал ключи! Вернётся через 2–3 минуты.':'Макар уехал на машине в магазин и забрал ключи от квартиры и от машины! Вернётся через 2–3 минуты.',5);
+  toast(kind==='walk'?'Макар ушёл гулять во двор и забрал ключи! Вернётся через 2–3 минуты.':'Макар пошёл на парковку к машине: поедет в магазин! Ключи от квартиры и от машины забрал с собой. Вернётся через 2–3 минуты.',5);
   if(missing)setTimeout(()=>say('А где мои ключи?! Ладно, потом найду.',2.5),400);
 }
 function returnKeys(){for(const k of ['keys','carkeys']){const it=ITEMS[k];if(!it.withMakar)continue;it.withMakar=false;
   it.spot=pick(KEY_SPOTS);it.mesh.position.set(it.spot.x,it.spot.y+.01,it.spot.z);it.mesh.visible=true;it.spark.visible=true;const pk=PICKS.find(p=>p.item===k);if(pk){pk.lv='flat';centerPick(pk);}}
-  if(!CAR.g.visible&&!CAR.driven){CAR.g.visible=true;CAR.glow.visible=true;if(!PCOL.includes(CAR.col))PCOL.push(CAR.col);}}
+  if(!CAR.driven){if(CAR.leaving)hideCar();CAR.g.visible=true;CAR.glow.visible=true;if(!PCOL.includes(CAR.col))PCOL.push(CAR.col);}}
 function comeHome(silent){
   const kind=MS.away&&MS.away.kind;MS.away=null;returnKeys();MK.g.visible=true;
   Object.assign(MS,{lv:'flat',x:4.4,z:7.07,face:Math.PI,state:'look',wait:2,path:[],seat:null,sitK:0,lookBase:Math.PI,lookT:0,aware:0,task:'stream',seatKey:'desk'});
   if(!silent){sfx.door(4.97,7.07);say(kind==='shop'?'Я вернулся из магазина! Купил чипсов!':'Нагулялся! Ключи положил на место.',3);if(P.lv==='flat')toast('Макар вернулся домой!',2.5);}
 }
-function tickAway(dt){if(MS.away&&(MS.away.t-=dt)<=0)comeHome();}
+function tickAway(dt){
+  const a=MS.away;if(!a)return;
+  if(a.kind==='shop'&&a.phase==='toCar'&&P.lv!=='park'&&(a.pt-=dt)<=0)driveOff();   // (while you are down there you see him walk to it)
+  if((a.t-=dt)<=0&&!CAR.leaving)comeHome();
+}
+// he gets in and drives off up the ramp; the car is gone until he is back from the shop
+function driveOff(){
+  const a=MS.away;a.phase='driving';Object.assign(MS,{lv:'away',state:'away',spd:0});MK.g.visible=false;CAR.glow.visible=false;
+  if(P.lv==='park'){CAR.leaving=true;CAR.leg=0;CAR.spd=0;nz(.25,400,.5,panFor(CAR.x,CAR.z));tone(90,.6,'sawtooth',.08,140);toast('Врум! Макар уехал на своей машине в магазин.',3);}
+  else hideCar();
+}
+function hideCar(){CAR.leaving=false;CAR.g.visible=false;const i=PCOL.indexOf(CAR.col);if(i>=0)PCOL.splice(i,1);
+  Object.assign(CAR,{x:.5,z:8.3,leg:0});CAR.g.position.set(.5,0,8.3);CAR.g.rotation.set(0,0,0);BARRIER.ang=0;BARRIER.pivot.rotation.x=0;}
+// the car moving along the way out (used by the theft ending and by Makar driving off)
+function carDriveStep(dt,spd){
+  const g=CAR.g,tgt=DRIVE_PATH[Math.min(CAR.leg,DRIVE_PATH.length-1)],dx=tgt.x-CAR.x,dz=tgt.z-CAR.z,d=hyp(dx,dz);
+  if(d<.4&&CAR.leg<DRIVE_PATH.length-1)CAR.leg++;
+  const want=Math.atan2(-dx,-dz);g.rotation.y+=angDiff(want,g.rotation.y)*Math.min(1,dt*3);
+  const st=Math.min(d,spd*dt);CAR.x-=Math.sin(g.rotation.y)*st;CAR.z-=Math.cos(g.rotation.y)*st;
+  const up=clamp((PX0-CAR.x)/8.2,0,1)*3.1;g.position.set(CAR.x,up,CAR.z);g.rotation.x=CAR.x<PX0&&CAR.x>PX0-8.15?Math.atan2(3.1,8.2):0;
+  if(CAR.x<PX0+8)BARRIER.ang=Math.min(1.45,BARRIER.ang+dt*1.6);BARRIER.pivot.rotation.x=-BARRIER.ang;
+  return up;
+}
 function sitDown(){
   const s=SEATS[MS.seatKey];MS.seat=s;MS.state='sit';const [a,b]=SIT_TIME[MS.task];MS.wait=a+Math.random()*(b-a);MS.sayT=1.5+Math.random()*2;
   if(s.door&&DOOR[s.door].open)toggleDoor(DOOR[s.door],'makar');
@@ -1602,16 +1625,24 @@ function startLook(t){MS.state='look';MS.wait=t;MS.lookBase=MS.face;MS.lookT=0;
 // Downstairs: Makar doesn't notice you going out into the yard (there you only meet him when he is out for
 // his walk); into the parking he comes running through the stairs door 7 seconds after you, and chases you, sliding around whatever is in the way.
 // If you ride back up he follows you into the flat 5 s later.
-const OUTSIDE={yard:{delay:Infinity,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:7,x:()=>8.6,z:()=>4.95,face:Math.PI/2}};
+const OUTSIDE={yard:{delay:Infinity,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:Infinity,x:()=>8.6,z:()=>4.95,face:Math.PI/2}};
 function updateMakarOutside(dt){
   if(MS.away){tickAway(dt);if(!MS.away)return;
-    if(MS.away.kind!=='walk'||P.lv!=='yard'){MS.spd=0;return;}
+    const a=MS.away;
+    if(a.kind==='shop'&&P.lv==='park'&&a.phase==='toCar'){
+      if(MS.lv!=='park'){Object.assign(MS,{lv:'park',x:8.6,z:4.95,face:Math.PI/2,state:'toCar',path:[],seat:null,sitK:0});MK.g.visible=true;}
+      if(MS.state==='toCar'){   // through the stairs door, along the lane and round to his driver door
+        const W=[[-1,4.4],[-1,8.1]][a.wp];slideTo(W[0],W[1],D.walk,dt);if(hyp(W[0]-MS.x,W[1]-MS.z)<.5){if(a.wp<1)a.wp++;else{driveOff();return;}}
+        const dP=hyp(P.x-MS.x,P.z-MS.z);if(!D.blind&&dP<14&&sightClear(MS.x,MS.z,P.x,P.z)){MS.state='chase';say('А ты что тут делаешь?!');sfx.sting();}
+        animMakar(dt);return;}
+    }else if(a.kind!=='walk'||P.lv!=='yard'){MS.spd=0;return;}
+    else{
     if(MS.lv!=='yard'){Object.assign(MS,{lv:'yard',x:16,z:28,face:0,state:'stroll',path:[],seat:null,sitK:0});MK.g.visible=true;}
     if(MS.state==='stroll'){   // a slow walk round the lawns until he spots you
       if(!MS.strollT||hyp(MS.sx-MS.x,MS.sz-MS.z)<.5){MS.sx=pick([12,16,6,3])+Math.random()*2;MS.sz=18+Math.random()*22;MS.strollT=1;}
       slideTo(MS.sx,MS.sz,D.walk*.8,dt);const dP=hyp(P.x-MS.x,P.z-MS.z);
       if(!P.hidden&&!D.blind&&dP<14&&sightClear(MS.x,MS.z,P.x,P.z)){MS.state='chase';say('О! Ты что тут делаешь?!');sfx.sting();}
-      animMakar(dt);return;}}
+      animMakar(dt);return;}}}
   if(MS.lv!==P.lv){MS.spd=0;if(MS.gaveUp)return;yardT-=dt;
     if(yardT<=0){const o=OUTSIDE[P.lv];Object.assign(MS,{lv:P.lv,x:o.x(),z:o.z(),face:o.face,path:[],seat:null,sitK:0,lookBase:0,lookT:0,aware:1,state:D.blind?'look':'chase'});
       if(D.blind)say('Эй! Куда он делся?');else{say(pick(LINES.yard));sfx.sting();}}
@@ -1814,6 +1845,7 @@ function updateGecko(dt,time){
 
 function updateWorld(dt,time){
   updateGecko(dt,time);updateFlying(dt);
+  if(CAR.leaving){CAR.spd=Math.min(8,CAR.spd+dt*3);carDriveStep(dt,CAR.spd);if(CAR.x<PX0-6)hideCar();}
   if(P.lv==='park'&&CAR.glow.visible){const k=.5+.5*Math.sin(time*3.2);CAR_M[0xe2512b].emissive.setRGB(.32*k,.1*k,.03*k);CAR.glowM.color.setHSL(.13,1,.4+.25*k);const sc=1.2+.4*k;CAR.mark.scale.set(sc,sc,1);}
   updateVac(dt,time);
   const fl=Math.sin(time*18)>0;M_SMOKE.color.setHex(fireOn?(fl?0xff2020:0x330000):(time%2.5<.08?0xff3030:0x330000));M_STROBE.color.setHex(fireOn&&fl?0xff3020:0x4a0a08);
@@ -1885,10 +1917,10 @@ function rideDown(lv){
     if(state!=='ride')return;
     P.lv=lv;Object.assign(P,lv==='park'?{x:8.6,z:2.85,yaw:Math.PI/2}:{x:ENTR.x,z:ENTR.z+.95,yaw:Math.PI},{pitch:-.04,crouch:false,room:null});
     if(MS.lv!==lv&&!MS.away){MS.lv='flat';yardT=OUTSIDE[lv].delay;}   // he is on the stairs
-    if(MS.away&&MS.lv==='yard'&&lv!=='yard')MS.lv='away';
+    if(MS.away&&MS.lv!==lv&&MS.lv!=='away')MS.lv='away';
     MS.gaveUp=false;MS.knowsHide=false;
     GATE.open=false;setLevel(lv);state='play';showHUD(true);f.style.opacity=0;tone(988,.4,'sine',.15);
-    toast(lv==='park'?(D.blind?'Подземная парковка. Где-то тут машина Макара.':'Подземная парковка! Где-то тут машина Макара. Через 7 секунд Макар прибежит по лестнице!')
+    toast(lv==='park'?(MS.away&&MS.away.kind==='shop'&&MS.away.phase!=='driving'?'Подземная парковка! Осторожно: Макар идёт к своей машине!':D.blind?'Подземная парковка. Где-то тут машина Макара.':'Подземная парковка! Где-то тут машина Макара. Макар дома и не знает, что ты здесь.')
       :(MS.away&&MS.away.kind==='walk'?'Первый этаж! Осторожно: Макар гуляет во дворе!':'Первый этаж! Макар дома и не заметил, что ты вышел. Беги к калитке!'),4.5);
   },1500);
 }
@@ -1918,12 +1950,7 @@ function stealCar(){
 }
 function updateDrive(dt){
   driveT+=dt;if(driveT<.8){driveSpd=0;}else driveSpd=Math.min(9,driveSpd+dt*3);
-  const g=CAR.g,tgt=DRIVE_PATH[Math.min(CAR.leg,DRIVE_PATH.length-1)],dx=tgt.x-CAR.x,dz=tgt.z-CAR.z,d=hyp(dx,dz);
-  if(d<.4&&CAR.leg<DRIVE_PATH.length-1)CAR.leg++;
-  const want=Math.atan2(-dx,-dz);g.rotation.y+=angDiff(want,g.rotation.y)*Math.min(1,dt*3);
-  const st=Math.min(d,driveSpd*dt);CAR.x-=Math.sin(g.rotation.y)*st;CAR.z-=Math.cos(g.rotation.y)*st;
-  const up=clamp((PX0-CAR.x)/8.2,0,1)*3.1;g.position.set(CAR.x,up,CAR.z);g.rotation.x=CAR.x<PX0&&CAR.x>PX0-8.15?Math.atan2(3.1,8.2):0;
-  if(CAR.x<PX0+8)BARRIER.ang=Math.min(1.45,BARRIER.ang+dt*1.6);BARRIER.pivot.rotation.x=-BARRIER.ang;
+  const g=CAR.g,up=carDriveStep(dt,driveSpd);
   // camera: behind and above the car, looking at it
   const fx=-Math.sin(g.rotation.y),fz=-Math.cos(g.rotation.y);
   camera.position.set(CAR.x-fx*5.2,YP+up+2.4,CAR.z-fz*5.2);camera.lookAt(CAR.x+fx*2,YP+up+.9,CAR.z+fz*2);
@@ -1934,7 +1961,7 @@ function updateDrive(dt){
 }
 // Makar running after the car on foot (he can't catch it)
 function stepTowardOut(tx,tz,dt){const a=Math.atan2(tx-MS.x,tz-MS.z),ox=MS.x,oz=MS.z;MS.state='chase';MS.x+=Math.sin(a)*D.chase*.8*dt;MS.z+=Math.cos(a)*D.chase*.8*dt;collide(MS,MR);turnTo(a,dt);MS.spd=hyp(MS.x-ox,MS.z-oz)/dt;}
-function resetCar(){Object.assign(CAR,{x:.5,z:8.3,leg:0,fading:false,driven:false});CAR.g.visible=true;if(!PCOL.includes(CAR.col))PCOL.push(CAR.col);CAR.glow.visible=true;CAR.g.position.set(.5,0,8.3);CAR.g.rotation.set(0,0,0);BARRIER.ang=0;BARRIER.pivot.rotation.x=0;}
+function resetCar(){Object.assign(CAR,{x:.5,z:8.3,leg:0,fading:false,driven:false,leaving:false});CAR.g.visible=true;if(!PCOL.includes(CAR.col))PCOL.push(CAR.col);CAR.glow.visible=true;CAR.g.position.set(.5,0,8.3);CAR.g.rotation.set(0,0,0);BARRIER.ang=0;BARRIER.pivot.rotation.x=0;}
 
 /* ---------- ending: Makar caught you for good ---------- */
 const END_SCRIPT=[
@@ -2138,9 +2165,9 @@ function updateHUD(dt){
   {const m=(isDay?13*60+20:23*60+40)+Math.floor(tPlay*20/60),t=`🕒 ${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;if(t!==clockShown){clockShown=t;$('clock').textContent=t;}}
   if($('flyBtns').hidden===ADMIN.fly){$('flyBtns').hidden=!ADMIN.fly;touchFly=0;}
   const st=$('status'),txt=$('statusText');let s,cls='';
-  if(MS.away&&!(MS.lv==='yard'&&P.lv==='yard')){const t=Math.max(0,Math.ceil(MS.away.t));s=(MS.away.kind==='walk'?'Макар гуляет':'Макар в магазине')+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
+  if(MS.away&&MS.lv!==P.lv){const t=Math.max(0,Math.ceil(MS.away.t));s=(MS.away.kind==='walk'?'Макар гуляет':'Макар в магазине')+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
   else if(P.hidden){s='Ты спрятался';cls='hid';if(MS.state==='grab'||MS.state==='check'){s='Макар идёт к укрытию!';cls='alert';}}
-  else if(P.lv==='yard'&&MS.lv!=='yard'){s='Макар дома и тебя не заметил';}
+  else if(P.lv!=='flat'&&MS.lv!==P.lv&&!MS.away){s='Макар дома и тебя не заметил';}
   else if(P.lv!=='flat'&&MS.lv!==P.lv){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
   else if(MS.state==='chase'){s='Макар гонится!';cls='alert';}
   else if(MS.aware>.05){s='Макар что-то заметил';}
