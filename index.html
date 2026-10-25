@@ -162,7 +162,7 @@ h1 em{font-style:normal;color:var(--makar)}
     <div>
       <div class="eyebrow" id="clockLine">Москва · 18-й этаж · 23:40</div>
       <h1>Побег от <em>Макара</em></h1>
-      <p class="story">Макар — блогер. Он запер входную дверь, спрятал ключи и сел вести стрим в твоей комнате. Иногда он отходит покакать или поесть супа на кухне. Найди ключи и кроссовки, выберись в подъезд, спустись на лифте во двор и убеги через калитку. Если Макар тебя заметит, беги, хлопай дверями и прячься: за шторой, в ванне, в палатке, в шкафу, под кроватью или в кофейне во дворе.</p>
+      <p class="story">Макар — блогер. Он запер входную дверь, спрятал ключи и сел вести стрим в твоей комнате. Иногда он отходит покакать или поесть супа на кухне. Найди ключи и кроссовки, выберись в подъезд, спустись на лифте во двор и убеги через калитку. Если Макар тебя заметит, беги, хлопай дверями и прячься: за шторой, в ванне, в палатке, в шкафу, под кроватью, а во дворе — в кофейне или в соседних подъездах.</p>
       <div class="diff" id="diff">
         <button type="button" data-d="practice" aria-pressed="false">Практика</button>
         <button type="button" data-d="easy" aria-pressed="false">Лёгкий</button>
@@ -804,6 +804,23 @@ yboxUV(5.6,22,0,3.6,14.55,14.62,M_lobby,2,3.6);yboxUV(-.35,-.28,0,3.6,14.62,44,M
  {const L=new THREE.PointLight(0xffc98a,1.2,8,2);L.position.set(2.6,2.6,12.6);YARD.add(L);}
  yc(5.15,0,.4,14.15,.18,mat(0xb5603a));sph(5.15,.8,14.15,.35,mat(0x3a7a37,{flatShading:true}),{parent:YARD});}
 
+/* ---------- doors into the other two houses ----------
+   Each has a metal door with a lamp and a sign; behind it is a small dark room (a box seen from the
+   inside) where you can hide from Makar. */
+function sideDoor(fx,z,dir,n){   // fx: the facade plane, dir: +1 if the facade faces +x (house to the west), −1 if it faces −x
+  const f=fx+dir*.08,g=new THREE.Group();g.position.set(f,0,z);g.rotation.y=dir>0?Math.PI/2:-Math.PI/2;YARD.add(g);
+  blk(-.6,.6,0,2.35,-.04,.03,mat(0x2c3238),{parent:g});blk(-.5,.5,.02,2.2,.03,.07,mat(0x4b5560,{shininess:40}),{parent:g});
+  blk(.32,.42,1.0,1.06,.07,.11,M_.metal,{parent:g});sph(0,2.55,.1,.07,mat(0xffe2a8,{emissive:0x9a7a3a}),{parent:g});
+  const sign=new THREE.Mesh(new THREE.PlaneGeometry(.8,.24),new THREE.MeshBasicMaterial({map:ctex(160,48,(c,w,h)=>{c.fillStyle='#16324f';c.fillRect(0,0,w,h);c.fillStyle='#fff';c.font='bold 22px Arial';c.textAlign='center';c.textBaseline='middle';c.fillText('ПОДЪЕЗД '+n,w/2,h/2+1);},false)}));
+  sign.position.set(0,2.85,.09);g.add(sign);
+  // the dark room behind it
+  const rx=fx-dir*1.7,room=new THREE.Mesh(new THREE.BoxGeometry(3,2.6,2),mat(0x0c0c0e,{side:THREE.BackSide}));room.position.set(rx,1.3,z);YARD.add(room);
+  const inner=new THREE.Group();inner.position.set(fx-dir*.22,0,z);inner.rotation.y=dir>0?-Math.PI/2:Math.PI/2;YARD.add(inner);
+  blk(-.5,.5,.02,2.2,0,.03,mat(0x1c2026),{parent:inner});blk(-.5,.5,0,.02,0,.04,basic(0x8a7b62),{parent:inner});   // the door from inside, light under it
+  sph(rx,2.5,z,.05,basic(0x5a1010),{parent:YARD});
+}
+sideDoor(-.28,34.5,1,2);sideDoor(21.93,27.8,-1,3);
+
 // our entrance: lit glass door, canopy, sign
 const ENTR={x:8.1,z:14.55};
 yb(7.45,8.75,0,2.45,14.6,14.68,M_.metal);yb(7.52,8.68,.05,2.38,14.62,14.7,mat(0xffe2a8,{emissive:0x9a7a3a}));yb(8.08,8.12,0,2.4,14.6,14.72,M_.metal);
@@ -1148,6 +1165,8 @@ const HIDES=[
   {id:'wardrobe',room:'mine',x:4.75,z:10.6,name:'в шкафу',cam:{x:3.92,y:1.12,z:10.6,yaw:-Math.PI/2}},
   {id:'bed',room:'parents',x:7.7,z:9.6,name:'под кроватью',cam:{x:9.4,y:.17,z:9.6,yaw:Math.PI/2}},
   {id:'cafe',lv:'yard',room:'cafe',x:5.0,z:12.4,name:'за стойкой в кофейне',cam:{x:2.6,y:.6,z:10.85,yaw:Math.PI}},
+  {id:'house2',lv:'yard',room:'house2',x:.45,z:34.5,name:'за дверью подъезда 2',verb:'Зайти в подъезд 2 и спрятаться',cam:{x:-2.3,y:1.15,z:34.5,yaw:-Math.PI/2}},
+  {id:'house3',lv:'yard',room:'house3',x:21.3,z:27.8,name:'за дверью подъезда 3',verb:'Зайти в подъезд 3 и спрятаться',cam:{x:23.4,y:1.15,z:27.8,yaw:Math.PI/2}},
 ];
 
 /* ---------- audio ---------- */
@@ -1256,7 +1275,7 @@ for(const d of DOORS){
       toggleDoor(d,'player');
     }});
 }
-for(const h of HIDES)INTER.push({lv:h.lv,x:h.x,z:h.z,r:1.0,label:()=>'Спрятаться '+h.name,act:()=>enterHide(h)});
+for(const h of HIDES)INTER.push({lv:h.lv,x:h.x,z:h.z,r:h.verb?1.3:1.0,label:()=>h.verb||'Спрятаться '+h.name,act:()=>enterHide(h)});
 INTER.push({x:1.2,z:7.05,r:1.15,label:()=>toiletCD>0?'Умный унитаз перезагружается…':'Включить музыку в умном унитазе',act:()=>{
   if(toiletCD>0){toast('Умный унитаз: «Подождите, идёт обновление»');return;}
   toiletCD=25;sfx.smart();toast('Умный унитаз: «Добрый вечер! Включаю музыку». Макар пойдёт на звук.');
