@@ -984,7 +984,11 @@ function parkCar(x,z,ry,color,plate,lite){
   return {g,col:c};
 }
 cp('Машина Макара',PARK,1);
-const CAR=Object.assign(parkCar(.5,8.3,0,0xe2512b,'М777АК'),{x:.5,z:8.3});CAR.g.rotation.order='YXZ'; // so it can pitch up the ramp
+const CAR=Object.assign(parkCar(.5,8.3,0,0xe2512b,'М777АК'),{x:.5,z:8.3});
+// so you can find it in the big garage: the body glows, a yellow frame on the floor and a sparkle over the roof
+CAR.glow=new THREE.Group();PARK.add(CAR.glow);CAR.glowM=basic(0xffd23f);
+for(const [x0,x1,z0,z1] of [[-.4,1.4,5.9,6.0],[-.4,1.4,10.6,10.7],[-.4,-.3,5.9,10.7],[1.3,1.4,5.9,10.7]])blk(x0,x1,.008,.02,z0,z1,CAR.glowM,{parent:CAR.glow});
+CAR.mark=new THREE.Sprite(new THREE.SpriteMaterial({map:texSpark,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:false,transparent:true}));CAR.mark.position.set(.5,2.3,8.3);CAR.mark.scale.set(1.4,1.4,1);CAR.glow.add(CAR.mark);CAR.g.rotation.order='YXZ'; // so it can pitch up the ramp
 cp(null,PARK);parkCar(-3.5,8.3,0,0xe6e6e6,'А123ВС');parkCar(4.5,-2.3,Math.PI,0x2f4f8f,'Е555КХ');parkCar(-1.5,-2.3,Math.PI,0x8a1f24,'О808ОО');
 // fill most of the other spaces (noses towards the lane)
 {let k=41;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};const cols=[0xe6e6e6,0x2f4f8f,0x8a1f24,0x1d1f24,0x9aa3ab,0x3f6f3a,0xc9a23a,0x5a6a8a,0xf2f2ee,0x6b2a5a];
@@ -1154,7 +1158,14 @@ function buildShoes(){const g=new THREE.Group();for(const s of [-1,1]){blk(s*.07
 // Makar's car key: a black fob with a metal blade and a red button
 function buildCarKey(){const g=new THREE.Group();blk(-.025,.025,0,.016,-.05,.03,mat(0x1a1a1e,{shininess:60}),{parent:g});blk(-.007,.007,.004,.012,.03,.1,M_.metal,{parent:g});
   sph(0,.017,-.02,.008,basic(0xe02424),{parent:g});cyl(0,.004,.012,-.065,.012,M_.metal,{parent:g}).rotation.x=Math.PI/2;g.scale.setScalar(1.7);scene.add(g);return g;}
-const ITEMS={keys:{mesh:buildKeys(),name:'Ключи'},shoes:{mesh:buildShoes(),name:'Кроссовки'},carkeys:{mesh:buildCarKey(),name:'Ключи от машины'}};
+// door keys of the other two houses: a long blade and a coloured tag (blue for 2, green for 3)
+function buildDoorKey(c){const g=new THREE.Group();const ring=new THREE.Mesh(new THREE.TorusGeometry(.028,.006,8,20),M_.metal);ring.rotation.x=Math.PI/2;g.add(ring);
+  blk(.02,.13,-.004,.004,-.008,.008,M_.metal,{parent:g});blk(.1,.12,-.004,.004,.008,.024,M_.metal,{parent:g});blk(-.09,-.03,-.006,.006,-.02,.02,mat(c),{parent:g});g.scale.setScalar(1.7);scene.add(g);return g;}
+const ITEMS={keys:{mesh:buildKeys(),name:'Ключи'},shoes:{mesh:buildShoes(),name:'Кроссовки'},carkeys:{mesh:buildCarKey(),name:'Ключи от машины'},
+  key2:{mesh:buildDoorKey(0x2f6fd6),name:'Ключ от подъезда 2',lv:'yard'},key3:{mesh:buildDoorKey(0x3fbf5a),name:'Ключ от подъезда 3',lv:'yard'}};
+// places in the yard where the two door keys can lie (y is the height above the ground)
+const YARD_KEY_SPOTS=[{x:13.2,y:.48,z:21.3},{x:4.8,y:.21,z:23.8},{x:6.2,y:.05,z:28.6},{x:16.4,y:.06,z:21.5},{x:1.05,y:.06,z:33.5},{x:12,y:.03,z:16.4},
+  {x:18.2,y:.06,z:35.2},{x:7.6,y:.03,z:36.5},{x:2.9,y:.36,z:32.4},{x:10.8,y:.03,z:41.5}];
 TPL.push({name:'Ключи (не настоящие)',meshes:[ITEMS.keys.mesh]},{name:'Кроссовки (не настоящие)',meshes:[ITEMS.shoes.mesh]});
 for(const k in ITEMS){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:texSpark,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true}));sp.scale.set(.35,.35,1);scene.add(sp);ITEMS[k].spark=sp;}
 
@@ -1165,8 +1176,8 @@ const HIDES=[
   {id:'wardrobe',room:'mine',x:4.75,z:10.6,name:'в шкафу',cam:{x:3.92,y:1.12,z:10.6,yaw:-Math.PI/2}},
   {id:'bed',room:'parents',x:7.7,z:9.6,name:'под кроватью',cam:{x:9.4,y:.17,z:9.6,yaw:Math.PI/2}},
   {id:'cafe',lv:'yard',room:'cafe',x:5.0,z:12.4,name:'за стойкой в кофейне',cam:{x:2.6,y:.6,z:10.85,yaw:Math.PI}},
-  {id:'house2',lv:'yard',room:'house2',x:.45,z:34.5,name:'за дверью подъезда 2',verb:'Зайти в подъезд 2 и спрятаться',cam:{x:-2.3,y:1.15,z:34.5,yaw:-Math.PI/2}},
-  {id:'house3',lv:'yard',room:'house3',x:21.3,z:27.8,name:'за дверью подъезда 3',verb:'Зайти в подъезд 3 и спрятаться',cam:{x:23.4,y:1.15,z:27.8,yaw:Math.PI/2}},
+  {id:'house2',need:'key2',lv:'yard',room:'house2',x:.45,z:34.5,name:'за дверью подъезда 2',verb:'Зайти в подъезд 2 и спрятаться',cam:{x:-2.3,y:1.15,z:34.5,yaw:-Math.PI/2}},
+  {id:'house3',need:'key3',lv:'yard',room:'house3',x:21.3,z:27.8,name:'за дверью подъезда 3',verb:'Зайти в подъезд 3 и спрятаться',cam:{x:23.4,y:1.15,z:27.8,yaw:Math.PI/2}},
 ];
 
 /* ---------- audio ---------- */
@@ -1203,6 +1214,7 @@ function placeItems(){
   keySpot=pick(KEY_SPOTS);shoeSpot=pick(SHOE_SPOTS.filter(s=>s.room!==keySpot.room));
   ITEMS.keys.spot=keySpot;ITEMS.shoes.spot=shoeSpot;
   ITEMS.carkeys.spot=pick(KEY_SPOTS.filter(s=>s!==keySpot&&s.room!==shoeSpot.room));
+  const ys=YARD_KEY_SPOTS.slice().sort(()=>Math.random()-.5);ITEMS.key2.spot={...ys[0],y:YG+ys[0].y};ITEMS.key3.spot={...ys[1],y:YG+ys[1].y};
   for(const k in ITEMS){const it=ITEMS[k];it.taken=false;it.mesh.visible=true;it.spark.visible=true;it.mesh.position.set(it.spot.x,it.spot.y+.01,it.spot.z);}
 }
 function resetActors(){
@@ -1213,7 +1225,7 @@ function resetActors(){
   $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;
 }
 function newGame(){
-  D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false};
+  D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false,key2:false,key3:false};
   for(const d of DOORS){d.open=false;d.ang=0;d.hold=0;if(d.id==='front')d.locked=true;}
   DOOR.kitchen.open=true;DOOR.living.open=true;
   Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);
@@ -1275,7 +1287,9 @@ for(const d of DOORS){
       toggleDoor(d,'player');
     }});
 }
-for(const h of HIDES)INTER.push({lv:h.lv,x:h.x,z:h.z,r:h.verb?1.3:1.0,label:()=>h.verb||'Спрятаться '+h.name,act:()=>enterHide(h)});
+for(const h of HIDES)INTER.push({lv:h.lv,x:h.x,z:h.z,r:h.verb?1.3:1.0,
+  label:()=>h.need&&!P.items[h.need]?`Подъезд ${h.need[3]} заперт: нужен ключ`:h.verb||'Спрятаться '+h.name,
+  act:()=>{if(h.need&&!P.items[h.need]){toast(`Заперто. Ключ от подъезда ${h.need[3]} валяется где-то во дворе.`);sfx.click();return;}enterHide(h);}});
 INTER.push({x:1.2,z:7.05,r:1.15,label:()=>toiletCD>0?'Умный унитаз перезагружается…':'Включить музыку в умном унитазе',act:()=>{
   if(toiletCD>0){toast('Умный унитаз: «Подождите, идёт обновление»');return;}
   toiletCD=25;sfx.smart();toast('Умный унитаз: «Добрый вечер! Включаю музыку». Макар пойдёт на звук.');
@@ -1300,7 +1314,7 @@ INTER.push({lv:'park',get x(){return CAR.x-1.05;},get z(){return CAR.z+.2;},r:1.
    spawned from the admin panel can be picked up (E) and dropped in front of you again (Q). A pick moves
    as one object together with the colliders under it. */
 const INV_SIZE=6,INV=[],PICKS=[];let invSel=0;
-const ICONS=[['Ключи от машины','🚙'],['Машина Макара','🚙'],['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
+const ICONS=[['подъезда','🗝️'],['Чипсы','🍟'],['Ключи от машины','🚙'],['Машина Макара','🚙'],['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
   ['Ночник','🏮'],['Кольцевая','💡'],['Люстр','💡'],['Лампа','💡'],['пылесос','🤖'],['Станция','🤖'],['нитаз','🚽'],['Ванна','🛁'],['ровать','🛏️'],['Диван','🛋️'],
   ['Телевизор','📺'],['Холодильник','🧊'],['Розетк','🔌'],['Выключатель','🔌'],['Дверь','🚪'],['дверь','🚪'],['Окно','🪟'],['Палатк','⛺'],['Самокат','🛴'],['Фонарь','🏮'],
   ['Дерев','🌳'],['Ель','🌲'],['Берёз','🌳'],['Машин','🚗'],['Макар','🧍'],['Стиральн','🫧'],['Раковин','🚰'],['Шкаф','🗄️'],['Зеркало','🪞'],['Ковёр','🟥'],['коврик','🟥'],['Пожарн','🚨'],
@@ -1321,13 +1335,22 @@ function propPick(name){
   addPick({name,obj:g,lv:'flat',cols,prop:true});
 }
 for(const n of ['Мяч','Чашка','Тарелка борща','Туалетная бумага','Кубики','Микрофон','Веб-камера','Кольцевая лампа','Ночник','Стул','Компьютерный стул'])propPick(n);
-for(const k in ITEMS)addPick({name:ITEMS[k].name,obj:ITEMS[k].mesh,lv:'flat',item:k});
+for(const k in ITEMS)addPick({name:ITEMS[k].name,obj:ITEMS[k].mesh,lv:ITEMS[k].lv||'flat',homeLv:ITEMS[k].lv||'flat',item:k});
+// chip packets lying all over the parking (you can pick them up like anything else)
+{let k=53;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};
+ const FLAV=[['с сыром','#f2c230','#c0392b'],['с беконом','#c0392b','#f2c230'],['с крабом','#e8743b','#2f6fd6'],['с солью','#2f6fd6','#f4f4f0'],['с луком','#3fbf5a','#f4f4f0']];
+ const mats=FLAV.map(([n,bg,fg])=>matT(ctex(64,88,(g,w,h)=>{g.fillStyle=bg;g.fillRect(0,0,w,h);g.fillStyle=fg;g.font='bold 15px Arial Black, Arial';g.textAlign='center';g.fillText('ЧИПСЫ',w/2,30);
+   g.fillStyle='#f2d27a';g.beginPath();g.ellipse(w/2,58,16,11,0,0,7);g.fill();g.fillStyle='rgba(255,255,255,.35)';g.fillRect(4,4,8,h-8);},false),{shininess:60,specular:0x888888}));
+ for(let i=0;i<22;i++){const f=(rnd()*FLAV.length)|0,onLane=rnd()<.7;
+   const x=onLane?PX0+2+rnd()*(PX1-PX0-5):XLANES[(rnd()*2)|0]+(rnd()-.5)*3,z=onLane?LANES[(rnd()*3)|0]+(rnd()-.5)*3.6:PZ0+2+rnd()*(PZ1-PZ0-4);
+   const g=new THREE.Group();g.position.set(x,YP,z);g.rotation.y=rnd()*6.28;scene.add(g);const bag=blk(-.09,.09,0,.04,-.13,.13,mats[f],{parent:g});bag.rotation.z=(rnd()-.5)*.3;
+   addPick({name:'Чипсы '+FLAV[f][0],obj:g,lv:'park',homeLv:'park',prop:true});}}
 function pickUp(pk){
   if(INV.length>=INV_SIZE){toast('Инвентарь полон: 6 из 6. Выбрось что-нибудь (Q).');return false;}
   pk.held=true;pk.obj.visible=false;const a=colsOf(pk.lv);for(const c of pk.cols){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}
   INV.push(pk);invSel=INV.length-1;sfx.pick();
   if(pk.item){const k=pk.item;ITEMS[k].taken=true;ITEMS[k].spark.visible=false;P.items[k]=true;
-    toast(k==='carkeys'?'Ключи от машины Макара! Его машина стоит на подземной парковке: в лифте выбери −1.':k==='keys'?'Ключи найдены! '+(P.items.shoes?'Теперь к входной двери.':'Осталось найти кроссовки.'):'Кроссовки надеты! '+(P.items.keys?'Теперь к входной двери.':'Осталось найти ключи.'));}
+    toast(k==='key2'||k==='key3'?`Ключ от подъезда ${k[3]}! Теперь можно спрятаться за его дверью.`:k==='carkeys'?'Ключи от машины Макара! Его машина стоит на подземной парковке: в лифте выбери −1.':k==='keys'?'Ключи найдены! '+(P.items.shoes?'Теперь к входной двери.':'Осталось найти кроссовки.'):'Кроссовки надеты! '+(P.items.keys?'Теперь к входной двери.':'Осталось найти ключи.'));}
   else toast('Взято: '+pk.name,1.4);
   renderInv(true);return true;
 }
@@ -1347,7 +1370,7 @@ function resetInv(){
   for(const pk of PICKS){
     if(!pk.held)for(const c of pk.cols){const a=colsOf(pk.lv),i=a.indexOf(c);if(i>=0)a.splice(i,1);}
     if(pk.prop){pk.obj.position.x-=pk.off.x;pk.obj.position.y-=pk.off.y;pk.obj.position.z-=pk.off.z;for(const c of pk.cols){c.x0-=pk.off.x;c.x1-=pk.off.x;c.z0-=pk.off.z;c.z1-=pk.off.z;}}
-    pk.off={x:0,y:0,z:0};pk.held=false;pk.obj.visible=true;pk.lv='flat';COL.push(...pk.cols);centerPick(pk);
+    pk.off={x:0,y:0,z:0};pk.held=false;pk.obj.visible=true;pk.lv=pk.homeLv||'flat';colsOf(pk.lv).push(...pk.cols);centerPick(pk);
   }
   INV.length=0;invSel=0;renderInv();
 }
@@ -1672,6 +1695,7 @@ function updateVac(dt,time){
 
 /* ---------- doors, lift, items, toilet ---------- */
 function updateWorld(dt,time){
+  if(P.lv==='park'&&CAR.glow.visible){const k=.5+.5*Math.sin(time*3.2);CAR_M[0xe2512b].emissive.setRGB(.32*k,.1*k,.03*k);CAR.glowM.color.setHSL(.13,1,.4+.25*k);const sc=1.2+.4*k;CAR.mark.scale.set(sc,sc,1);}
   updateVac(dt,time);
   const fl=Math.sin(time*18)>0;M_SMOKE.color.setHex(fireOn?(fl?0xff2020:0x330000):(time%2.5<.08?0xff3030:0x330000));M_STROBE.color.setHex(fireOn&&fl?0xff3020:0x4a0a08);
   for(const d of DOORS){const target=d.open?1.48:0;d.ang+=(target-d.ang)*Math.min(1,dt*7);d.pivot.rotation.y=d.base+d.swing*d.ang;if(d.hold>0)d.hold-=dt;}
@@ -1766,7 +1790,7 @@ const DRIVE_PATH=[{x:.5,z:3},{x:PX0+1,z:3},{x:PX0-8.7,z:3}];
 function stealCar(){
   if(state!=='play')return;
   if(!P.items.carkeys){toast('Машина заперта. Ключи от неё Макар спрятал где-то в квартире.');sfx.click();return;}
-  state='drive';driveT=0;driveSpd=0;CAR.leg=0;unlock();showHUD(false);hush();$('prompt').hidden=true;
+  state='drive';driveT=0;driveSpd=0;CAR.leg=0;CAR.glow.visible=false;CAR_M[0xe2512b].emissive.setHex(0);unlock();showHUD(false);hush();$('prompt').hidden=true;
   nz(.25,400,.5);tone(90,.6,'sawtooth',.08,140);toast('Врум! Ты завёл машину Макара!',3);
   engine=setInterval(()=>tone(48+driveSpd*14,.24,'sawtooth',.045,0,0),180);
   if(MS.lv==='park')setTimeout(()=>say('Эй! Это моя машина!!!',2.5),700);
@@ -1789,7 +1813,7 @@ function updateDrive(dt){
 }
 // Makar running after the car on foot (he can't catch it)
 function stepTowardOut(tx,tz,dt){const a=Math.atan2(tx-MS.x,tz-MS.z),ox=MS.x,oz=MS.z;MS.state='chase';MS.x+=Math.sin(a)*D.chase*.8*dt;MS.z+=Math.cos(a)*D.chase*.8*dt;collide(MS,MR);turnTo(a,dt);MS.spd=hyp(MS.x-ox,MS.z-oz)/dt;}
-function resetCar(){Object.assign(CAR,{x:.5,z:8.3,leg:0,fading:false});CAR.g.position.set(.5,0,8.3);CAR.g.rotation.set(0,0,0);BARRIER.ang=0;BARRIER.pivot.rotation.x=0;}
+function resetCar(){Object.assign(CAR,{x:.5,z:8.3,leg:0,fading:false});CAR.glow.visible=true;CAR.g.position.set(.5,0,8.3);CAR.g.rotation.set(0,0,0);BARRIER.ang=0;BARRIER.pivot.rotation.x=0;}
 
 /* ---------- ending: Makar caught you for good ---------- */
 const END_SCRIPT=[
