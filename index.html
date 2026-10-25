@@ -237,7 +237,7 @@ const ROOMS=[
   {id:'hall',   name:'Холл',                   x0:2.25,x1:4.97,z0:4.3, z1:8.45,wall:'hall',   floor:'parquet',n:'1',apt:1},
   {id:'vest',   name:'Холл',                   x0:3.6, x1:6.9, z0:8.45,z1:9.7, wall:'hall',   floor:'parquet',apt:1},
   {id:'sisters',name:'Комната систёр',         x0:0,   x1:3.6, z0:8.45,z1:14.2,wall:'sisters',floor:'parquet',n:'7',apt:1},
-  {id:'mine',   name:'Моя комната',            x0:3.6, x1:6.9, z0:9.7, z1:14.2,wall:'mine',   floor:'parquet',n:'8',apt:1},
+  {id:'mine',   name:'Моя комната',            x0:3.6, x1:6.9, z0:9.7, z1:14.2,wall:'mine',   floor:'brown',n:'8',apt:1},
   {id:'parents',name:'Комната родителей',      x0:6.9, x1:10.5,z0:8.45,z1:14.2,wall:'parents',floor:'parquet',n:'9',apt:1},
   {id:'corr',   name:'Коридор подъезда',       x0:4.97,x1:10.7,z0:6.3, z1:7.85,wall:'entr',   floor:'entr'},
   {id:'lift',   name:'Лифтовый холл',          x0:6.85,x1:9.45,z0:0,   z1:6.3, wall:'entr',   floor:'entr',   n:'Л'},
@@ -305,6 +305,10 @@ for(const k of ['bath','smart','wc3'])WT[k]=texWhiteTile;
 // White floor everywhere: pale tiles with faint seams.
 const texWhiteFloor=ctex(256,256,(g,w,h)=>tileGrid(g,0,0,w,h,128,['#f7f7f4','#f2f2ee','#f9f9f6'],'#d9d9d3'));
 const FT={};for(const k of ['parquet','tile','lino','entr','cab'])FT[k]=[texWhiteFloor,1.2];
+// Brown plank floor (Makar's room)
+{let k=3;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};
+ FT.brown=[ctex(256,256,(g,w,h)=>{for(let y=0;y<h;y+=32)for(let x=-((y/32)%2)*64;x<w;x+=128){g.fillStyle=['#7a4a2a','#86522e','#6f4325','#8d5a34'][(rnd()*4)|0];g.fillRect(x,y,128,32);
+   g.fillStyle='rgba(0,0,0,.08)';for(let i=0;i<4;i++)g.fillRect(x,y+4+rnd()*24,128,1);g.fillStyle='#4a2c18';g.fillRect(x,y,2,32);g.fillRect(x,y,128,2);}}),1];}
 // The Moscow skyline. Night is drawn at start-up with the shared seed; day is drawn later with its own.
 function drawMoscow(g,w,h,day,rnd){
   const sky=g.createLinearGradient(0,0,0,h);
@@ -349,7 +353,7 @@ const M_={
   white:mat(0xf1efe9),gloss:mat(0xfbfbfb,{shininess:90,specular:0x666666}),wood:mat(0xa0703f),woodL:mat(0xc9a77a),woodD:mat(0x5e3b22),
   dark:mat(0x1d1f24),metal:mat(0xb8bec4,{shininess:60,specular:0x555555}),gold:mat(0xd8b04a,{shininess:70,specular:0x886622}),
   red:mat(0xc8352b),blue:mat(0x3a6fc4),green:mat(0x4f9a5a),yellow:mat(0xf0c23a),pink:mat(0xf19ab0),fabric:mat(0x6c7fa3),
-  sofa:mat(0x8a4b3a),sofaD:mat(0x6d3a2c),cream:mat(0xefe6cf),glass:new THREE.MeshPhongMaterial({color:0xbfe6ff,transparent:true,opacity:.35,shininess:90}),
+  sofa:mat(0x2f5fae),sofaD:mat(0x24498a),cream:mat(0xefe6cf),glass:new THREE.MeshPhongMaterial({color:0xbfe6ff,transparent:true,opacity:.35,shininess:90}),
   curtain:new THREE.MeshPhongMaterial({color:0x9b3b46,side:THREE.DoubleSide,transparent:true,opacity:.92}),
   shower:new THREE.MeshPhongMaterial({color:0xd9f0ff,side:THREE.DoubleSide,transparent:true,opacity:.75}),
   tent:new THREE.MeshPhongMaterial({color:0xf07ca0,side:THREE.DoubleSide}),tent2:new THREE.MeshPhongMaterial({color:0xffd23f,side:THREE.DoubleSide}),
@@ -443,7 +447,7 @@ cp('Лампа-трубка');lamp(8.1,3.1,0xe6f2ff,.95,7,'tube');        // lif
 cp(null);
 /* ---------- windows & radiators ---------- */
 const WINDOWS=[];
-function windowAt(side,x,z,w){
+function windowAt(side,x,z,w,noRad){
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=NORM_ROT[side];scene.add(g);
   const t=texMoscow.clone();t.needsUpdate=true;t.repeat.set(.42,1);t.offset.x=sr()*.58;
   const glass=new THREE.Mesh(new THREE.PlaneGeometry(w,1.35),new THREE.MeshBasicMaterial({map:t}));glass.position.set(0,1.6,.004);g.add(glass);WINDOWS.push({side,x,z,w,glass});
@@ -452,11 +456,11 @@ function windowAt(side,x,z,w){
   blk(-hw-.05,-hw,.88,2.34,0,.07,fr,{parent:g});blk(hw,hw+.05,.88,2.34,0,.07,fr,{parent:g});
   blk(-.025,.025,.92,2.3,0,.06,fr,{parent:g});blk(-hw,hw,1.98,2.02,0,.06,fr,{parent:g});
   blk(-hw-.12,hw+.12,.84,.88,0,.24,M_.white,{parent:g});
-  const rw=Math.min(w,1);for(let i=0;i<9;i++){const rx=-rw/2+i*rw/8;blk(rx-.035,rx+.035,.18,.74,.05,.13,mat(0xe8e4da),{parent:g});}
-  blk(-rw/2,rw/2,.68,.72,.08,.1,mat(0xe8e4da),{parent:g});
+  if(!noRad){const rw=Math.min(w,1);for(let i=0;i<9;i++){const rx=-rw/2+i*rw/8;blk(rx-.035,rx+.035,.18,.74,.05,.13,mat(0xe8e4da),{parent:g});}
+  blk(-rw/2,rw/2,.68,.72,.08,.1,mat(0xe8e4da),{parent:g});}
   return g;
 }
-cp('Окно с батареей');windowAt('+z',1.7,wallFace('+z',0),1.2);          // living (red mark on the plan)
+cp('Окно');windowAt('+z',1.7,wallFace('+z',0),1.2,true);          // living (red mark on the plan)
 cp(null);windowAt('+z',5.0,wallFace('+z',0),1.1);          // kitchen
 windowAt('-z',1.8,wallFace('-z',14.2),1.2);       // sisters
 windowAt('-z',5.35,wallFace('-z',14.2),1.1);      // mine (red mark on the plan)
@@ -591,7 +595,7 @@ cp('Рокот-3'); // «Рокот-3»: the voice alarm unit with its built-in 
 // Living room: sofa against the partition (the "Диван" on the plan), TV, coffee table, curtains
 cp('Диван');blk(2.7,3.52,0,.42,.8,3.0,M_.sofa,{col:true});blk(3.22,3.52,.42,.95,.8,3.0,M_.sofaD);blk(2.7,3.52,.42,.62,.65,.8,M_.sofaD);blk(2.7,3.52,.42,.62,3.0,3.15,M_.sofaD);
 addCol(2.7,3.52,.65,3.15);
-for(const z of [1.3,2.4])blk(2.76,3.18,.42,.55,z-.48,z+.48,mat(0x9c5a46));
+for(const z of [1.3,2.4])blk(2.76,3.18,.42,.55,z-.48,z+.48,mat(0x3b6cc0));
 blk(2.95,3.15,.55,.9,1.2,1.6,M_.yellow);
 cp('Журнальный столик');blk(1.6,2.3,.4,.44,1.4,2.2,M_.woodL,{col:true});for(const [x,z] of [[1.65,1.45],[2.25,1.45],[1.65,2.15],[2.25,2.15]])blk(x-.03,x+.03,0,.4,z-.03,z+.03,M_.woodD);
 cp('Тумба с телевизором');blk(.07,.5,0,.5,1.2,2.6,M_.woodD,{col:true});blk(.1,.16,.55,1.2,1.3,2.5,M_.dark);onWall('+x',.165,.88,1.9,1.15,.6,M_.tv);
@@ -600,15 +604,16 @@ cp('Тройная розетка с вилкой');socket('+x',0,3.05,.3,3);
 {const x=wallFace('+x',0),c=mat(0xf0f0ec);
  blk(x,x+.035,.27,.33,3.145,3.195,M_.white);      // plug in the socket nearest the dock
  blk(x+.02,x+.032,.012,.27,3.164,3.176,c);       // cable down the wall
- blk(x+.014,x+.03,0,.012,3.164,3.63,c);}         // and along it into the dock
-cp('Станция самоочистки');blk(.07,.52,0,.015,3.59,4.05,mat(0x2b2e33));blk(.07,.4,.015,.46,3.62,4.02,M_.white,{col:true});
-blk(.4,.41,.2,.4,3.7,3.94,M_.glass);blk(.4,.412,.42,.435,3.72,3.92,M_.led);
-const VAC={x:.62,z:3.82,a:-Math.PI/2,mode:'dock',t:0,emptyT:0,bump:0,
-  dock:{x:.62,z:3.82,a:-Math.PI/2},g:new THREE.Group(),brush:null,led:basic(0x55e6ff)};
+ blk(x+.014,x+.03,0,.012,3.164,4.0,c);          // along it to the corner
+ blk(x+.014,.15,0,.012,3.99,4.005,c);}           // and into the dock
+cp('Станция самоочистки');blk(.12,.58,0,.015,3.66,4.22,mat(0xe9e9e6));blk(.15,.55,.015,.46,3.9,4.22,M_.white,{col:true});
+blk(.23,.47,.2,.4,3.89,3.9,M_.glass);blk(.25,.45,.42,.435,3.888,3.9,M_.led);
+const VAC={x:.35,z:3.69,a:0,mode:'dock',t:0,emptyT:0,bump:0,
+  dock:{x:.35,z:3.69,a:0},g:new THREE.Group(),brush:null,led:basic(0x55e6ff)};
 cp('Робот-пылесос');{const g=VAC.g;scene.add(g);
- cyl(0,0,.08,0,.17,mat(0x26292e),{parent:g,seg:24});cyl(0,.08,.085,0,.15,mat(0x3a3f47,{shininess:60}),{parent:g,seg:24});
- cyl(0,.085,.11,-.05,.04,mat(0x1a1c20),{parent:g});sph(0,.087,.1,.012,VAC.led,{parent:g});
- blk(-.12,.12,.01,.07,.14,.17,mat(0x555a62),{parent:g});
+ cyl(0,0,.08,0,.17,mat(0xf3f3f0,{shininess:40}),{parent:g,seg:24});cyl(0,.08,.085,0,.15,mat(0xe4e4e0,{shininess:60}),{parent:g,seg:24});
+ cyl(0,.085,.11,-.05,.04,M_.gold,{parent:g});   // gold lidarsph(0,.087,.1,.012,VAC.led,{parent:g});
+ blk(-.12,.12,.01,.07,.14,.17,mat(0xcfcfca),{parent:g});
  VAC.brush=new THREE.Group();VAC.brush.position.set(-.11,.012,.11);g.add(VAC.brush);
  for(const r of [0,Math.PI/3,2*Math.PI/3])blk(-.07,.07,0,.004,-.004,.004,mat(0x111111),{parent:VAC.brush}).rotation.y=r;}
 cp('Шторы');blk(.6,1.1,.2,2.45,.12,.3,M_.curtain);const curtainHide=blk(2.3,2.95,.2,2.45,.12,.3,M_.curtain);blk(.5,3.0,2.45,2.5,.1,.16,M_.metal);
@@ -672,7 +677,7 @@ cp('Красный ящик');blk(9.4,9.65,0,.55,7.53,7.78,M_.red,{col:true});
 cp('Скамейка в холле');blk(7.0,7.6,0,.45,1.0,2.4,M_.woodD,{col:true}); // bench in lift hall
 cp('Табличка');onWall('+x',wallFace('+x',6.85),1.6,3.6,.5,.5,matT(ctex(64,64,(g,w,h)=>{g.fillStyle='#1f5fbf';g.fillRect(0,0,w,h);g.fillStyle='#fff';g.beginPath();g.arc(30,14,5,0,7);g.fill();g.lineWidth=5;g.strokeStyle='#fff';g.beginPath();g.moveTo(28,20);g.lineTo(28,36);g.lineTo(42,36);g.lineTo(46,50);g.stroke();g.beginPath();g.arc(28,42,12,.6,3.6);g.stroke();},false)));
 
-// Sisters' room: bunk bed, tent, desk, dollhouse
+// Sisters' room: bunk bed, tent, desk
 cp('Двухъярусная кровать');blk(.07,1.02,0,.35,9.2,11.2,M_.white,{col:true,tall:true});blk(.1,1.0,.35,.5,9.25,11.15,M_.pink);blk(.07,1.02,1.15,1.3,9.2,11.2,M_.white);blk(.1,1.0,1.3,1.45,9.25,11.15,mat(0xb48fe0));
 for(const z of [9.2,11.15])for(const x of [.07,.97])blk(x,x+.05,0,1.8,z,z+.05,M_.white);
 for(let i=0;i<5;i++)blk(.96,1.02,.3+i*.28,.34+i*.28,10.6,10.95,M_.white);
@@ -684,7 +689,6 @@ cp('Палатка');const tentG=new THREE.Group();tentG.position.set(3.0,0,13.3
  blk(-.47,.47,1.0,1.04,-.56,.56,M_.yellow,{parent:tentG});}
 addCol(2.52,3.48,12.8,13.92);
 cp('Детский стол');blk(1.2,2.4,.72,.76,13.6,14.13,M_.white,{col:true});for(const x of [1.25,2.35])blk(x-.03,x+.03,0,.72,13.65,14.1,M_.white);
-cp('Кукольный домик');blk(2.9,3.53,0,.9,9.0,9.4,M_.pink,{col:true});blk(2.9,3.53,.9,1.25,9.05,9.35,mat(0xf6e6a8));
 cp('Кубики');for(let i=0;i<6;i++)blk(1.6+i*.18,1.72+i*.18,0,.12,12.0+(i%3)*.2,12.12+(i%3)*.2,[M_.red,M_.yellow,M_.blue,M_.green,M_.pink,M_.yellow][i]);
 cp('Круглый коврик');{const rug=new THREE.Mesh(new THREE.CircleGeometry(.9,32),mat(0xe9a8c4));rug.rotation.x=-Math.PI/2;rug.position.set(2.0,.006,11.8);scene.add(rug);}
 
@@ -693,7 +697,7 @@ cp('Шкаф');const wardrobe={x0:3.67,x1:4.27,z0:9.95,z1:11.25};
 blk(3.67,4.27,0,2.1,9.95,10.0,M_.wood);blk(3.67,4.27,0,2.1,11.2,11.25,M_.wood);blk(3.67,4.27,2.06,2.1,9.95,11.25,M_.wood);blk(3.67,3.72,0,2.1,9.95,11.25,M_.woodD);
 blk(4.22,4.27,0,2.06,10.0,10.585,M_.wood);blk(4.22,4.27,0,2.06,10.615,11.2,M_.wood);for(const z of [10.5,10.7])blk(4.27,4.3,1.0,1.2,z-.01,z+.01,M_.metal);
 addCol(3.67,4.27,9.95,11.25,{tall:true});
-cp('Кровать');blk(3.67,4.45,0,.42,11.3,13.3,M_.wood,{col:true});blk(3.7,4.42,.42,.55,11.35,13.25,mat(0x3f7fd0));blk(3.77,4.37,.55,.65,12.95,13.22,M_.white);blk(3.67,4.45,.42,.95,13.25,13.3,M_.wood);
+cp('Кровать');blk(3.67,4.45,0,.42,11.3,13.3,M_.wood,{col:true});blk(3.7,4.42,.42,.55,11.35,13.25,mat(0x3f7fd0));blk(3.77,4.37,.55,.65,11.38,11.65,M_.white);blk(3.67,4.45,.42,.95,11.3,11.35,M_.wood);
 cp('Стол с компьютером');blk(4.6,5.9,.72,.76,13.6,14.13,M_.woodL,{col:true});for(const x of [4.65,5.85])blk(x-.03,x+.03,0,.72,13.65,14.1,M_.woodD);
 blk(4.95,5.45,.76,.79,13.85,14.0,M_.dark);blk(5.17,5.23,.79,.95,13.95,14.0,M_.dark);blk(4.9,5.5,.95,1.3,13.94,13.98,M_.dark);onWall('-z',5.2,1.125,13.935,.56,.32,M_.screen);
 blk(4.9,5.4,.76,.78,13.65,13.82,mat(0x222222));cp('Компьютерный стул');chair(5.2,13.2,0);
@@ -708,8 +712,8 @@ cp('Синий ковёр');blk(4.4,5.9,0,.006,11.0,12.8,mat(0x3c5a8c));
 
 // Parents' room: double bed against the north wall (hide underneath), nightstands, wall carpet, wardrobe on the west wall
 cp('Двуспальная кровать');blk(8.4,10.43,.28,.4,8.57,10.37,M_.woodD);for(const [x,z] of [[8.45,8.62],[10.38,8.62],[8.45,10.32],[10.38,10.32]])blk(x-.04,x+.04,0,.28,z-.04,z+.04,M_.woodD);
-blk(8.42,10.38,.4,.58,8.59,10.35,M_.cream);blk(8.36,10.0,.58,.64,8.55,10.39,mat(0x8a5a8e));blk(8.36,8.4,.12,.64,8.55,10.39,mat(0x8a5a8e));
-blk(9.95,10.32,.58,.72,8.72,9.42,M_.white);blk(9.95,10.32,.58,.72,9.52,10.22,M_.white);blk(10.38,10.45,0,1.15,8.55,10.39,M_.woodD);
+blk(8.42,10.38,.4,.58,8.59,10.35,M_.cream);blk(8.81,10.45,.58,.64,8.55,10.39,mat(0x8a5a8e));blk(10.41,10.45,.12,.64,8.55,10.39,mat(0x8a5a8e));
+blk(8.49,8.86,.58,.72,8.72,9.42,M_.white);blk(8.49,8.86,.58,.72,9.52,10.22,M_.white);blk(8.36,8.43,0,1.15,8.55,10.39,M_.woodD);
 addCol(8.36,10.45,8.55,10.39);
 cp('Тумбочка');blk(9.95,10.43,0,.52,10.47,10.95,M_.wood,{col:true});cp(null);blk(9.95,10.43,0,.52,12.27,12.75,M_.wood,{col:true});
 cp('Ночник');cyl(10.19,.52,.56,12.51,.08,M_.gold);cyl(10.19,.56,.8,12.51,.015,M_.gold);cyl(10.19,.78,.95,12.51,.13,mat(0xf3e2b6,{emissive:0x553a10}),{r2:.07});
