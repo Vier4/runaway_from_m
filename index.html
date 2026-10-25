@@ -162,7 +162,7 @@ h1 em{font-style:normal;color:var(--makar)}
     <div>
       <div class="eyebrow" id="clockLine">Москва · 18-й этаж · 23:40</div>
       <h1>Побег от <em>Макара</em></h1>
-      <p class="story">Макар — блогер. Он запер входную дверь, спрятал ключи и сел вести стрим в твоей комнате. Иногда он отходит покакать или поесть супа на кухне. Найди ключи и кроссовки, выберись в подъезд, спустись на лифте во двор и убеги через калитку. Если Макар тебя заметит, беги, хлопай дверями и прячься: за шторой, в ванне, в палатке, в шкафу или под кроватью.</p>
+      <p class="story">Макар — блогер. Он запер входную дверь, спрятал ключи и сел вести стрим в твоей комнате. Иногда он отходит покакать или поесть супа на кухне. Найди ключи и кроссовки, выберись в подъезд, спустись на лифте во двор и убеги через калитку. Если Макар тебя заметит, беги, хлопай дверями и прячься: за шторой, в ванне, в палатке, в шкафу, под кроватью или в кофейне во дворе.</p>
       <div class="diff" id="diff">
         <button type="button" data-d="practice" aria-pressed="false">Практика</button>
         <button type="button" data-d="easy" aria-pressed="false">Лёгкий</button>
@@ -751,7 +751,9 @@ function facade(base,trim,lit){
 }
 const FAC={ours:facade('#d9d4c8','#8c7a6a',.35),west:facade('#b8614a','#efe7dc',.4),east:facade('#c9ccd0','#3d4650',.3),far:facade('#9aa0a8','#4a5058',.45)};
 function house(x0,x1,z0,z1,floors,m,col=true){yboxUV(x0,x1,-.5,floors*3,z0,z1,m,14,12);if(col)YCOL.push({x0,x1,z0,z1,tall:true});}
-house(-.35,22,-.35,14.55,22,FAC.ours);          // our building, 22 floors (the flat is inside it, 51 m up)
+// our building, 22 floors (the flat is inside it, 51 m up); its ground floor leaves room for the café in the west corner
+yboxUV(-.35,22,3.6,66,-.35,14.55,FAC.ours,14,12);yboxUV(-.35,22,-.5,3.6,-.35,10.4,FAC.ours,14,12);yboxUV(5.6,22,-.5,3.6,10.4,14.55,FAC.ours,14,12);
+YCOL.push({x0:-.35,x1:22,z0:-.35,z1:10.4,tall:true},{x0:5.6,x1:22,z0:10.4,z1:14.55,tall:true});
 house(-14,-.35,14.55,44,20,FAC.west);           // house 2
 house(22,36,14.55,44,20,FAC.east);              // house 3
 house(-34,4,-64,-44,18,FAC.far,false);house(12,52,-66,-46,24,FAC.west,false); // across the street, north
@@ -766,7 +768,41 @@ yflat(-450,450,47,54,.012,mat(0x15171a));for(let x=-60;x<80;x+=6)yflat(x,x+3,50.
 // glass ground floors along the yard
 const texLobby=ctex(128,128,(g,w,h)=>{g.fillStyle='#8a9098';g.fillRect(0,0,w,h);g.fillStyle='#1c2733';g.fillRect(6,10,w-12,h-16);g.fillStyle='rgba(255,220,160,.18)';g.fillRect(6,h-50,w-12,44);},true);
 const M_lobby=new THREE.MeshPhongMaterial({map:texLobby,shininess:70,specular:0x444444});
-yboxUV(-.35,22,0,3.6,14.55,14.62,M_lobby,2,3.6);yboxUV(-.42,-.35,0,3.6,14.55,44,M_lobby,2,3.6);yboxUV(22,22.07,0,3.6,14.55,44,M_lobby,2,3.6);
+// each strip stands just in front of its wall: one sharing the wall's plane flickered against it
+yboxUV(5.6,22,0,3.6,14.55,14.62,M_lobby,2,3.6);yboxUV(-.35,-.28,0,3.6,14.62,44,M_lobby,2,3.6);yboxUV(21.93,22,0,3.6,14.62,44,M_lobby,2,3.6);
+
+/* ---------- the café («Кофейня») ----------
+   In the west corner of our building's ground floor, next to the entrance: a glass front with a door
+   opening, a counter you can hide behind, a coffee machine, a pastry case, a menu board and two tables. */
+{const glassFront=(x0,x1)=>{yb(x0,x1,0,3,14.56,14.6,M_.glass);YCOL.push({x0,x1,z0:14.5,z1:14.66});};
+ glassFront(-.28,2.2);glassFront(3.2,5.6);yb(2.2,3.2,2.45,3,14.56,14.6,M_.glass);
+ for(const x of [-.28,1.0,2.2,3.2,4.4,5.56])yb(x-.04,x+.04,0,3,14.54,14.64,M_.dark);
+ yb(-.35,5.6,3,3.6,14.54,14.65,mat(0x3a2418));
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(2.4,.46),new THREE.MeshBasicMaterial({map:ctex(256,50,(g,w,h)=>{g.fillStyle='#3a2418';g.fillRect(0,0,w,h);g.fillStyle='#f3e2c0';g.font='bold 30px Georgia, serif';g.textAlign='center';g.textBaseline='middle';g.fillText('☕ КОФЕЙНЯ',w/2,h/2+2);},false)}));
+ sign.position.set(2.7,3.3,14.66);YARD.add(sign);
+ const aw=mat(0x8a2b1f);yb(1.7,3.7,2.62,2.68,14.62,15.35,aw);
+ // inside: floor, walls, ceiling
+ yflat(-.28,5.56,10.45,14.55,.02,matT(FT.brown[0]),1);
+ const wall=(w,h,x,y,z,ry,m)=>{const me=new THREE.Mesh(new THREE.PlaneGeometry(w,h),m);me.position.set(x,y,z);me.rotation.y=ry;YARD.add(me);return me;};
+ const warm=mat(0xd9c3a5),coffee=mat(0x6b4a33);
+ wall(5.9,3.45,2.62,1.72,10.42,0,coffee);wall(4.15,3.45,-.27,1.72,12.48,Math.PI/2,warm);wall(4.15,3.45,5.58,1.72,12.48,-Math.PI/2,warm);
+ {const ce=new THREE.Mesh(new THREE.PlaneGeometry(5.9,4.15),mat(0xeae1d2));ce.rotation.x=Math.PI/2;ce.position.set(2.62,3.45,12.48);YARD.add(ce);}
+ YCOL.push({x0:-.35,x1:-.25,z0:10.4,z1:14.55,tall:true},{x0:5.5,x1:5.6,z0:10.4,z1:14.55,tall:true});
+ // the counter (it hides you from view) with a coffee machine, cups, a pastry case and a till
+ yb(.6,4.6,0,1,11.2,11.75,mat(0x5a3a26),'tall');yb(.55,4.65,1,1.06,11.15,11.8,mat(0xe9e2d6));
+ yb(1,1.5,1.06,1.5,11.3,11.65,M_.metal);yb(1.05,1.45,1.5,1.55,11.3,11.65,M_.dark);for(const x of [1.15,1.35])yc(x,1.14,1.2,11.55,.012,M_.dark);
+ for(let i=0;i<3;i++)yc(1.8+i*.14,1.06,1.16,11.5,.04,M_.white);
+ yb(2.6,3.6,1.06,1.4,11.25,11.7,M_.glass);for(let i=0;i<4;i++)sph(2.75+i*.24,1.13,11.47,.06,mat(0xd99a4a),{parent:YARD});
+ yb(4,4.35,1.06,1.25,11.35,11.6,M_.dark);
+ wall(2.4,1.0,2.6,2.3,10.43,0,new THREE.MeshBasicMaterial({map:ctex(256,108,(g,w,h)=>{g.fillStyle='#1f2622';g.fillRect(0,0,w,h);g.strokeStyle='#8a6a44';g.lineWidth=6;g.strokeRect(3,3,w-6,h-6);
+   g.fillStyle='#f4f0e6';g.font='bold 17px Arial';g.textAlign='left';[['Капучино','250'],['Латте','280'],['Какао','200'],['Круассан','150']].forEach(([n,c],i)=>{g.fillText(n,16,26+i*22);g.fillText(c+' ₽',w-80,26+i*22);});},false)}));
+ // two round tables with chairs, pendant lamps, a plant
+ function ychair(x,z,ry){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;YARD.add(g);blk(-.2,.2,.44,.48,-.2,.2,M_.wood,{parent:g});blk(-.2,.2,.48,.95,-.2,-.17,M_.wood,{parent:g});
+   for(const [a,b] of [[-.17,-.17],[.17,-.17],[-.17,.17],[.17,.17]])blk(a-.02,a+.02,0,.44,b-.02,b+.02,M_.woodD,{parent:g});YCOL.push({x0:x-.22,x1:x+.22,z0:z-.22,z1:z+.22});}
+ for(const x of [1.0,4.3]){yc(x,0,.72,13.4,.05,M_.metal);yc(x,.72,.75,13.4,.38,mat(0xf1ece2),{seg:20});YCOL.push({x0:x-.38,x1:x+.38,z0:13.02,z1:13.78});ychair(x-.62,13.4,Math.PI/2);ychair(x+.62,13.4,-Math.PI/2);}
+ for(const x of [1.0,2.6,4.3]){yc(x,2.9,3.45,12.6,.008,M_.dark);yc(x,2.75,2.9,12.6,.16,mat(0xffd9a0,{emissive:0x8a5a20}),{r2:.05});}
+ {const L=new THREE.PointLight(0xffc98a,1.2,8,2);L.position.set(2.6,2.6,12.6);YARD.add(L);}
+ yc(5.15,0,.4,14.15,.18,mat(0xb5603a));sph(5.15,.8,14.15,.35,mat(0x3a7a37,{flatShading:true}),{parent:YARD});}
 
 // our entrance: lit glass door, canopy, sign
 const ENTR={x:8.1,z:14.55};
@@ -1095,6 +1131,7 @@ const HIDES=[
   {id:'tent',room:'sisters',x:3.0,z:12.35,name:'в палатке',cam:{x:3.0,y:.42,z:13.45,yaw:0}},
   {id:'wardrobe',room:'mine',x:4.75,z:10.6,name:'в шкафу',cam:{x:3.92,y:1.12,z:10.6,yaw:-Math.PI/2}},
   {id:'bed',room:'parents',x:7.7,z:9.6,name:'под кроватью',cam:{x:9.4,y:.17,z:9.6,yaw:Math.PI/2}},
+  {id:'cafe',lv:'yard',room:'cafe',x:5.0,z:12.4,name:'за стойкой в кофейне',cam:{x:2.6,y:.6,z:10.85,yaw:Math.PI}},
 ];
 
 /* ---------- audio ---------- */
@@ -1137,7 +1174,7 @@ function resetActors(){
   if(P.lv!=='flat'){Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);}
   P.lv='flat';MS.lv='flat';GATE.open=false;setLevel('flat');
   Object.assign(P,{x:SPAWN.x,z:SPAWN.z,yaw:SPAWN.yaw,pitch:0,crouch:false,hidden:null});
-  const s=SEATS.desk;Object.assign(MS,{x:s.x,z:s.z,face:s.face,state:'sit',task:'stream',seatKey:'desk',seat:s,sitK:1,wait:18+Math.random()*10,path:[],aware:0,lastSeen:null,knowsHide:false,doorT:0,delay:2,sayT:3,lostT:0,hideTarget:null});
+  const s=SEATS.desk;Object.assign(MS,{x:s.x,z:s.z,face:s.face,state:'sit',task:'stream',seatKey:'desk',seat:s,sitK:1,wait:18+Math.random()*10,path:[],aware:0,lastSeen:null,knowsHide:false,gaveUp:false,doorT:0,delay:2,sayT:3,lostT:0,hideTarget:null});
   $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;
 }
 function newGame(){
@@ -1203,7 +1240,7 @@ for(const d of DOORS){
       toggleDoor(d,'player');
     }});
 }
-for(const h of HIDES)INTER.push({x:h.x,z:h.z,r:1.0,label:()=>'Спрятаться '+h.name,act:()=>enterHide(h)});
+for(const h of HIDES)INTER.push({lv:h.lv,x:h.x,z:h.z,r:1.0,label:()=>'Спрятаться '+h.name,act:()=>enterHide(h)});
 INTER.push({x:1.2,z:7.05,r:1.15,label:()=>toiletCD>0?'Умный унитаз перезагружается…':'Включить музыку в умном унитазе',act:()=>{
   if(toiletCD>0){toast('Умный унитаз: «Подождите, идёт обновление»');return;}
   toiletCD=25;sfx.smart();toast('Умный унитаз: «Добрый вечер! Включаю музыку». Макар пойдёт на звук.');
@@ -1311,9 +1348,9 @@ function interact(){
 }
 function enterHide(h){
   P.hidden=h;P.crouch=false;
-  if(MS.state==='chase'&&sightClear(MS.x,MS.z,P.x,P.z)&&hyp(MS.x-P.x,MS.z-P.z)<8){MS.knowsHide=true;}
+  if(MS.lv===P.lv&&MS.state==='chase'&&sightClear(MS.x,MS.z,P.x,P.z)&&hyp(MS.x-P.x,MS.z-P.z)<8){MS.knowsHide=true;}
   P.yaw=h.cam.yaw;P.pitch=0;$('hideShade').hidden=false;toast('Ты спрятался '+h.name+'. Сиди тихо.');
-  if(MS.knowsHide){MS.state='grab';MS.hideTarget=h;MS.path=buildPath(MS.x,MS.z,h.x,h.z);}
+  if(MS.knowsHide&&P.lv==='flat'){MS.state='grab';MS.hideTarget=h;MS.path=buildPath(MS.x,MS.z,h.x,h.z);}
 }
 function exitHide(){const h=P.hidden;P.hidden=null;P.x=h.x;P.z=h.z;$('hideShade').hidden=true;}
 
@@ -1329,7 +1366,7 @@ function heard(x,z,r,kind){
 
 /* ---------- player ---------- */
 function updatePlayer(dt){
-  if(P.hidden){const c=P.hidden.cam;camera.position.set(c.x,c.y,c.z);camera.rotation.set(P.pitch,P.yaw,0);return;}
+  if(P.hidden){const c=P.hidden.cam;camera.position.set(c.x,baseY(P.lv)+c.y,c.z);camera.rotation.set(P.pitch,P.yaw,0);return;}
   let mx=0,mz=0;
   if(keys.KeyW||keys.ArrowUp)mz+=1;if(keys.KeyS||keys.ArrowDown)mz-=1;if(keys.KeyA||keys.ArrowLeft)mx-=1;if(keys.KeyD||keys.ArrowRight)mx+=1;
   mx+=touchMove.x;mz+=touchMove.y;const len=hyp(mx,mz);if(len>1){mx/=len;mz/=len;}
@@ -1433,25 +1470,35 @@ function startLook(t){MS.state='look';MS.wait=t;MS.lookBase=MS.face;MS.lookT=0;
 // If you ride back up he follows you into the flat 5 s later.
 const OUTSIDE={yard:{delay:5,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:7,x:()=>8.6,z:()=>4.95,face:Math.PI/2}};
 function updateMakarOutside(dt){
-  if(MS.lv!==P.lv){MS.spd=0;yardT-=dt;
+  if(MS.lv!==P.lv){MS.spd=0;if(MS.gaveUp)return;yardT-=dt;
     if(yardT<=0){const o=OUTSIDE[P.lv];Object.assign(MS,{lv:P.lv,x:o.x(),z:o.z(),face:o.face,path:[],seat:null,sitK:0,lookBase:0,lookT:0,aware:1,state:D.blind?'look':'chase'});
       if(D.blind)say('Эй! Куда он делся?');else{say(pick(LINES.yard));sfx.sting();}}
     return;}
   const dP=hyp(P.x-MS.x,P.z-MS.z);
   if(D.blind||ADMIN.freeze){MS.state='look';MS.spd=0;MS.lookT+=dt;MS.face=MS.lookBase+Math.sin(MS.lookT*1.4)*1.1;}
-  else{
-    MS.state='chase';const a=Math.atan2(P.x-MS.x,P.z-MS.z),step=D.chase*dt;MS.spd=0;
-    for(const off of [0,MS.side*.7,MS.side*1.4,-MS.side*.7,-MS.side*1.4]){
-      const ox=MS.x,oz=MS.z;MS.x+=Math.sin(a+off)*step;MS.z+=Math.cos(a+off)*step;collide(MS,MR);
-      const m=hyp(MS.x-ox,MS.z-oz);
-      if(m>step*.6){turnTo(a+off,dt);MS.spd=m/dt;if(off)MS.side=Math.sign(off);break;}
-      MS.x=ox;MS.z=oz;
-    }
-    if(dP<.78&&!(ADMIN.fly&&P.eye>1.9))caught();
+  else if(P.hidden&&MS.knowsHide){   // he saw you hide: goes straight there (chairs or not, he gets you in a moment)
+    if(MS.state!=='grab'){MS.state='grab';MS.grabT=0;say(pick(LINES.check));}MS.grabT+=dt;slideTo(P.hidden.x,P.hidden.z,D.chase,dt);
+    if(hyp(P.hidden.x-MS.x,P.hidden.z-MS.z)<1||MS.grabT>3)caught();}
+  else if(P.hidden){
+    // he didn't see you hide: looks around where he is, then gives up and goes back up to his stream
+    if(MS.state!=='search'){MS.state='search';MS.lookBase=MS.face;MS.lookT=0;MS.searchT=0;say(pick(LINES.lose));}
+    MS.spd=0;MS.lookT+=dt;MS.searchT+=dt;MS.face=MS.lookBase+Math.sin(MS.lookT*1.6)*1.3;
+    if(MS.searchT>12){say('Ладно, пойду обратно к стриму…',3);Object.assign(MS,{lv:'flat',x:4.4,z:7.07,face:Math.PI/2,state:'look',wait:2,path:[],lookBase:Math.PI/2,lookT:0,aware:0,knowsHide:false,task:'stream',gaveUp:true});return;}
   }
+  else{MS.state='chase';slideTo(P.x,P.z,D.chase,dt);if(dP<.78&&!(ADMIN.fly&&P.eye>1.9))caught();}
   MS.heartT-=dt;const near=MS.state==='chase'?1:clamp(1-dP/7,0,1);
   if(near>.05&&MS.heartT<=0){sfx.heart(.4+near*.6);MS.heartT=MS.state==='chase'?.45:1.1-near*.5;}
   animMakar(dt);
+}
+// run straight at a point, sliding around whatever is in the way
+function slideTo(tx,tz,speed,dt){
+  const a=Math.atan2(tx-MS.x,tz-MS.z),step=speed*dt;MS.spd=0;
+  for(const off of [0,MS.side*.7,MS.side*1.4,-MS.side*.7,-MS.side*1.4]){
+    const ox=MS.x,oz=MS.z;MS.x+=Math.sin(a+off)*step;MS.z+=Math.cos(a+off)*step;collide(MS,MR);
+    const m=hyp(MS.x-ox,MS.z-oz);
+    if(m>step*.6){turnTo(a+off,dt);MS.spd=m/dt;if(off)MS.side=Math.sign(off);break;}
+    MS.x=ox;MS.z=oz;
+  }
 }
 function updateMakar(dt){
   if(P.lv!=='flat'){updateMakarOutside(dt);return;}
@@ -1630,6 +1677,7 @@ function rideDown(lv){
     if(state!=='ride')return;
     P.lv=lv;Object.assign(P,lv==='park'?{x:8.6,z:2.85,yaw:Math.PI/2}:{x:ENTR.x,z:ENTR.z+.95,yaw:Math.PI},{pitch:-.04,crouch:false,room:null});
     if(MS.lv!==lv){MS.lv='flat';yardT=OUTSIDE[lv].delay;}   // he is on the stairs
+    MS.gaveUp=false;MS.knowsHide=false;
     GATE.open=false;setLevel(lv);state='play';showHUD(true);f.style.opacity=0;tone(988,.4,'sine',.15);
     toast(lv==='park'?(D.blind?'Подземная парковка. Где-то тут машина Макара.':'Подземная парковка! Где-то тут машина Макара. Через 7 секунд Макар прибежит по лестнице!')
       :(D.blind?'Первый этаж! Беги к калитке в заборе.':'Первый этаж! Беги к калитке: через 5 секунд Макар выбежит из подъезда!'),4.5);
