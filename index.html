@@ -1388,11 +1388,15 @@ function checkCarlson(){
 }
 // put him on the sill of any window in the flat (the sill sticks out 12 cm into the room)
 const SILLS=WINDOWS.map(W=>{const n=W.side==='+z'?1:-1;return {x:W.x,z:W.z+n*.12,ix:W.x,iz:W.z+n*.8};});
-for(const S of SILLS)INTER.push({x:S.ix,z:S.iz,r:1.1,on:()=>INV.includes(CARL.pk)&&!CARL.placed,label:()=>'Поставить Карлсона на подоконник',act:()=>placeCarlson(S)});
+// he needs a pilot: the gecko rides in the basket (and hops out again before he takes off)
+for(const S of SILLS)INTER.push({x:S.ix,z:S.iz,r:1.1,on:()=>INV.includes(CARL.pk)&&!CARL.placed,
+  label:()=>GECKO.mode==='held'?'Посадить эублефара в корзиночку и поставить Карлсона на подоконник':'Поставить Карлсона на подоконник',
+  act:()=>{if(GECKO.mode!=='held'){toast('Карлсону не хватает пилота: возьми эублефара на руки и посади его в корзиночку 🦎',3.2);sfx.click();return;}placeCarlson(S);}});
 let carlT=0,CS=null;
 function placeCarlson(S){
   if(state!=='play')return;INV.splice(INV.indexOf(CARL.pk),1);invSel=clamp(invSel,0,Math.max(0,INV.length-1));renderInv();
   CARL.placed=true;CARL.pk.held=false;CARL.g.visible=true;CARL.g.position.set(S.x,.885,S.z);CARL.g.rotation.set(0,S.iz>S.z?0:Math.PI,0);
+  scene.attach(GECKO.g);GECKO.mode='carl';GECKO.g.position.set(S.x,.885+.1,S.z);GECKO.g.rotation.set(-.35,S.iz>S.z?0:Math.PI,0);renderInv();   // peeking out of the basket
   state='carlson';carlT=0;CS={S,step:0};unlock();showHUD(false);$('prompt').hidden=true;hush();sfx.pick();
   if(MS.away||MS.lv!=='flat')comeHome(true);standUp();MS.stun=0;const n=S.iz>S.z?1:-1;Object.assign(MS,{state:'carlson',path:buildPath(MS.x,MS.z,S.ix+.8,S.iz+n*1.1)});   // next to you, not into you
   toast('Карлсон сидит на подоконнике… Кто-то бежит!',2.5);
@@ -1401,11 +1405,12 @@ function updateCarlsonScene(dt){
   carlT+=dt;const c=CARL.g,S=CS.S,st=carlT-(CS.t||0);CARL.prop.rotation.y+=dt*(CS.step>=2?40:9);
   if(CS.step<=2){camera.position.set(P.x,P.eye,P.z);camera.lookAt(c.position.x,c.position.y+.2,c.position.z);}
   if(CS.step===0){follow(dt,D.chase*1.25);animMakar(dt);if(!MS.path.length||carlT>8){CS.step=1;CS.t=carlT;MS.spd=0;MS.face=Math.atan2(S.x-MS.x,S.z-MS.z);say('Это же Карлсон! Можно с тобой?!',2.6);}}
-  else if(CS.step===1){animMakar(dt);if(st>2.6){CS.step=2;CS.t=carlT;say('Эй! Подожди меня, Карлсон!',2.4);tone(300,1.2,'sawtooth',.05,900);}}
+  else if(CS.step===1){animMakar(dt);if(st>2.6){CS.step=2;CS.t=carlT;say('Эй! Подожди меня, Карлсон!',2.4);tone(300,1.2,'sawtooth',.05,900);
+    GECKO.mode='terr';geckoPickUp();toast('Эублефар выпрыгнул из корзиночки прямо тебе на руки! 🦎 А Карлсон…',3);}}
   else if(CS.step===2){   // the motor whirrs and he lifts off the sill and out of the window
     const k=Math.min(1,st/2.6),ox=S.x-S.ix,oz=S.z-S.iz,l=hyp(ox,oz);c.position.set(S.x+ox/l*k*4,.885+k*k*2.2,S.z+oz/l*k*4);c.rotation.z=Math.sin(carlT*6)*.15;animMakar(dt);
     if(st>2.6&&!CS.black){CS.black=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;}
-    if(st>3.4){CS.step=3;CS.t=carlT;setLevel('dubai');$('fade').style.opacity=0;c.scale.setScalar(13);c.rotation.set(0,Math.PI,0);CS.pos=new THREE.Vector3(60,112,300);CS.vy=0;toast('Карлсон летит… до самого Дубая! ✈️',3);}}
+    if(st>3.4){CS.step=3;CS.t=carlT;setLevel('dubai');GECKO.g.visible=false;$('fade').style.opacity=0;c.scale.setScalar(13);c.rotation.set(0,Math.PI,0);CS.pos=new THREE.Vector3(60,112,300);CS.vy=0;toast('Карлсон летит… до самого Дубая! ✈️',3);}}
   else if(CS.step===3){   // across the desert straight at the Burj Khalifa
     const D0=DUBAI.position.y,tgt=new THREE.Vector3(0,112,BURJ_R(112)+1.3),dir=tgt.clone().sub(CS.pos),d=dir.length();
     if(d>.6){dir.normalize();CS.pos.addScaledVector(dir,Math.min(d,48*dt));c.rotation.y=Math.atan2(dir.x,dir.z);}
@@ -1983,7 +1988,7 @@ const JAR_HOME={x:6.15,z:13.75};let jarAt={x:6.15,z:13.75,lv:'flat'};
 // out in the yard (10%), and very rarely down in the parking (5%), wandering on the ground with the jar beside it.
 const GECKO_OUT={yard:[[16.5,20.6],[2.3,33],[18.2,37.4],[5,36]],park:[[-20,3],[-8,-13],[4,19],[-30,-1]]};
 function resetGecko(){
-  if(GECKO.mode==='held')scene.attach(GECKO.g);GECKO.g.rotation.set(0,0,0);if(GECKO.cricket){scene.remove(GECKO.cricket.g);GECKO.cricket=null;}
+  GECKO.g.visible=true;if(GECKO.mode==='held')scene.attach(GECKO.g);GECKO.g.rotation.set(0,0,0);if(GECKO.cricket){scene.remove(GECKO.cricket.g);GECKO.cricket=null;}
   const r=Math.random(),lv=r<.85?'flat':r<.95?'yard':'park';
   if(lv==='flat'){Object.assign(GECKO,{mode:'terr',lv:'flat',x:5.72,z:13.88,tx:5.72,tz:13.88});jarAt={...JAR_HOME,lv:'flat'};JAR.position.set(0,0,0);}
   else{const [x,z]=pick(GECKO_OUT[lv]);Object.assign(GECKO,{mode:'floor',lv,x,z,tx:x,tz:z,home:{x,z}});jarAt={x:x+.55,z:z+.35,lv};JAR.position.set(jarAt.x-JAR_HOME.x,baseY(lv),jarAt.z-JAR_HOME.z);}
@@ -2003,7 +2008,8 @@ function feedGecko(){
   c.position.set(B.x0+.05,B.y,B.z1-.05);scene.add(c);GECKO.cricket={g:c,x:c.position.x,z:c.position.z,t:0};toast('Ты бросил кузнечика 🦗',1.6);
 }
 function updateGecko(dt,time){
-  const G_=GECKO;if(G_.mode==='held'){G_.g.position.y=-.22+Math.sin(time*2)*.004;G_.tail.rotation.y=Math.sin(time*1.6)*.3;return;}
+  const G_=GECKO;if(G_.mode==='carl'){G_.tail.rotation.y=Math.sin(time*2.5)*.4;return;}
+  if(G_.mode==='held'){G_.g.position.y=-.22+Math.sin(time*2)*.004;G_.tail.rotation.y=Math.sin(time*1.6)*.3;return;}
   const cr=G_.cricket;
   if(cr){cr.t-=dt;if(cr.t<=0){cr.t=.5+Math.random()*.7;const B=G_.cb||TERR;cr.x=clamp(cr.x+(Math.random()-.5)*.18,B.x0,B.x1);cr.z=clamp(cr.z+(Math.random()-.5)*.18,B.z0,B.z1);}
     cr.g.position.x+=(cr.x-cr.g.position.x)*Math.min(1,dt*8);cr.g.position.z+=(cr.z-cr.g.position.z)*Math.min(1,dt*8);cr.g.position.y=(G_.cb||TERR).y+Math.max(0,Math.sin(cr.t*6))*.03;
@@ -2199,7 +2205,7 @@ const ENDINGS=[
   {id:'fire',title:'Пожарная тревога',hint:'Найди ключи и кроссовки и выберись в подъезд. В лифтовом холле на стене висит красная кнопка «ПОЖАР»: нажми её.'},
   {id:'car',title:'Угон машины',hint:'Найди в квартире ключи от машины Макара (🚙), выберись в подъезд, в лифте выбери «−1 — подземная парковка» и угони его оранжевую машину.'},
   {id:'boom',title:'Макар взорвался',hint:'Укради со стола Макара монитор, клавиатуру, мышку и микрофон, найди в квартире картон 📦 и собери всё это в инвентаре.'},
-  {id:'carlson',title:'Разбился насмерть',hint:'Найди в квартире мини-корзиночку 🧺, медицинскую маску 😷, зажигалку 🔥 и салатовый пластилин 🟩 — из них получится игрушечный Карлсон. Поставь его на подоконник.'},
+  {id:'carlson',title:'Разбился насмерть',hint:'Найди в квартире мини-корзиночку 🧺, медицинскую маску 😷, зажигалку 🔥 и салатовый пластилин 🟩 — из них получится игрушечный Карлсон. Возьми эублефара на руки и поставь Карлсона на подоконник: ящерка сядет в корзиночку пилотом.'},
   {id:'vacuum',title:'Сломал робот-пылесос',hint:'Принеси с парковки пачку чипсов 🍟, положи её на пол в гостиной рядом с робот-пылесосом (Q) и включи его.'},
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
