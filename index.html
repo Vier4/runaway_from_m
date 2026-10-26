@@ -1048,13 +1048,14 @@ function buildMakar(){
   for(const a of [armL,armR])blk(-.06,.06,-.73,-.61,-.06,.06,skin,{parent:a});
   blk(-.07,.07,1.56,1.62,-.06,.06,skin,{parent:g});
   const head=new THREE.Group();head.position.y=1.6;g.add(head);
+  const spikes=new THREE.Group();spikes.visible=false;head.add(spikes);for(let i=0;i<7;i++){const sp=blk(-.02,.02,0,.16,-.02,.02,mat(0x111111),{parent:spikes});sp.position.set(-.14+i*.047,.36,(i%2)*.06-.03);sp.rotation.z=(i-3)*.18;}
   blk(-.16,.16,0,.34,-.16,.16,skin,{parent:head});blk(-.17,.17,.27,.39,-.17,.17,hair,{parent:head});blk(-.17,.17,.06,.3,-.18,-.1,hair,{parent:head});
   const eyeW=basic(0xffffff),pupil=basic(0x111111);
   for(const s of [-1,1]){blk(s*.09-.035,s*.09+.035,.17,.22,.16,.165,eyeW,{parent:head});blk(s*.09-.016,s*.09+.016,.175,.21,.165,.17,pupil,{parent:head});
     const brow=blk(s*.09-.05,s*.09+.05,.235,.255,.16,.172,hair,{parent:head});brow.rotation.z=s*.32;}
   const mouth=blk(-.06,.06,.08,.1,.16,.17,mat(0x6a2a22),{parent:head});
   const hp=mat(0x1b1b22);blk(-.19,.19,.39,.42,-.03,.03,hp,{parent:head});for(const s of [-1,1]){blk(s*.17-.02,s*.17+.02,.24,.4,-.03,.03,hp,{parent:head});blk(s*.18-.025,s*.18+.025,.12,.26,-.06,.06,mat(0xff4fd8),{parent:head});}
-  return {g,legL,legR,armL,armR,head,pupil,mouth,skin};
+  return {g,legL,legR,armL,armR,head,pupil,mouth,skin,hood,jeans,spikes};
 }
 const MK=buildMakar();
 TPL.push({name:'Фигура Макара',make:()=>{const m=buildMakar();scene.remove(m.g);return m.g;}}); // a fresh one, standing, not in Makar's current pose
@@ -1244,7 +1245,7 @@ function newGame(){
   Object.assign(VAC,{x:VAC.dock.x,z:VAC.dock.z,a:VAC.dock.a,mode:'dock'});
   for(const r in ROOM_LAMP)setRoomLight(r,true);
   for(const f of FLY)f.pk.flying=false;FLY.length=0;MS.stun=0;
-  clearSpawned();resetCar();resetGecko();resetBoom();resetCarlson();
+  clearSpawned();resetCar();resetGecko();resetBoom();resetCarlson();resetVacScene();
   renderLives();
 }
 
@@ -1307,7 +1308,7 @@ INTER.push({x:1.2,z:7.05,r:1.15,label:()=>toiletCD>0?'Умный унитаз п
   toiletCD=25;sfx.smart();toast('Умный унитаз: «Добрый вечер! Включаю музыку». Макар пойдёт на звук.');
   heard(1.2,6.9,99,'toilet');}});
 for(const [x,z,rid] of [[1.21,5.75,'bath2'],[6.35,4.8,'wc3']])INTER.push({x,z,r:1.1,label:()=>'Смыть воду',act:()=>{if(flushCD>0)return;flushCD=4;sfx.flush(x,z);heard(x,z,9,'flush');toast('Шшшшш! Это было громко.');}});
-INTER.push({get x(){return VAC.x;},get z(){return VAC.z;},r:1.1,label:()=>VAC.mode==='dock'?'Включить робот-пылесос':VAC.mode==='clean'?'Отправить пылесос на базу':'Пылесос занят…',
+INTER.push({get x(){return VAC.x;},get z(){return VAC.z;},r:1.2,prio:1.5,label:()=>VAC.mode==='broken'?'Пылесос сломан… 💨':VAC.mode==='dock'?'Включить робот-пылесос':VAC.mode==='clean'?'Отправить пылесос на базу':'Пылесос занят…',
   act:()=>{if(VAC.mode==='dock')startVac();else if(VAC.mode==='clean'){VAC.mode='home';toast('Пылесос едет на базу.');}}});
 for(const s of SWITCHES)INTER.push({x:s.x,z:s.z,r:.85,label:()=>ROOM_LAMP[s.room].on?'Выключить свет':'Включить свет',act:()=>{setRoomLight(s.room,!ROOM_LAMP[s.room].on);sfx.click();}});
 INTER.push({x:wallFace('+x',6.85),z:5.0,r:1.2,label:()=>'Нажать пожарную кнопку',act:fireAlarm});
@@ -1341,7 +1342,7 @@ const boxOf=o=>new THREE.Box3().setFromObject(o);
 function centerPick(pk){const b=boxOf(pk.obj);pk.cx=(b.min.x+b.max.x)/2;pk.cz=(b.min.z+b.max.z)/2;}
 function addPick(pk){
   Object.assign(pk,{icon:iconFor(pk.name),held:false,off:{x:0,y:0,z:0},cols:pk.cols||[]});centerPick(pk);
-  pk.inter={get x(){return pk.cx;},get z(){return pk.cz;},get lv(){return pk.lv;},r:1.1,on:()=>!pk.held&&!pk.flying&&!(pk.item&&ITEMS[pk.item].withMakar),label:()=>'Взять: '+pk.name.toLowerCase(),act:()=>pickUp(pk)};
+  pk.inter={get x(){return pk.cx;},get z(){return pk.cz;},get lv(){return pk.lv;},r:1.1,on:()=>!pk.held&&!pk.flying&&!pk.eaten&&!(pk.item&&ITEMS[pk.item].withMakar),label:()=>'Взять: '+pk.name.toLowerCase(),act:()=>pickUp(pk)};
   INTER.push(pk.inter);PICKS.push(pk);return pk;
 }
 // a thing already in the flat: its template meshes are gathered into one group, with the colliders under it
@@ -1521,7 +1522,7 @@ function resetInv(){
   for(const pk of PICKS){
     if(!pk.held)for(const c of pk.cols){const a=colsOf(pk.lv),i=a.indexOf(c);if(i>=0)a.splice(i,1);}
     if(pk.prop){pk.obj.position.x-=pk.off.x;pk.obj.position.y-=pk.off.y;pk.obj.position.z-=pk.off.z;for(const c of pk.cols){c.x0-=pk.off.x;c.x1-=pk.off.x;c.z0-=pk.off.z;c.z1-=pk.off.z;}}
-    pk.off={x:0,y:0,z:0};pk.held=false;pk.obj.visible=true;pk.lv=pk.homeLv||'flat';colsOf(pk.lv).push(...pk.cols);centerPick(pk);
+    pk.off={x:0,y:0,z:0};pk.held=false;pk.eaten=false;pk.obj.visible=true;pk.lv=pk.homeLv||'flat';colsOf(pk.lv).push(...pk.cols);centerPick(pk);
   }
   INV.length=0;invSel=0;renderInv();
 }
@@ -1548,7 +1549,7 @@ function updateFocus(){
   focus=null;if(P.hidden){showPrompt('Вылезти');return;}if(P.swing){showPrompt('Слезть с качелей');return;}
   const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);let best=1e9;
   for(const it of INTER){if((it.lv||'flat')!==P.lv||(it.on&&!it.on()))continue;const dx=it.x-P.x,dz=it.z-P.z,d=hyp(dx,dz);if(d>it.r)continue;
-    const dot=d<.35?1:(dx*fx+dz*fz)/d;if(dot<.5)continue;const sc=d*(2-dot);if(sc<best){best=sc;focus=it;}}
+    const dot=d<.35?1:(dx*fx+dz*fz)/d;if(dot<.5)continue;const sc=d*(2-dot)-(it.prio||0);if(sc<best){best=sc;focus=it;}}
   showPrompt(focus?focus.label():null);
 }
 let lastPrompt='';
@@ -1887,6 +1888,50 @@ function startVac(){
   toast('Робот-пылесос: «Начинаю уборку». Макар пойдёт на звук.');heard(VAC.x,VAC.z,99,'vacuum');
 }
 const VAC_BOX={x0:.25,x1:3.35,z0:.25,z1:4.05};
+// smoke puffs (the broken vacuum, the bang in the car): grey balls that rise, grow and fade
+const PUFFS=[];
+function puff(x,y,z,r){const m=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),new THREE.MeshBasicMaterial({color:0x8a8a8a,transparent:true,opacity:.55,depthWrite:false}));m.position.set(x,y,z);scene.add(m);PUFFS.push({m,t:0});}
+function updatePuffs(dt){for(let i=PUFFS.length-1;i>=0;i--){const p=PUFFS[i];p.t+=dt;p.m.position.y+=dt*.5;p.m.scale.setScalar(1+p.t*1.4);p.m.material.opacity=.55*(1-p.t/2);if(p.t>=2){scene.remove(p.m);PUFFS.splice(i,1);}}}
+/* Chips on the floor by the vacuum: it sucks the packet up and chokes — smoke, a red light, an error beep.
+   Makar comes running, takes it to the car to drive it to the repair shop, and when he gets in it goes
+   BANG (a cartoon bang: he climbs out covered in soot with his hair standing on end) — ending 7. */
+function vacChoke(ch){
+  ch.eaten=true;ch.obj.visible=false;VAC.mode='broken';VAC.puffT=0;
+  nz(.3,500,.8,panFor(VAC.x,VAC.z));for(let i=0;i<3;i++)tone(i%2?440:330,.25,'square',.08,0,.4+i*.3,panFor(VAC.x,VAC.z));
+  toast('Пылесос засосал пачку чипсов и сломался! 💨',3);setTimeout(()=>{if(state==='play'&&VAC.mode==='broken')startVacScene();},2200);
+}
+function setSoot(on){MK.skin.color.setHex(on?0x4a3a32:0xe7b48f);MK.hood.color.setHex(on?0x2a2a2a:0xe2512b);MK.jeans.color.setHex(on?0x1d1d22:0x2f4a7a);MK.spikes.visible=on;}
+let VB=null;
+function startVacScene(){
+  state='vacboom';unlock();showHUD(false);hush();$('prompt').hidden=true;if(P.hidden)exitHide();if(P.swing)stopSwing();
+  if(MS.away||MS.lv!=='flat')comeHome(true);standUp();MS.stun=0;VB={step:0,t:0,t0:0};
+  Object.assign(MS,{state:'vacboom',path:buildPath(MS.x,MS.z,VAC.x+.75,VAC.z)});say('Что это за дым?! Мой пылесос!',2.5);
+}
+function updateVacScene(dt){
+  VB.t+=dt;const st=VB.t-VB.t0,next=n=>{VB.step=n;VB.t0=VB.t;};
+  if(VB.step<=2){camera.position.set(P.x,P.eye,P.z);camera.lookAt(MS.x,1.1,MS.z);}
+  if(VB.step===0){follow(dt,D.walk*1.8);animMakar(dt);if(!MS.path.length||st>9){next(1);MS.spd=0;MS.face=Math.atan2(VAC.x-MS.x,VAC.z-MS.z);say('Кто сломал мой пылесос?! Ладно, повезу его в ремонт.',3);}}
+  else if(VB.step===1){animMakar(dt);if(st>3){next(2);VAC.g.visible=false;VB.carry=VAC.g.clone();VB.carry.visible=true;MK.g.add(VB.carry);VB.carry.position.set(0,1.05,.32);VB.carry.rotation.set(0,0,0);MS.path=buildPath(MS.x,MS.z,4.4,7.07);}}
+  else if(VB.step===2){follow(dt,D.walk*1.6);animMakar(dt);MK.armL.rotation.x=MK.armR.rotation.x=-1.25;
+    if(st>3.5&&!VB.black){VB.black=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;}
+    if(st>4.4){next(3);setLevel('park');Object.assign(MS,{lv:'park',x:CAR.x-1.3,z:CAR.z-3.2,state:'vacboom',path:[]});$('fade').style.opacity=0;toast('Макар повёз пылесос в ремонт…',2.5);}}
+  else if(VB.step>=3){
+    camera.position.set(CAR.x+1.2,YP+1.8,CAR.z-6.2);camera.lookAt(CAR.x-.4,YP+.9,CAR.z-.6);
+    if(VB.step===3){slideTo(CAR.x-1.15,CAR.z-.5,D.walk*1.4,dt);animMakar(dt);MK.armL.rotation.x=MK.armR.rotation.x=-1.25;
+      if(hyp(CAR.x-1.15-MS.x,CAR.z-.5-MS.z)<.3||st>4){next(4);MK.g.visible=false;tone(70,1.2,'sawtooth',.06,110);}}
+    else if(VB.step===4){CAR.g.position.x=CAR.x+Math.sin(VB.t*40)*.01;
+      if(st>1.6){next(5);   // БАБАХ
+        nz(.6,350,1.2);nz(.4,1500,.5);tone(55,1,'sawtooth',.22,25);const f=$('fade');f.style.background='#fff';f.style.opacity=.85;setTimeout(()=>f.style.opacity=0,220);
+        for(let i=0;i<10;i++)puff(CAR.x+(Math.random()-.5)*2,YP+1+Math.random(),CAR.z+(Math.random()-.5)*3,.35);toast('БАБАХ! 💥 Пылесос взорвался прямо в машине!',3);
+        if(VB.carry){MK.g.remove(VB.carry);VB.carry=null;}setSoot(true);MK.g.visible=true;Object.assign(MS,{x:CAR.x-1.4,z:CAR.z+.2,face:Math.PI/2});}}
+    else if(VB.step===5){CAR.g.position.x=CAR.x;MS.spd=0;MK.head.rotation.z=Math.sin(VB.t*5)*.2;MK.armL.rotation.x=MK.armR.rotation.x=0;animMakar(dt);
+      if(VB.t%1<dt)puff(CAR.x,YP+1.4,CAR.z,.25);
+      if(st>.9&&!VB.said){VB.said=true;say('Кхе-кхе… Мой пылесос…',2.6);}
+      if(st>4&&!VB.fade){VB.fade=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;
+        setTimeout(()=>{$('fade').style.opacity=0;$('sub').hidden=true;$('toast').hidden=true;
+          endingPanel('vacuum','Робот-пылесос засосал пачку чипсов и сломался. Макар повёз его в ремонт, но как только он сел в машину — БАБАХ! Пылесос взорвался. Макар вылез весь чёрный от сажи, с торчащими во все стороны волосами, и только кашляет: «Мой пылесос…». Ремонт отменяется!');},1300);}}}
+}
+function resetVacScene(){if(VB&&VB.carry)MK.g.remove(VB.carry);VB=null;setSoot(false);MK.head.rotation.z=0;VAC.g.visible=true;for(const p of PUFFS)scene.remove(p.m);PUFFS.length=0;}
 function vacMove(dist){
   const p={lv:'flat',x:VAC.x+Math.sin(VAC.a)*dist,z:VAC.z+Math.cos(VAC.a)*dist};collide(p,.17);
   p.x=clamp(p.x,VAC_BOX.x0,VAC_BOX.x1);p.z=clamp(p.z,VAC_BOX.z0,VAC_BOX.z1);
@@ -1895,7 +1940,9 @@ function vacMove(dist){
 function updateVac(dt,time){
   const v=VAC,sp=.28*dt,vol=P.lv==='flat'?clamp(1-hyp(v.x-P.x,v.z-P.z)/9,0,1):0;
   if(v.mode==='clean'){
-    if(!vacMove(sp)){v.a+=Math.PI*(.5+Math.random()*.8)*(Math.random()<.5?-1:1);if(vol>.05)nz(.05*vol,900,.05,panFor(v.x,v.z),0,'bandpass');}
+    const ch=PICKS.find(p=>isChips(p)&&!p.held&&!p.flying&&!p.eaten&&p.lv==='flat'&&p.cx>VAC_BOX.x0-.4&&p.cx<VAC_BOX.x1+.4&&p.cz>VAC_BOX.z0-.4&&p.cz<VAC_BOX.z1+.4);
+    if(ch){v.a=Math.atan2(ch.cx-v.x,ch.cz-v.z);vacMove(sp*1.3);if(hyp(ch.cx-v.x,ch.cz-v.z)<.25)vacChoke(ch);}
+    else if(!vacMove(sp)){v.a+=Math.PI*(.5+Math.random()*.8)*(Math.random()<.5?-1:1);if(vol>.05)nz(.05*vol,900,.05,panFor(v.x,v.z),0,'bandpass');}
     v.t-=dt;if(v.t<=0)v.mode='home';
   }else if(v.mode==='home'){
     const dx=v.dock.x-v.x,dz=v.dock.z-v.z,d=hyp(dx,dz);
@@ -1905,6 +1952,7 @@ function updateVac(dt,time){
   }else if(v.mode==='empty'){v.emptyT-=dt;if(v.emptyT<=0)v.mode='dock';}
   v.g.position.set(v.x,0,v.z);v.g.rotation.y=v.a;
   if(v.mode==='clean'||v.mode==='home')v.brush.rotation.y+=dt*14;
+  if(v.mode==='broken'){v.puffT=(v.puffT||0)-dt;if(v.puffT<=0){v.puffT=.22;puff(v.x,.15,v.z,.12);}v.led.color.setHex(Math.sin(time*10)>0?0xff2020:0x330000);return;}
   v.led.color.setHex(v.mode==='empty'?(Math.sin(time*12)>0?0xffb020:0x553300):v.mode==='dock'?0x3bff7a:0x55e6ff);
   if((v.mode==='clean'||v.mode==='home')&&vol>.05){v.humT=(v.humT||0)-dt;if(v.humT<=0){v.humT=.5;nz(.035*vol,2200,.55,panFor(v.x,v.z),0,'bandpass');}}
 }
@@ -1972,7 +2020,7 @@ function updateGecko(dt,time){
 }
 
 function updateWorld(dt,time){
-  updateGecko(dt,time);updateFlying(dt);
+  updateGecko(dt,time);updateFlying(dt);updatePuffs(dt);
   if(CAR.leaving){CAR.spd=Math.min(8,CAR.spd+dt*3);carDriveStep(dt,CAR.spd);if(CAR.x<PX0-6)hideCar();}
   if(P.lv==='park'&&CAR.glow.visible){const k=.5+.5*Math.sin(time*3.2);CAR_M[0xe2512b].emissive.setRGB(.32*k,.1*k,.03*k);CAR.glowM.color.setHSL(.13,1,.4+.25*k);const sc=1.2+.4*k;CAR.mark.scale.set(sc,sc,1);}
   updateVac(dt,time);
@@ -2152,6 +2200,7 @@ const ENDINGS=[
   {id:'car',title:'Угон машины',hint:'Найди в квартире ключи от машины Макара (🚙), выберись в подъезд, в лифте выбери «−1 — подземная парковка» и угони его оранжевую машину.'},
   {id:'boom',title:'Макар взорвался',hint:'Укради со стола Макара монитор, клавиатуру, мышку и микрофон, найди в квартире картон 📦 и собери всё это в инвентаре.'},
   {id:'carlson',title:'Разбился насмерть',hint:'Найди в квартире мини-корзиночку 🧺, медицинскую маску 😷, зажигалку 🔥 и салатовый пластилин 🟩 — из них получится игрушечный Карлсон. Поставь его на подоконник.'},
+  {id:'vacuum',title:'Сломал робот-пылесос',hint:'Принеси с парковки пачку чипсов 🍟, положи её на пол в гостиной рядом с робот-пылесосом (Q) и включи его.'},
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
 const endCount=()=>ENDINGS.filter(e=>gotEnd[e.id]).length;
@@ -2324,6 +2373,7 @@ function frame(now){
   else if(state==='drive')updateDrive(dt);
   else if(state==='boom')updateBoom(dt);
   else if(state==='carlson')updateCarlsonScene(dt);
+  else if(state==='vacboom')updateVacScene(dt);
   else if(state==='win'){camera.position.x-=Math.sin(P.yaw)*dt*.8;camera.position.z-=Math.cos(P.yaw)*dt*.8;}
   updateWorld(dt,time);
   renderer.render(scene,camera);
@@ -2333,7 +2383,7 @@ newGame();showMenu();applyTime();
 MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
-function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
+function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
 window.__game={get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
