@@ -983,10 +983,20 @@ cp(null,PARK);
 
 const YARD_ROOM={id:'yard',name:'Двор'},STREET_ROOM={id:'street',name:'Улица'},PARK_ROOM={id:'park',name:'Парковка'};
 const baseY=lv=>lv==='yard'?YG:lv==='park'?YP:0;
-const FOG={flat:[0x07080c,10,26],yard:[0x0c1020,40,190],park:[0x0c0e11,9,34]};
-function setLevel(lv){const [c,n,f]=FOG[lv];scene.fog.color.setHex(c);scene.fog.near=n;scene.fog.far=f;scene.background.setHex(c);YARD.visible=lv==='yard';PARK.visible=lv==='park';
+const FOG={flat:[0x07080c,10,26],yard:[0x0c1020,40,190],park:[0x0c0e11,9,34],dubai:[0xbcd6ee,300,1400]};
+/* Dubai, only for the Carlson ending: desert sand, a few low towers and the Burj Khalifa (230 m, tapering,
+   with its spire). Far below everything else so it never shows anywhere else. */
+const DUBAI=new THREE.Group();DUBAI.position.y=-1000;DUBAI.visible=false;scene.add(DUBAI);
+const BURJ_R=h=>h>=180?Math.max(.4,1.6-(h-180)*.025):16*Math.pow(1-h/205,1.25)+1.5;
+{const sand=new THREE.Mesh(new THREE.PlaneGeometry(4000,4000),mat(0xd8b98a));sand.rotation.x=-Math.PI/2;DUBAI.add(sand);
+ const glass=mat(0x9fb4c8,{shininess:90,specular:0xaaaaaa}),steel=mat(0xc9d2da,{shininess:80,specular:0x999999});
+ for(let i=0;i<15;i++){const h0=i*12,h1=h0+12,m=new THREE.Mesh(new THREE.CylinderGeometry(BURJ_R(h1),BURJ_R(h0),12,6),i%2?glass:steel);m.position.y=h0+6;m.rotation.y=i*.18;DUBAI.add(m);}
+ const sp=new THREE.Mesh(new THREE.CylinderGeometry(.35,1.6,50,8),steel);sp.position.y=205;DUBAI.add(sp);
+ for(const [x,z,w,h] of [[-120,-60,30,70],[110,-90,26,90],[-180,80,40,55],[150,120,30,60],[60,-200,24,80],[-60,-190,28,65]]){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),mat(0xb8c2cc));b.position.set(x,h/2,z);DUBAI.add(b);}
+ const L=new THREE.PointLight(0xfff0d0,1.2,900,1.2);L.position.set(200,300,300);DUBAI.add(L);}
+function setLevel(lv){const [c,n,f]=FOG[lv];scene.fog.color.setHex(c);scene.fog.near=n;scene.fog.far=f;scene.background.setHex(c);YARD.visible=lv==='yard';PARK.visible=lv==='park';DUBAI.visible=lv==='dubai';
   // by day the sun shines only outside (it would light the flat through the walls), indoors it is just a bit brighter
-  SUN.intensity=isDay&&lv==='yard'?.75:0;HEMI.intensity=lv==='park'?.42:isDay?(lv==='yard'?1.0:.62):.5;}
+  SUN.intensity=lv==='dubai'||isDay&&lv==='yard'?.75:0;HEMI.intensity=lv==='dubai'?1:lv==='park'?.42:isDay?(lv==='yard'?1.0:.62):.5;}
 // Each window shows a snapshot of what really lies outside it: the bedrooms look down into the yard.
 function renderWindowViews(){
   setLevel('yard');
@@ -1154,10 +1164,12 @@ function buildBasket(){const g=new THREE.Group(),w=mat(0xa8743f);cyl(0,0,.09,0,.
 function buildMask(){const g=new THREE.Group();blk(-.08,.08,0,.012,-.045,.045,mat(0x8fd3f0),{parent:g});for(let i=0;i<3;i++)blk(-.08,.08,.012,.014,-.03+i*.03,-.026+i*.03,mat(0x6fb8da),{parent:g});
   for(const s of [-1,1]){const l=new THREE.Mesh(new THREE.TorusGeometry(.03,.003,6,14),M_.white);l.rotation.x=Math.PI/2;l.position.set(s*.1,.006,0);g.add(l);}scene.add(g);return g;}
 function buildPlasticine(){const g=new THREE.Group();blk(-.045,.045,0,.03,-.025,.025,mat(0x9be34a,{shininess:30}),{parent:g});blk(-.046,.046,.012,.018,-.026,.026,mat(0xe9e2d6),{parent:g});g.rotation.y=.7;scene.add(g);return g;}
+function buildLighter(){const g=new THREE.Group();blk(-.012,.012,0,.07,-.02,.02,mat(0xd02a2a,{shininess:60}),{parent:g});blk(-.012,.012,.07,.085,-.02,.02,M_.metal,{parent:g});
+  cyl(0,.078,.09,.012,.008,M_.dark,{parent:g}).rotation.z=Math.PI/2;g.rotation.set(Math.PI/2,0,.5);g.position.y=.02;scene.add(g);return g;}
 // places they can lie (surfaces and floor corners; none of them is a toilet)
 const CRAFT_SPOTS=[{room:'kitchen',x:6.5,y:.92,z:1.6},{room:'kitchen',x:4.1,y:.76,z:1.4},{room:'hall',x:4.62,y:.45,z:7.75},{room:'sisters',x:2.1,y:.76,z:13.9},
   {room:'mine',x:5.3,y:.55,z:11.5},{room:'vest',x:6.2,y:0,z:9.25},{room:'living',x:2.1,y:0,z:.6},{room:'parents',x:7.6,y:0,z:13.8},{room:'bath1',x:1.95,y:.88,z:8.2}];
-const ITEMS={basket:{mesh:buildBasket(),name:'Мини-корзиночка'},mask:{mesh:buildMask(),name:'Медицинская маска'},plast:{mesh:buildPlasticine(),name:'Салатовый пластилин'},
+const ITEMS={lighter:{mesh:buildLighter(),name:'Зажигалка'},basket:{mesh:buildBasket(),name:'Мини-корзиночка'},mask:{mesh:buildMask(),name:'Медицинская маска'},plast:{mesh:buildPlasticine(),name:'Салатовый пластилин'},
   cardboard:{mesh:buildCardboard(),name:'Картон'},keys:{mesh:buildKeys(),name:'Ключи'},shoes:{mesh:buildShoes(),name:'Кроссовки'},carkeys:{mesh:buildCarKey(),name:'Ключи от машины'},
   key2:{mesh:buildDoorKey(0x2f6fd6),name:'Ключ от подъезда 2',lv:'yard'},key3:{mesh:buildDoorKey(0x3fbf5a),name:'Ключ от подъезда 3',lv:'yard'}};
 // places in the yard where the two door keys can lie (y is the height above the ground)
@@ -1211,7 +1223,7 @@ function placeItems(){
   ITEMS.keys.spot=keySpot;ITEMS.shoes.spot=shoeSpot;
   ITEMS.carkeys.spot=pick(KEY_SPOTS.filter(s=>s!==keySpot&&s.room!==shoeSpot.room));
   ITEMS.cardboard.spot=pick(CARD_SPOTS.filter(s=>s.room!==shoeSpot.room));
-  {const cs=CRAFT_SPOTS.slice().sort(()=>Math.random()-.5);ITEMS.basket.spot=cs[0];ITEMS.mask.spot=cs[1];ITEMS.plast.spot=cs[2];}
+  {const cs=CRAFT_SPOTS.slice().sort(()=>Math.random()-.5);ITEMS.basket.spot=cs[0];ITEMS.mask.spot=cs[1];ITEMS.plast.spot=cs[2];ITEMS.lighter.spot=cs[3];}
   const ys=YARD_KEY_SPOTS.slice().sort(()=>Math.random()-.5);ITEMS.key2.spot={...ys[0],y:YG+ys[0].y};ITEMS.key3.spot={...ys[1],y:YG+ys[1].y};
   for(const k in ITEMS){const it=ITEMS[k];it.taken=false;it.withMakar=false;it.mesh.visible=true;it.spark.visible=true;it.mesh.position.set(it.spot.x,it.spot.y+.01,it.spot.z);}
 }
@@ -1224,7 +1236,7 @@ function resetActors(){
   $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;
 }
 function newGame(){
-  D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false,key2:false,key3:false,cardboard:false,basket:false,mask:false,plast:false};
+  D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false,key2:false,key3:false,cardboard:false,basket:false,mask:false,plast:false,lighter:false};
   for(const d of DOORS){d.open=false;d.ang=0;d.hold=0;if(d.id==='front')d.locked=true;}
   DOOR.kitchen.open=true;DOOR.living.open=true;
   Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);
@@ -1318,7 +1330,7 @@ INTER.push({lv:'park',get x(){return clamp(P.x,CAR.x-.95,CAR.x+.95);},get z(){re
    spawned from the admin panel can be picked up (E) and dropped in front of you again (Q). A pick moves
    as one object together with the colliders under it. */
 const INV_SIZE=7,INV=[],PICKS=[];let invSel=0;
-const ICONS=[['Карлсон','🧸'],['корзиночка','🧺'],['маска','😷'],['пластилин','🟩'],['Картон','📦'],['Монитор','🖥️'],['Клавиатура','⌨️'],['Мышка','🖱️'],['Эндер','🐉'],['Террариум','🦎'],['кузнечик','🦗'],['подъезда','🗝️'],['Чипсы','🍟'],['Ключи от машины','🚙'],['Машина Макара','🚙'],['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
+const ICONS=[['Зажигалка','🔥'],['Карлсон','🧸'],['корзиночка','🧺'],['маска','😷'],['пластилин','🟩'],['Картон','📦'],['Монитор','🖥️'],['Клавиатура','⌨️'],['Мышка','🖱️'],['Эндер','🐉'],['Террариум','🦎'],['кузнечик','🦗'],['подъезда','🗝️'],['Чипсы','🍟'],['Ключи от машины','🚙'],['Машина Макара','🚙'],['Ключ','🔑'],['Кроссовк','👟'],['Мяч','⚽'],['Чашк','☕'],['борщ','🍲'],['бумага','🧻'],['Кубик','🧱'],['Микрофон','🎤'],['камера','📷'],
   ['Ночник','🏮'],['Кольцевая','💡'],['Люстр','💡'],['Лампа','💡'],['пылесос','🤖'],['Станция','🤖'],['нитаз','🚽'],['Ванна','🛁'],['ровать','🛏️'],['Диван','🛋️'],
   ['Телевизор','📺'],['Холодильник','🧊'],['Розетк','🔌'],['Выключатель','🔌'],['Дверь','🚪'],['дверь','🚪'],['Окно','🪟'],['Палатк','⛺'],['Самокат','🛴'],['Фонарь','🏮'],
   ['Дерев','🌳'],['Ель','🌲'],['Берёз','🌳'],['Машин','🚗'],['Макар','🧍'],['Стиральн','🫧'],['Раковин','🚰'],['Шкаф','🗄️'],['Зеркало','🪞'],['Ковёр','🟥'],['коврик','🟥'],['Пожарн','🚨'],
@@ -1349,26 +1361,29 @@ for(const k in ITEMS)addPick({name:ITEMS[k].name,obj:ITEMS[k].mesh,lv:ITEMS[k].l
    const x=onLane?PX0+2+rnd()*(PX1-PX0-5):XLANES[(rnd()*2)|0]+(rnd()-.5)*3,z=onLane?LANES[(rnd()*3)|0]+(rnd()-.5)*3.6:PZ0+2+rnd()*(PZ1-PZ0-4);
    const g=new THREE.Group();g.position.set(x,YP,z);g.rotation.y=rnd()*6.28;scene.add(g);const bag=blk(-.09,.09,0,.04,-.13,.13,mats[f],{parent:g});bag.rotation.z=(rnd()-.5)*.3;
    addPick({name:'Чипсы '+FLAV[f][0],obj:g,lv:'park',homeLv:'park',prop:true});}}
-/* The toy Carlson: with the basket, the mask and the plasticine in your inventory they stick together
-   into a toy Carlson (the basket is his tummy, a plasticine head, the mask is his propeller). Put him on
-   a windowsill: Makar sees him, shouts «Это же Карлсон! Можно с тобой?!» and dashes up to the roof to
-   look for him, where the door slams shut behind him — ending 6. */
+/* The toy Carlson: with the basket, the mask, the lighter and the plasticine in your inventory they stick
+   together into a toy Carlson (the basket is his tummy, a plasticine head, the mask is his propeller, the
+   lighter his motor). Put him on a windowsill: Makar shouts «Это же Карлсон! Можно с тобой?!», but the toy
+   flies off out of the window all the way to Dubai, smacks into the Burj Khalifa, hangs on for a moment
+   and falls — ending 6, «Разбился насмерть» (it's the toy that breaks). */
 function buildCarlson(){
   const g=new THREE.Group();scene.add(g);g.visible=false;
   const b=cyl(0,0,.1,0,.075,mat(0xa8743f),{parent:g,r2:.06,seg:14});for(let i=0;i<3;i++)cyl(0,.02+i*.03,.028+i*.03,0,.076-i*.004,mat(0x7d5428),{parent:g,seg:14});
   const head=sph(0,.15,0,.05,mat(0x9be34a,{shininess:30}),{parent:g,seg:12});for(const s of [-1,1])sph(s*.02,.16,.045,.008,basic(0x111111),{parent:g,seg:6});
   sph(0,.145,.05,.01,mat(0xe2512b),{parent:g,seg:6});cyl(0,.195,.23,0,.006,M_.metal,{parent:g});
+  blk(-.014,.014,.04,.11,-.1,-.075,mat(0xd02a2a,{shininess:60}),{parent:g});blk(-.014,.014,.11,.125,-.1,-.075,M_.metal,{parent:g});   // the lighter: his motor
   const prop=new THREE.Group();prop.position.y=.235;g.add(prop);blk(-.1,.1,0,.008,-.03,.03,mat(0x8fd3f0),{parent:prop});blk(-.03,.03,0,.008,-.1,.1,mat(0x8fd3f0),{parent:prop});
   return {g,prop};
 }
 const CARL=buildCarlson();
 CARL.pk=addPick({name:'Игрушечный Карлсон',obj:CARL.g,lv:'flat',homeLv:'flat'});CARL.pk.made=false;
 {const on=CARL.pk.inter.on;CARL.pk.inter.on=()=>CARL.pk.made&&!CARL.placed&&on();}
+const CARL_PARTS=['basket','mask','plast','lighter'];
 function checkCarlson(){
-  if(state!=='play'||CARL.pk.made||!['basket','mask','plast'].every(k=>INV.some(p=>p.item===k)))return;
-  for(let i=INV.length-1;i>=0;i--)if(['basket','mask','plast'].includes(INV[i].item))INV.splice(i,1);
+  if(state!=='play'||CARL.pk.made||!CARL_PARTS.every(k=>INV.some(p=>p.item===k)))return;
+  for(let i=INV.length-1;i>=0;i--)if(CARL_PARTS.includes(INV[i].item))INV.splice(i,1);
   CARL.pk.made=true;CARL.pk.held=true;CARL.g.visible=false;INV.push(CARL.pk);invSel=INV.length-1;
-  toast('Ты склеил пластилином корзиночку и маску — получился игрушечный Карлсон! 🧸 Поставь его на подоконник.',4);renderInv(true);
+  toast('Ты склеил пластилином корзиночку, маску и зажигалку — получился игрушечный Карлсон с моторчиком! 🧸 Поставь его на подоконник.',4);renderInv(true);
 }
 // put him on the sill of any window in the flat (the sill sticks out 12 cm into the room)
 const SILLS=WINDOWS.map(W=>{const n=W.side==='+z'?1:-1;return {x:W.x,z:W.z+n*.12,ix:W.x,iz:W.z+n*.8};});
@@ -1378,20 +1393,36 @@ function placeCarlson(S){
   if(state!=='play')return;INV.splice(INV.indexOf(CARL.pk),1);invSel=clamp(invSel,0,Math.max(0,INV.length-1));renderInv();
   CARL.placed=true;CARL.pk.held=false;CARL.g.visible=true;CARL.g.position.set(S.x,.885,S.z);CARL.g.rotation.set(0,S.iz>S.z?0:Math.PI,0);
   state='carlson';carlT=0;CS={S,step:0};unlock();showHUD(false);$('prompt').hidden=true;hush();sfx.pick();
-  if(MS.away||MS.lv!=='flat')comeHome(true);standUp();MS.stun=0;Object.assign(MS,{state:'carlson',path:buildPath(MS.x,MS.z,S.ix,S.iz)});
+  if(MS.away||MS.lv!=='flat')comeHome(true);standUp();MS.stun=0;const n=S.iz>S.z?1:-1;Object.assign(MS,{state:'carlson',path:buildPath(MS.x,MS.z,S.ix+.8,S.iz+n*1.1)});   // next to you, not into you
   toast('Карлсон сидит на подоконнике… Кто-то бежит!',2.5);
 }
 function updateCarlsonScene(dt){
-  carlT+=dt;CARL.prop.rotation.y+=dt*9;
-  camera.position.set(P.x,P.eye,P.z);camera.lookAt(CARL.g.position.x,1.1,CARL.g.position.z);
-  if(CS.step===0){follow(dt,D.chase*1.25);if(!MS.path.length||carlT>8){CS.step=1;CS.t=carlT;MS.spd=0;MS.face=Math.atan2(CS.S.x-MS.x,CS.S.z-MS.z);say('Это же Карлсон! Можно с тобой?!',3);}}
-  else if(CS.step===1&&carlT-CS.t>2.8){CS.step=2;CS.t=carlT;MS.path=buildPath(MS.x,MS.z,4.4,7.07);say('Подожди меня на крыше, Карлсон! Я сейчас!',2.5);}
-  else if(CS.step===2){follow(dt,D.chase*1.4);if(carlT-CS.t>3.2&&!CS.fade){CS.fade=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;
-    setTimeout(()=>{$('fade').style.opacity=0;$('sub').hidden=true;$('toast').hidden=true;
-      endingPanel('carlson','Макар увидел на подоконнике Карлсона, закричал «Можно с тобой?!» и помчался на крышу его искать. Дверь на крышу захлопнулась, и Макар просидел там до прихода мамы, высматривая Карлсона. А ты спокойно ушёл гулять!');},1300);}}
-  animMakar(dt);
+  carlT+=dt;const c=CARL.g,S=CS.S,st=carlT-(CS.t||0);CARL.prop.rotation.y+=dt*(CS.step>=2?40:9);
+  if(CS.step<=2){camera.position.set(P.x,P.eye,P.z);camera.lookAt(c.position.x,c.position.y+.2,c.position.z);}
+  if(CS.step===0){follow(dt,D.chase*1.25);animMakar(dt);if(!MS.path.length||carlT>8){CS.step=1;CS.t=carlT;MS.spd=0;MS.face=Math.atan2(S.x-MS.x,S.z-MS.z);say('Это же Карлсон! Можно с тобой?!',2.6);}}
+  else if(CS.step===1){animMakar(dt);if(st>2.6){CS.step=2;CS.t=carlT;say('Эй! Подожди меня, Карлсон!',2.4);tone(300,1.2,'sawtooth',.05,900);}}
+  else if(CS.step===2){   // the motor whirrs and he lifts off the sill and out of the window
+    const k=Math.min(1,st/2.6),ox=S.x-S.ix,oz=S.z-S.iz,l=hyp(ox,oz);c.position.set(S.x+ox/l*k*4,.885+k*k*2.2,S.z+oz/l*k*4);c.rotation.z=Math.sin(carlT*6)*.15;animMakar(dt);
+    if(st>2.6&&!CS.black){CS.black=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;}
+    if(st>3.4){CS.step=3;CS.t=carlT;setLevel('dubai');$('fade').style.opacity=0;c.scale.setScalar(13);c.rotation.set(0,Math.PI,0);CS.pos=new THREE.Vector3(60,112,300);CS.vy=0;toast('Карлсон летит… до самого Дубая! ✈️',3);}}
+  else if(CS.step===3){   // across the desert straight at the Burj Khalifa
+    const D0=DUBAI.position.y,tgt=new THREE.Vector3(0,112,BURJ_R(112)+1.3),dir=tgt.clone().sub(CS.pos),d=dir.length();
+    if(d>.6){dir.normalize();CS.pos.addScaledVector(dir,Math.min(d,48*dt));c.rotation.y=Math.atan2(dir.x,dir.z);}
+    c.position.set(CS.pos.x,D0+CS.pos.y+Math.sin(carlT*3)*.6,CS.pos.z);
+    const back=dir.clone().multiplyScalar(-11);camera.position.set(c.position.x+back.x+5,c.position.y+3,c.position.z+back.z);camera.lookAt(c.position.x,c.position.y+1,c.position.z);
+    if(d<=.6){CS.step=4;CS.t=carlT;nz(.45,500,.4);tone(120,.5,'square',.18,60);toast('БАМ! 💥 Карлсон врезался в Бурдж-Халифу и зацепился!',2.5);CS.cam=camera.position.clone();}}
+  else if(CS.step===4){   // hangs on to the tower for a moment
+    const D0=DUBAI.position.y;c.position.set(CS.pos.x,D0+CS.pos.y,CS.pos.z);c.rotation.z=Math.sin(carlT*12)*.25;camera.position.copy(CS.cam);camera.lookAt(c.position.x,c.position.y+1,c.position.z);
+    if(st>1.6){CS.step=5;CS.t=carlT;tone(1400,2.4,'sine',.08,250);}}
+  else if(CS.step===5){   // and falls all the way down
+    const D0=DUBAI.position.y;CS.vy+=22*dt;CS.pos.y=Math.max(0,CS.pos.y-CS.vy*dt);CS.pos.z+=dt*2;c.rotation.x+=dt*5;c.rotation.z+=dt*3;
+    c.position.set(CS.pos.x,D0+CS.pos.y+.3,CS.pos.z);camera.position.set(16,D0+Math.max(6,CS.pos.y*.7),BURJ_R(10)+26);camera.lookAt(c.position.x,c.position.y,c.position.z);
+    if(CS.pos.y<=0&&!CS.down){CS.down=true;CS.t=carlT;nz(.5,700,.5);tone(80,.6,'square',.2,40);toast('Хрясь! Карлсон разбился вдребезги 💔',3);}
+    if(CS.down&&carlT-CS.t>1.8&&!CS.fade){CS.fade=true;const f=$('fade');f.style.background='#000';f.style.opacity=1;
+      setTimeout(()=>{$('fade').style.opacity=0;$('sub').hidden=true;$('toast').hidden=true;
+        endingPanel('carlson','Игрушечный Карлсон завёл моторчик, вылетел в окно и полетел… до самого Дубая! Там он врезался в Бурдж-Халифу, зацепился пропеллером, повисел и шлёпнулся вниз. Разбился насмерть. 💔 А Макар до сих пор стоит у окна и ждёт его обратно.');},1300);}}
 }
-function resetCarlson(){CARL.placed=false;CARL.pk.made=false;CARL.pk.held=false;CARL.g.visible=false;CS=null;}
+function resetCarlson(){CARL.placed=false;CARL.pk.made=false;CARL.pk.held=false;CARL.g.visible=false;CARL.g.scale.setScalar(1);CARL.g.rotation.set(0,0,0);CS=null;}
 
 /* The cardboard trick: with the monitor, keyboard, mouse and microphone from Makar's desk and the cardboard
    all in your inventory, everything turns into cardboard, and Makar gets so angry he blows up (like a
@@ -1434,7 +1465,7 @@ function pickUp(pk){
   pk.held=true;pk.obj.visible=false;const a=colsOf(pk.lv);for(const c of pk.cols){const i=a.indexOf(c);if(i>=0)a.splice(i,1);}
   INV.push(pk);invSel=INV.length-1;sfx.pick();
   if(pk.item){const k=pk.item;ITEMS[k].taken=true;ITEMS[k].spark.visible=false;P.items[k]=true;
-    toast(k==='basket'||k==='mask'||k==='plast'?pk.name+'! Если собрать корзиночку, маску и пластилин, получится кое-что интересное…':k==='cardboard'?'Картон! Интересно, что будет, если собрать с ним монитор, клавиатуру, мышку и микрофон Макара…':k==='key2'||k==='key3'?`Ключ от подъезда ${k[3]}! Теперь можно спрятаться за его дверью.`:k==='carkeys'?'Ключи от машины Макара! Его машина стоит на подземной парковке: в лифте выбери −1.':k==='keys'?'Ключи найдены! '+(P.items.shoes?'Теперь к входной двери.':'Осталось найти кроссовки.'):'Кроссовки надеты! '+(P.items.keys?'Теперь к входной двери.':'Осталось найти ключи.'));}
+    toast(k==='basket'||k==='mask'||k==='plast'||k==='lighter'?pk.name+'! Если собрать корзиночку, маску, зажигалку и пластилин, получится кое-что интересное…':k==='cardboard'?'Картон! Интересно, что будет, если собрать с ним монитор, клавиатуру, мышку и микрофон Макара…':k==='key2'||k==='key3'?`Ключ от подъезда ${k[3]}! Теперь можно спрятаться за его дверью.`:k==='carkeys'?'Ключи от машины Макара! Его машина стоит на подземной парковке: в лифте выбери −1.':k==='keys'?'Ключи найдены! '+(P.items.shoes?'Теперь к входной двери.':'Осталось найти кроссовки.'):'Кроссовки надеты! '+(P.items.keys?'Теперь к входной двери.':'Осталось найти ключи.'));}
   else toast('Взято: '+pk.name,1.4);
   renderInv(true);checkCardboard();checkCarlson();return true;
 }
@@ -2120,7 +2151,7 @@ const ENDINGS=[
   {id:'fire',title:'Пожарная тревога',hint:'Найди ключи и кроссовки и выберись в подъезд. В лифтовом холле на стене висит красная кнопка «ПОЖАР»: нажми её.'},
   {id:'car',title:'Угон машины',hint:'Найди в квартире ключи от машины Макара (🚙), выберись в подъезд, в лифте выбери «−1 — подземная парковка» и угони его оранжевую машину.'},
   {id:'boom',title:'Макар взорвался',hint:'Укради со стола Макара монитор, клавиатуру, мышку и микрофон, найди в квартире картон 📦 и собери всё это в инвентаре.'},
-  {id:'carlson',title:'Макар ищет Карлсона',hint:'Найди в квартире мини-корзиночку 🧺, медицинскую маску 😷 и салатовый пластилин 🟩 — из них получится игрушечный Карлсон. Поставь его на подоконник.'},
+  {id:'carlson',title:'Разбился насмерть',hint:'Найди в квартире мини-корзиночку 🧺, медицинскую маску 😷, зажигалку 🔥 и салатовый пластилин 🟩 — из них получится игрушечный Карлсон. Поставь его на подоконник.'},
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
 const endCount=()=>ENDINGS.filter(e=>gotEnd[e.id]).length;
@@ -2303,6 +2334,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
