@@ -50,6 +50,8 @@ button:focus-visible{outline:2px solid var(--crayon);outline-offset:3px}
 #prompt{left:50%;top:calc(50% + 34px);transform:translateX(-50%);padding:7px 13px;font-weight:800;font-size:14px;white-space:nowrap}
 #prompt kbd{font-family:var(--display);font-size:12px;background:var(--crayon);color:#1b1606;border-radius:5px;padding:2px 7px;margin-right:6px}
 #toast{left:50%;top:calc(58px + env(safe-area-inset-top,0px));transform:translateX(-50%);padding:9px 15px;font-weight:600;font-size:14px;max-width:min(520px,calc(100vw - 32px));text-align:center;transition:opacity .3s}
+#tok{right:calc(16px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);padding:6px;border-radius:22px;background:#0b0b0e;box-shadow:0 12px 30px rgba(0,0,0,.55)}
+#tok canvas{display:block;width:150px;height:267px;border-radius:16px}
 #sub{left:50%;bottom:calc(120px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);padding:9px 16px;font-size:16px;font-weight:600;max-width:min(560px,calc(100vw - 32px));text-align:center}
 #sub b{color:var(--makar);font-family:var(--display);font-weight:600;font-size:13px;margin-right:6px}
 #vig{inset:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(255,40,20,.55) 100%);opacity:0;transition:opacity .25s}
@@ -159,6 +161,7 @@ h1 em{font-style:normal;color:var(--makar)}
 <div class="hud plate" id="prompt" hidden></div>
 <div class="hud plate" id="toast" hidden></div>
 <div class="hud plate" id="sub" hidden></div>
+<div class="hud" id="tok" hidden></div>
 <div class="hud" id="vig"></div>
 <div class="hud" id="hideShade" hidden></div>
 <div class="hud" id="fade"></div>
@@ -187,6 +190,7 @@ h1 em{font-style:normal;color:var(--makar)}
         <button type="button" data-d="easy" aria-pressed="false">Лёгкий</button>
         <button type="button" data-d="normal" aria-pressed="true">Обычный</button>
         <button type="button" data-d="hard" aria-pressed="false">Сложный</button>
+        <button type="button" data-d="hyper" aria-pressed="false">Гипер сложный</button>
       </div>
       <div class="diffNote" id="diffNote"></div>
       <div class="mrow">
@@ -244,6 +248,7 @@ const DIFFS={
   easy: {name:'Лёгкий', note:'3 попытки. Макар очень медленный.', walk:1.0, chase:2.1, vision:8,  fov:90,  rate:1.1, lives:3, hear:.7,  doorDelay:1.3, showMakar:true,  hunt:.1,  check:0},
   normal:{name:'Обычный',note:'2 попытки. Макар слышит двери и унитаз и иногда проверяет укрытия.', walk:1.25,chase:2.5,vision:11, fov:100, rate:1.8, lives:2, hear:1,   doorDelay:.95, showMakar:false, hunt:.25, check:.15},
   hard:  {name:'Сложный',note:'1 попытка. Макар зоркий и заглядывает в укрытия.', walk:1.5,chase:2.9,vision:14, fov:115, rate:2.8, lives:1, hear:1.35,doorDelay:.65, showMakar:false, hunt:.45, check:.35},
+  hyper: {name:'Гипер сложный',note:'1 попытка. Макар очень быстрый и зоркий. А на кровати в комнате родителей лежат мама и папа и листают тиктоки. Если они поднимут глаза и увидят тебя, позовут Макара! Спрятаться можно под кроватью или присев у её изножья.', walk:1.7,chase:3.2,vision:16, fov:125, rate:3.4, lives:1, hear:1.6, doorDelay:.5, showMakar:false, hunt:.6, check:.5, parents:true},
 };
 let D=DIFFS.normal, diffKey='normal';
 
@@ -1264,7 +1269,7 @@ function resetActors(){
   P.lv='flat';MS.lv='flat';GATE.open=false;setLevel('flat');
   if(P.swing)stopSwing();Object.assign(P,{x:SPAWN.x,z:SPAWN.z,yaw:SPAWN.yaw,pitch:0,crouch:false,hidden:null});
   const s=SEATS.desk;Object.assign(MS,{x:s.x,z:s.z,face:s.face,state:'sit',task:'stream',seatKey:'desk',seat:s,sitK:1,wait:18+Math.random()*10,path:[],aware:0,lastSeen:null,knowsHide:false,gaveUp:false,doorT:0,delay:2,sayT:3,lostT:0,hideTarget:null});
-  $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;
+  $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;resetParents();
 }
 function newGame(){
   D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false,key2:false,key3:false,cardboard:false,basket:false,mask:false,plast:false,lighter:false};
@@ -1282,7 +1287,8 @@ function newGame(){
 /* ---------- UI helpers ---------- */
 let toastT=0,subT=0,tvT=0;
 function toast(t,dur=2.8){const el=$('toast');el.textContent=t;el.hidden=false;el.style.opacity=1;toastT=dur;}
-function say(t,dur=2.6){const el=$('sub');el.innerHTML='<b>МАКАР</b>';el.appendChild(document.createTextNode(t));el.hidden=false;subT=Math.max(dur,t.length*.075);speak(t);}
+let subBy='m';
+function say(t,dur=2.6){subBy='m';const el=$('sub');el.innerHTML='<b>МАКАР</b>';el.appendChild(document.createTextNode(t));el.hidden=false;subT=Math.max(dur,t.length*.075);speak(t);}
 // Makar speaks out loud through the browser's Russian voice; quieter when he is far away or behind walls.
 const SS=window.speechSynthesis;let ruVoice=null;
 function pickVoice(){if(!SS)return;const v=SS.getVoices().filter(v=>/^ru/i.test(v.lang));ruVoice=v.find(v=>/yuri|юрий|pavel|dmitr|male|муж/i.test(v.name))||v[0]||null;}
@@ -1341,6 +1347,130 @@ INTER.push({x:1.2,z:7.05,r:1.15,label:()=>toiletCD>0?'Умный унитаз п
 for(const [x,z,rid] of [[1.21,5.75,'bath2'],[6.35,4.8,'wc3']])INTER.push({x,z,r:1.1,label:()=>'Смыть воду',act:()=>{if(flushCD>0)return;flushCD=4;sfx.flush(x,z);heard(x,z,9,'flush');toast('Шшшшш! Это было громко.');}});
 INTER.push({get x(){return VAC.x;},get z(){return VAC.z;},r:1.2,prio:1.5,label:()=>VAC.mode==='broken'?'Пылесос сломан… 💨':VAC.mode==='dock'?'Включить робот-пылесос':VAC.mode==='clean'?'Отправить пылесос на базу':'Пылесос занят…',
   act:()=>{if(VAC.mode==='dock')startVac();else if(VAC.mode==='clean'){VAC.mode='home';toast('Пылесос едет на базу.');}}});
+
+/* ---------- hyper mode: Makar's parents on their bed, scrolling TikTok ---------- */
+// They lie on the double bed in the parents' room (where you start), propped up on pillows, phones over their faces.
+// Every so often one of them looks up from the phone; if they see you, they call Makar.
+const TOKS=[
+  {e:'😹',c:'#ff9f43',c2:'#ee5253',u:'koteyka',t:'котик залез в коробку'},{e:'🦎',c:'#1dd1a1',c2:'#10ac84',u:'gecko_life',t:'эублефар ест сверчка'},
+  {e:'💃',c:'#a55eea',c2:'#4b7bec',u:'dance.ru',t:'новый тренд #танец'},{e:'🍜',c:'#feca57',c2:'#ff6b6b',u:'supchik',t:'суп за 1 минуту'},
+  {e:'🐶',c:'#48dbfb',c2:'#0abde3',u:'pes_barbos',t:'собака поёт песню'},{e:'🐉',c:'#2d3436',c2:'#6c5ce7',u:'mine_craft',t:'победил дракона Края 😱'},
+  {e:'🤣',c:'#ff6b81',c2:'#ff4757',u:'prank_bro',t:'пранк над братом'},{e:'🚗',c:'#576574',c2:'#222f3e',u:'avto_mechta',t:'машина мечты'},
+  {e:'🐱',c:'#f8a5c2',c2:'#f78fb3',u:'koteyka',t:'кот против огурца'},{e:'🎂',c:'#f6e58d',c2:'#f9ca24',u:'tort_master',t:'торт как настоящий'}];
+function buildParent(o){
+  const g=new THREE.Group();g.position.set(o.x,.64,8.62);scene.add(g);
+  const skin=mat(0xe7b48f),shirt=mat(o.shirt),hair=mat(o.hair),blanket=mat(0x8a5a8e);
+  blk(-.3,.3,.08,.2,0,.42,M_.white,{parent:g});                                   // an extra pillow to lean on
+  blk(-.25,.25,0,.11,.62,1.05,blanket,{parent:g});blk(-.21,.21,0,.08,1.05,1.9,blanket,{parent:g});   // the blanket over the tummy and legs
+  const up=new THREE.Group();up.position.set(0,.1,.85);up.rotation.x=.35;g.add(up);   // upper body, from the hips back up to the head
+  blk(-.21,.21,-.1,.1,-.62,0,shirt,{parent:up});
+  const head=new THREE.Group();head.position.set(0,.02,-.76);up.add(head);
+  blk(-.14,.14,-.14,.14,-.14,.14,skin,{parent:head});
+  blk(-.15,.15,-.15,.06,-.16,-.07,hair,{parent:head});blk(-.15,.15,-.16,-.05,-.15,.15,hair,{parent:head});
+  if(o.mom)blk(-.17,.17,-.18,-.1,-.15,.3,hair,{parent:head});else blk(-.06,.06,.14,.15,.035,.06,hair,{parent:head});   // mum's long hair on the pillow, dad's moustache
+  for(const sx of [-1,1]){blk(sx*.06-.025,sx*.06+.025,.14,.147,-.06,-.03,basic(0xffffff),{parent:head});blk(sx*.06-.01,sx*.06+.01,.147,.152,-.055,-.035,basic(0x111111),{parent:head});}
+  blk(-.04,.04,.14,.147,.06,.075,mat(0x8a3a32),{parent:head});
+  const glowM=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.22,blending:THREE.AdditiveBlending,depthWrite:false});
+  const glow=new THREE.Mesh(new THREE.PlaneGeometry(.27,.27),glowM);glow.position.y=.156;glow.rotation.x=-Math.PI/2;head.add(glow);   // the screen light on the face
+  const arms=[-1,1].map(sx=>{const a=new THREE.Group();a.position.set(sx*.22,.06,-.5);blk(-.045,.045,0,1,-.045,.045,shirt,{parent:a});up.add(a);
+    const hand=blk(-.04,.04,-.04,.04,-.04,.04,skin,{parent:up});return {a,hand,sx};});
+  const cv=document.createElement('canvas');cv.width=135;cv.height=240;const tex=new THREE.CanvasTexture(cv);
+  const phone=new THREE.Group();up.add(phone);blk(-.048,.048,-.004,.008,-.085,.085,mat(0x15151a),{parent:phone});
+  const scr=new THREE.Mesh(new THREE.PlaneGeometry(.086,.152),new THREE.MeshBasicMaterial({map:tex}));scr.position.y=-.006;scr.rotation.set(Math.PI/2,0,Math.PI);phone.add(scr);
+  return Object.assign(o,{g,up,head,arms,phone,cv,cx:cv.getContext('2d'),tex,glowM,vid:0,prev:0,sw:0,swT:2,lk:0,st:'scroll',t:10,seenT:0,laughT:15,dT:0,start:0});
+}
+const PARENTS={g:new THREE.Group(),L:[],cool:0,callT:0,caller:null};
+{const m=buildParent({who:'Мама',label:'МАМА',mom:true,x:8.5,shirt:0xd94f8a,hair:0x5a3218,
+    laughs:['Ха-ха-ха, смотри, котик!','Ой, какая прелесть…','Сохраню себе.','Ещё одно видео и спать.'],
+    calls:['Макар! Мелкий не спит!','Макар, лови брата!','Макар! Он из комнаты убегает!']}),
+  d=buildParent({who:'Папа',label:'ПАПА',x:9.3,shirt:0x3d6fb0,hair:0x2a2a2a,
+    laughs:['Ха! Вот это пранк!','Ну и машина…','Смотри, суп за минуту.','Хе-хе-хе.'],
+    calls:['Макар! Он опять убегает!','Макар, твой брат тут бродит!','Макар! Поймай мелкого!']});
+  for(const p of [m,d]){scene.remove(p.g);PARENTS.g.add(p.g);PARENTS.L.push(p);}scene.add(PARENTS.g);PARENTS.g.visible=false;}
+const V_UP=new THREE.Vector3(0,1,0),V_TMP=new THREE.Vector3();
+function poseParent(p){
+  // phone held up over the face while scrolling, lowered to the chest when they look up
+  const k=p.lk,hx=0,hy=.4-.2*k,hz=-.6+.28*k;p.phone.position.set(hx,hy,hz);p.phone.rotation.x=-.5*k;
+  p.head.rotation.x=-.1+.8*k;
+  for(const a of p.arms){const tx=a.sx*.06,ty=hy-.01,tz=hz+.03;a.hand.position.set(tx,ty,tz);
+    V_TMP.set(tx-a.a.position.x,ty-a.a.position.y,tz-a.a.position.z);const len=V_TMP.length();a.a.quaternion.setFromUnitVectors(V_UP,V_TMP.normalize());a.a.scale.set(1,len,1);}
+}
+function drawTokClip(g,c,y,t,w,h){
+  g.save();g.translate(0,y);const gr=g.createLinearGradient(0,0,0,h);gr.addColorStop(0,c.c);gr.addColorStop(1,c.c2);g.fillStyle=gr;g.fillRect(0,0,w,h);
+  g.textAlign='center';g.textBaseline='middle';g.font=`${w*.42|0}px serif`;g.fillText(c.e,w/2+Math.sin(t*3)*7,h*.45-Math.abs(Math.sin(t*5))*14);
+  g.textAlign='left';g.fillStyle='#fff';g.font='bold 11px Arial';g.fillText('@'+c.u,8,h-36);g.font='10px Arial';g.fillText(c.t,8,h-21);
+  g.textAlign='center';g.font='15px serif';g.fillText('❤️',w-15,h*.52);g.fillText('💬',w-15,h*.64);g.fillText('↗️',w-15,h*.76);
+  g.font='bold 8px Arial';g.fillText((c.e.charCodeAt(0)%90+10)+'K',w-15,h*.52+13);g.restore();
+}
+function drawTok(p,t){
+  const g=p.cx,w=p.cv.width,h=p.cv.height,s=p.sw*p.sw;
+  drawTokClip(g,TOKS[p.vid],s*h,t,w,h);if(p.sw>0)drawTokClip(g,TOKS[p.prev],s*h-h,t,w,h);
+  g.fillStyle='rgba(0,0,0,.25)';g.fillRect(0,0,w,20);g.fillStyle='#fff';g.font='bold 10px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText('Подписки   Для вас',w/2,11);
+  g.fillStyle='rgba(255,255,255,.35)';g.fillRect(0,h-4,w,4);g.fillStyle='#fff';g.fillRect(0,h-4,w*clamp((t-p.start)/p.swDur,0,1),4);
+  p.tex.needsUpdate=true;
+}
+function swipeTok(p,t){p.prev=p.vid;let v;do v=Math.random()*TOKS.length|0;while(v===p.vid);p.vid=v;p.sw=1;p.start=t;p.swDur=p.swT=2+Math.random()*4;
+  const d=hyp(p.x-P.x,9.05-P.z);if(P.lv==='flat'&&d<7){const v2=.05*(1-d/7);tone(1300,.05,'sine',v2,700,0,panFor(p.x,9));for(let i=0;i<3;i++)tone(pick([523,659,784,988]),.1,'triangle',v2*.7,0,.08+i*.1,panFor(p.x,9));}}
+function talkParent(p,t){
+  subBy='p';const el=$('sub');el.innerHTML='<b>'+p.label+'</b>';el.appendChild(document.createTextNode(t));el.hidden=false;subT=Math.max(2.4,t.length*.075);
+  if(!SS||muted)return;try{SS.cancel();const u=new SpeechSynthesisUtterance(t),v=SS.getVoices().filter(v=>/^ru/i.test(v.lang));u.lang='ru-RU';
+    u.voice=p.mom?(v.find(v=>/milena|милена|irina|ирина|alena|алёна|katya|катя|female|жен/i.test(v.name))||ruVoice||v[0]||null):(ruVoice||v[0]||null);
+    u.pitch=p.mom?1.05:.7;u.rate=p.mom?1:.92;u.volume=clamp(1-hyp(p.x-P.x,9-P.z)/14,.3,1);SS.speak(u);}catch(e){}
+}
+// do they see you? They look down the bed towards its foot; right next to them they notice you from any side.
+function parentSees(p){
+  if(P.lv!=='flat'||P.hidden||state!=='play')return false;
+  const ex=p.x,ez=9.05,dx=P.x-ex,dz=P.z-ez,d=hyp(dx,dz),L=ROOM_LAMP.parents;
+  if(d>(L&&!L.on?4.5:8.5))return false;
+  if(d>1.7&&Math.abs(angDiff(Math.atan2(dx,dz),0))>1.2)return false;
+  if(P.crouch&&P.x>7.85&&P.x<10&&P.z>10.55&&P.z<11.35)return false;   // ducked down behind the foot of the bed
+  for(const c of COL)if((c.wall||c.tall)&&segBox(ex,ez,P.x,P.z,c.x0,c.x1,c.z0,c.z1))return false;
+  for(const dr of DOORS)if(doorSolid(dr)&&segBox(ex,ez,P.x,P.z,dr.box.x0,dr.box.x1,dr.box.z0,dr.box.z1))return false;
+  return true;
+}
+function parentsCall(){
+  const p=PARENTS.caller;if(state!=='play')return;
+  if(MS.lv!=='flat'||MS.away){talkParent(p,'Ой, а Макара же нет дома…');return;}
+  if(MS.state==='grab'||MS.state==='check')return;
+  const was=MS.state==='chase';standUp();MS.state='chase';MS.aware=1;MS.lastSeen={x:P.x,z:P.z};MS.lostT=0;MS.path=[];MS.repathT=0;MS.delay=0;
+  if(!was){say(p.mom?'Иду, мам!':'Иду, пап!');sfx.sting();}
+}
+function closePeek(){if(!P.peek)return;P.peek=null;$('tok').hidden=true;}
+function resetParents(){
+  PARENTS.g.visible=!!D.parents;PARENTS.cool=0;PARENTS.callT=0;closePeek();
+  PARENTS.L.forEach((p,i)=>{Object.assign(p,{st:'scroll',t:9+i*4+Math.random()*3,lk:0,seenT:0,sw:0,laughT:6+i*7});poseParent(p);});
+}
+function updateParents(dt,time){
+  if(!PARENTS.g.visible)return;
+  if(PARENTS.cool>0)PARENTS.cool-=dt;
+  if(PARENTS.callT>0){PARENTS.callT-=dt;if(PARENTS.callT<=0)parentsCall();}
+  const play=state==='play'&&!ADMIN.freeze;
+  for(const p of PARENTS.L){
+    const d=hyp(p.x-P.x,9.05-P.z),near=P.lv==='flat'&&d<8;
+    p.lk+=((p.st==='look'?1:p.st==='warn'?.4:0)-p.lk)*Math.min(1,dt*6);poseParent(p);
+    p.sw=Math.max(0,p.sw-dt/.35);
+    if(p.st==='scroll'){p.swT-=dt;if(p.swT<=0)swipeTok(p,time);}
+    if(near||P.peek===p){p.dT-=dt;if(p.dT<=0){p.dT=.1;drawTok(p,time);}}
+    const c=TOKS[p.vid];p.glowM.color.set(c.c);p.glowM.opacity=p.st==='scroll'?.22:.08;
+    if(!play)continue;
+    if(p.st==='scroll'&&near&&d<6&&Math.random()<dt*2)tone(pick([523,587,659,784,880,988]),.09,'triangle',.018*(1-d/6),0,0,panFor(p.x,9));   // the tinny phone music
+    p.laughT-=dt;if(p.laughT<=0){p.laughT=16+Math.random()*20;if(p.st==='scroll'&&near&&d<7&&subT<=0)talkParent(p,pick(p.laughs));}
+    p.t-=dt;
+    if(p.st==='scroll'&&p.t<=0){if(PARENTS.L.some(q=>q!==p&&q.st!=='scroll'))p.t=2;else{p.st='warn';p.t=1.1;tone(330,.12,'sine',near?.05:0,250);}}
+    else if(p.st==='warn'&&p.t<=0){p.st='look';p.t=2.4;p.seenT=0;}
+    else if(p.st==='look'){
+      if(PARENTS.cool<=0&&parentSees(p)){p.seenT+=dt;if(p.seenT>.3){PARENTS.cool=12;PARENTS.caller=p;PARENTS.callT=1.2;p.t=Math.max(p.t,1.4);talkParent(p,pick(p.calls));if(P.peek)closePeek();}}
+      else p.seenT=Math.max(0,p.seenT-dt);
+      if(p.t<=0){p.st='scroll';p.t=7+Math.random()*9;}
+    }
+  }
+  if(P.peek&&(state!=='play'||P.lv!=='flat'||hyp(P.peek.px-P.x,P.peek.pz-P.z)>1.8))closePeek();
+}
+for(const p of PARENTS.L){p.px=p.mom?7.95:9.95;p.pz=9.0;
+  INTER.push({get x(){return p.px;},get z(){return p.pz;},r:1.2,on:()=>PARENTS.g.visible,
+    label:()=>P.peek===p?'Перестать подглядывать':'Подсмотреть тикток '+(p.mom?'мамы':'папы'),
+    act:()=>{if(P.peek===p){closePeek();return;}closePeek();P.peek=p;drawTok(p,performance.now()/1000);const el=$('tok');el.innerHTML='';el.appendChild(p.cv);el.hidden=false;
+      toast('Тсс… Ты подглядываешь в телефон. Если '+(p.mom?'мама':'папа')+' поднимет глаза — беги!',3);}});}
 for(const s of SWITCHES)INTER.push({x:s.x,z:s.z,r:.85,label:()=>ROOM_LAMP[s.room].on?'Выключить свет':'Включить свет',act:()=>{setRoomLight(s.room,!ROOM_LAMP[s.room].on);sfx.click();}});
 INTER.push({x:wallFace('+x',6.85),z:5.0,r:1.2,label:()=>'Нажать пожарную кнопку',act:fireAlarm});
 INTER.push({x:9.15,z:3.62,r:1.2,label:()=>LIFT.state==='idle'?'Вызвать лифт':LIFT.state==='coming'?'Лифт едет…':'Заходи в лифт!',act:()=>{
@@ -1924,7 +2054,7 @@ function animMakar(dt){
     else if(MS.state==='swinging'){MK.armL.rotation.x=MK.armR.rotation.x=-2.6;}
     else if(sit){MK.armL.rotation.x=MK.armR.rotation.x=-.7;MK.head.rotation.x=.25;}}
   if(!(sit&&MS.task==='poop')&&!(MS.state==='sit'&&MS.task==='pet'))MK.head.rotation.x=0;
-  MK.mouth.scale.y=subT>0&&state!=='menu'?1+Math.abs(Math.sin(t*17))*2.2:1;
+  MK.mouth.scale.y=subT>0&&subBy==='m'&&state!=='menu'?1+Math.abs(Math.sin(t*17))*2.2:1;
 }
 
 /* ---------- robot vacuum ----------
@@ -2073,7 +2203,7 @@ function updateWorld(dt,time){
   {const home=MS.lv==='flat'&&MS.state==='sit'&&(state==='play'||state==='menu');setTV(livingTV,home&&MS.task==='soup');setTV(roomTV,home&&MS.task==='stream');
    if(TVS.some(t=>t.on)){tvT=(tvT||0)-dt;if(tvT<=0){tvT=.12;drawTV(time);}
      for(const tv of TVS)if(tv.on&&P.lv==='flat'){const v=clamp(1-hyp(tv.x-P.x,tv.z-P.z)/6,0,1);if(v>.05&&Math.random()<dt*2.5)tone(pick([523,587,659,784,880]),.12,'triangle',.03*v,0,0,panFor(tv.x,tv.z));}}}
-  updateGecko(dt,time);updateFlying(dt);updatePuffs(dt);
+  updateParents(dt,time);updateGecko(dt,time);updateFlying(dt);updatePuffs(dt);
   if(CAR.leaving){CAR.spd=Math.min(8,CAR.spd+dt*3);carDriveStep(dt,CAR.spd);if(CAR.x<PX0-6)hideCar();}
   if(P.lv==='park'&&CAR.glow.visible){const k=.5+.5*Math.sin(time*3.2);CAR_M[0xe2512b].emissive.setRGB(.32*k,.1*k,.03*k);CAR.glowM.color.setHSL(.13,1,.4+.25*k);const sc=1.2+.4*k;CAR.mark.scale.set(sc,sc,1);}
   updateVac(dt,time);
@@ -2120,7 +2250,7 @@ function panel(title,text,btns,body){panelCard.classList.remove('wide');menuCard
   btns.forEach(([label,fn,cls])=>{const e=document.createElement('button');e.type='button';e.className=cls||'play';e.textContent=label;e.addEventListener('click',fn);b.appendChild(e);});}
 function showMenu(){state='menu';hush();$('sub').hidden=true;if(P.lv!=='flat'){P.lv='flat';MS.lv='flat';setLevel('flat');}showHUD(false);overlay.hidden=false;menuCard.hidden=false;panelCard.hidden=true;$('hideShade').hidden=true;$('fade').style.opacity=0;unlock();drawPlan($('plan'),{big:true});}
 function startPlay(){state='play';hush();overlay.hidden=true;showHUD(true);lock();}
-function begin(){initAudio();if(AC&&AC.state==='suspended')AC.resume();newGame();startPlay();toast('Ты в комнате родителей. Макар ведёт стрим в своей комнате. Найди ключи и кроссовки, выберись из квартиры, спустись на лифте и убеги со двора через калитку.',6);}
+function begin(){initAudio();if(AC&&AC.state==='suspended')AC.resume();newGame();startPlay();toast(D.parents?'Ты в комнате родителей. Мама и папа лежат на кровати и листают тиктоки. Когда они поднимают глаза, не попадайся им на глаза, а то позовут Макара!':'Ты в комнате родителей. Макар ведёт стрим в своей комнате. Найди ключи и кроссовки, выберись из квартиры, спустись на лифте и убеги со двора через калитку.',6);}
 function pause(){if(state!=='play')return;state='pause';hush();showPause();showHUD(false);}
 function showPause(){panel('Пауза','Макар тоже ждёт.',[['Продолжить',()=>{startPlay();}],[timeLabel(),()=>{toggleTime();showPause();},'ghost'],...(adminOpen()?[['Админ панель',()=>showAdmin(true),'ghost']]:[]),['Заново',()=>begin(),'ghost'],['В меню',showMenu,'ghost']]);}
 function caught(){
@@ -2423,7 +2553,7 @@ if(isPhone)$('keysHelp').innerHTML='<kbd>Слева</kbd><span>джойстик:
 
 // menu
 const diffBtns=[...document.querySelectorAll('#diff button')];
-function setDiff(k){diffKey=k;D=DIFFS[k];diffBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===k));$('diffNote').textContent=DIFFS[k].note;try{localStorage.setItem('makar-diff',k);}catch(e){}}
+function setDiff(k){diffKey=k;D=DIFFS[k];diffBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===k));$('diffNote').textContent=DIFFS[k].note;PARENTS.g.visible=!!D.parents;try{localStorage.setItem('makar-diff',k);}catch(e){}}
 diffBtns.forEach(b=>b.addEventListener('click',()=>setDiff(b.dataset.d)));
 try{const s=localStorage.getItem('makar-diff');if(s&&DIFFS[s])diffKey=s;}catch(e){}
 setDiff(diffKey);
@@ -2446,6 +2576,7 @@ function updateHUD(dt){
   else if(P.lv!=='flat'&&MS.lv!==P.lv&&!MS.away){s='Макар дома и тебя не заметил';}
   else if(P.lv!=='flat'&&MS.lv!==P.lv){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
   else if(MS.state==='chase'){s='Макар гонится!';cls='alert';}
+  else if(PARENTS.g.visible&&P.lv==='flat'&&PARENTS.L.some(p=>p.st!=='scroll'&&hyp(p.x-P.x,9.05-P.z)<10)){const p=PARENTS.L.find(p=>p.st!=='scroll');s=p.who+(p.st==='warn'?' отрывается от телефона…':' смотрит! 👀');cls='alert';}
   else if(MS.aware>.05){s='Макар что-то заметил';}
   else if(MS.state==='investigate'){s='Макар идёт на шум';}
   else if(LIFT.state==='coming'){s='Лифт: '+LIFT.floor+' этаж';}
@@ -2481,6 +2612,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={PARENTS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
