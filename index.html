@@ -1269,7 +1269,7 @@ function resetActors(){
   P.lv='flat';MS.lv='flat';GATE.open=false;setLevel('flat');
   if(P.swing)stopSwing();Object.assign(P,{x:SPAWN.x,z:SPAWN.z,yaw:SPAWN.yaw,pitch:0,crouch:false,hidden:null});
   const s=SEATS.desk;Object.assign(MS,{x:s.x,z:s.z,face:s.face,state:'sit',task:'stream',seatKey:'desk',seat:s,sitK:1,wait:18+Math.random()*10,path:[],aware:0,lastSeen:null,knowsHide:false,gaveUp:false,doorT:0,delay:2,sayT:3,lostT:0,hideTarget:null});
-  $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;resetParents();
+  $('tCrouch').classList.remove('on');$('sub').hidden=true;subT=0;resetParents();resetSisters();
 }
 function newGame(){
   D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false,key2:false,key3:false,cardboard:false,basket:false,mask:false,plast:false,lighter:false};
@@ -1471,6 +1471,98 @@ for(const p of PARENTS.L){p.px=p.mom?7.95:9.95;p.pz=9.0;
     label:()=>P.peek===p?'Перестать подглядывать':'Подсмотреть тикток '+(p.mom?'мамы':'папы'),
     act:()=>{if(P.peek===p){closePeek();return;}closePeek();P.peek=p;drawTok(p,performance.now()/1000);const el=$('tok');el.innerHTML='';el.appendChild(p.cv);el.hidden=false;
       toast('Тсс… Ты подглядываешь в телефон. Если '+(p.mom?'мама':'папа')+' поднимет глаза — беги!',3);}});}
+
+/* ---------- Makar's sisters ----------
+   Two sisters sit cross-legged on their beds: the older one draws in an album, the younger one plays with a doll.
+   They are on your side: talk to them (E) and they whisper where a thing you still need is lying. Hide in their
+   tent and when Makar comes to look inside, they shoo him out of their room (then they need a while before
+   they can do it again). If he saw you climb in, they cannot help. */
+function buildSister(o){
+  const g=new THREE.Group();g.position.set(o.x,o.y,o.z);g.rotation.y=Math.PI/2;scene.add(g);   // facing east, into the room
+  const skin=mat(0xf0c19c),dress=mat(o.dress),hair=mat(o.hair),bow=mat(o.bow);
+  blk(-.17,.17,0,.08,-.02,.22,mat(o.tights),{parent:g});blk(-.19,.19,.02,.12,-.1,.1,dress,{parent:g});   // crossed legs, the skirt over them
+  for(const s of [-1,1])blk(s*.13-.04,s*.13+.04,0,.06,.17,.25,M_.white,{parent:g});                       // socks
+  const body=new THREE.Group();body.position.y=.1;g.add(body);
+  blk(-.13,.13,0,.3,-.08,.07,dress,{parent:body});blk(-.035,.035,.29,.36,-.03,.03,skin,{parent:body});
+  const head=new THREE.Group();head.position.y=.35;body.add(head);
+  blk(-.11,.11,0,.21,-.1,.1,skin,{parent:head});
+  blk(-.12,.12,.15,.24,-.11,.11,hair,{parent:head});blk(-.12,.12,.02,.2,-.12,-.05,hair,{parent:head});blk(-.115,.115,.16,.2,.1,.112,hair,{parent:head});
+  if(o.tails)for(const s of [-1,1]){sph(s*.14,.13,-.03,.05,hair,{parent:head});blk(s*.13-.03,s*.13+.03,.17,.21,-.06,0,bow,{parent:head});}   // two pigtails with bows
+  else{blk(-.12,.12,-.24,.12,-.13,-.07,hair,{parent:head});blk(-.07,.07,.23,.28,-.03,.03,bow,{parent:head});}              // long hair down the back, a bow on top
+  for(const s of [-1,1]){blk(s*.045-.022,s*.045+.022,.1,.135,.1,.104,basic(0xffffff),{parent:head});blk(s*.045-.01,s*.045+.01,.106,.13,.104,.107,basic(0x2a1a10),{parent:head});
+    blk(s*.072-.02,s*.072+.02,.06,.08,.1,.103,mat(0xf29a9a),{parent:head});}
+  const mouth=blk(-.03,.03,.045,.06,.1,.106,mat(0x9a3a3a),{parent:head});
+  const arms=[-1,1].map(s=>{const a=new THREE.Group();a.position.set(s*.16,.27,0);body.add(a);blk(-.035,.035,-.24,0,-.035,.035,dress,{parent:a});blk(-.03,.03,-.29,-.24,-.03,.03,skin,{parent:a});return a;});
+  let prop;
+  if(o.tails){prop=new THREE.Group();prop.position.set(0,.3,.25);g.add(prop);   // the doll: pink dress, yellow hair
+    blk(-.035,.035,0,.08,-.02,.02,M_.pink,{parent:prop});sph(0,.105,0,.028,skin,{parent:prop});blk(-.03,.03,.11,.14,-.03,.02,M_.yellow,{parent:prop});}
+  else{prop=blk(-.12,.12,.12,.13,.06,.24,matT(ctex(64,48,(c,w,h)=>{c.fillStyle='#fffdf6';c.fillRect(0,0,w,h);c.lineWidth=3;   // the album: a sun, a house and a cat
+      c.strokeStyle='#f0a020';c.beginPath();c.arc(12,11,6,0,7);c.stroke();c.strokeStyle='#d0402a';c.strokeRect(30,22,18,16);c.beginPath();c.moveTo(28,22);c.lineTo(39,12);c.lineTo(50,22);c.stroke();
+      c.strokeStyle='#4a4a4a';c.beginPath();c.arc(14,36,6,0,7);c.stroke();},false)),{parent:g});
+    blk(-.008,.008,-.34,-.25,.0,.016,M_.yellow,{parent:arms[1]});}   // a pencil in her right hand
+  return Object.assign(o,{g,body,head,mouth,arms,prop,lookY:0});
+}
+const SIS={L:[],cool:0,hintT:0,hinted:[],makarT:0,lightOn:true,inTent:false,replyT:0,chatT:12,talker:null};
+SIS.L.push(buildSister({by:'s1',label:'СТАРШАЯ СЕСТРЁНКА',x:1.22,y:.5,z:10.7,dress:0x7a5ad8,tights:0x3a3a6a,hair:0x6a3e1e,bow:0xf0c23a,pitch:1.35,
+    chat:['Я рисую котика. Похоже?','Макар опять стримит, как всегда.','Не шуми, а то Макар услышит!','Мы тебя не выдадим, честно.']}),
+  buildSister({by:'s2',label:'МЛАДШАЯ СЕСТРЁНКА',x:1.22,y:.46,z:9.4,dress:0xf06aa0,tights:0xffffff,hair:0xc88a3a,bow:0xf19ab0,tails:true,pitch:1.7,
+    chat:['Моя кукла будет принцессой!','Давай играть в дочки-матери!','А моя кукла тоже убегает от Макара!','Хи-хи-хи!']}));
+const femaleVoice=v=>v.find(v=>/milena|милена|irina|ирина|alena|алёна|katya|катя|female|жен/i.test(v.name))||ruVoice||v[0]||null;
+function talkSis(s,t){
+  subBy=s.by;SIS.talker=s;const el=$('sub');el.innerHTML='<b>'+s.label+'</b>';el.appendChild(document.createTextNode(t));el.hidden=false;subT=Math.max(2.4,t.length*.075);
+  if(!SS||muted)return;try{SS.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='ru-RU';u.voice=femaleVoice(SS.getVoices().filter(v=>/^ru/i.test(v.lang)));
+    u.pitch=s.pitch;u.rate=1.08;u.volume=clamp(1-hyp(s.x-P.x,s.z-P.z)/14,.3,1);SS.speak(u);}catch(e){}
+}
+// what they can tell you about, most important first, and how to say where it is
+const HINTS=[['keys','Ключи от квартиры','лежат'],['shoes','Твои кроссовки','стоят'],['carkeys','Ключи от машины Макара','лежат'],['cardboard','Картон','лежит'],
+  ['basket','Мини-корзиночка','лежит'],['mask','Медицинская маска','лежит'],['plast','Салатовый пластилин','лежит'],['lighter','Зажигалка','лежит']];
+const ROOM_IN={living:'в гостиной',kitchen:'на кухне',bath2:'в Туалете 2',bath1:'в Туалете 1, где умный унитаз',wc3:'в Туалете 3',hall:'в холле',vest:'в холле',
+  sisters:'у нас в комнате',mine:'в комнате Макара',parents:'в комнате родителей',corr:'в коридоре подъезда',lift:'в лифтовом холле',cab:'в лифте'};
+function whereIs(k){
+  const it=ITEMS[k],pk=PICKS.find(p=>p.item===k);
+  if(it.withMakar)return 'у Макара в кармане';
+  if(!pk||pk.held||pk.flying||pk.eaten||!pk.obj.visible)return null;
+  if(pk.lv==='park')return 'на парковке';if(pk.lv==='yard')return 'во дворе';
+  const sp=it.spot;if(sp.where&&hyp(pk.cx-sp.x,pk.cz-sp.z)<.3)return sp.where.replace('на столе у систёр','у нас на столе');
+  const r=roomAt(pk.cx,pk.cz);return r&&ROOM_IN[r.id]||'где-то в квартире';
+}
+function sisterHint(s){
+  if(SIS.hintT>0){talkSis(s,pick(['Подожди, я рисую!','Мы играем, не мешай!','Мы уже всё сказали.']));return;}
+  let h=HINTS.find(([k])=>!SIS.hinted.includes(k)&&whereIs(k));
+  if(!h){SIS.hinted=[];h=HINTS.find(([k])=>whereIs(k));}
+  if(!h){talkSis(s,'У тебя уже всё есть! Беги, пока Макар не видит!');return;}
+  SIS.hinted.push(h[0]);SIS.hintT=8;const w=whereIs(h[0]);
+  talkSis(s,'Тсс! '+h[1]+' '+(w.startsWith('у Макара')?'сейчас '+w:h[2]+' '+w)+'.');
+}
+function resetSisters(){Object.assign(SIS,{cool:0,hintT:0,hinted:[],makarT:0,lightOn:true,inTent:false,replyT:0,chatT:12,talker:null});}
+// Makar is about to look into the tent where you hide: the sisters shoo him away
+function coverTent(){
+  const s=pick(SIS.L);SIS.cool=30;talkSis(s,pick(['Макар! Не трогай нашу палатку, там куклы спят!','Макар, это наша комната! Уходи!','Там никого нет! Не лезь!']));
+  standUp();Object.assign(MS,{state:'look',wait:2.5,lookBase:MS.face,lookT:0,hideTarget:null,path:[]});SIS.replyT=1.8;
+}
+function updateSisters(dt,time){
+  for(const k of ['cool','hintT','makarT','chatT'])if(SIS[k]>0)SIS[k]-=dt;
+  if(SIS.replyT>0){SIS.replyT-=dt;if(SIS.replyT<=0&&state==='play')say(pick(['Ладно, ладно, не орите…','Ну и сидите в своей палатке.','Девчонки…']));}
+  const play=state==='play'&&P.lv==='flat'&&!ADMIN.freeze;
+  for(const s of SIS.L){
+    const d=hyp(s.x-P.x,s.z-P.z),talking=subT>0&&subBy===s.by,looks=P.lv==='flat'&&!P.hidden&&(d<3.5||talking);
+    const ly=looks?clamp(angDiff(Math.atan2(P.x-s.x,P.z-s.z),Math.PI/2),-1.1,1.1):0;s.lookY+=(ly-s.lookY)*Math.min(1,dt*4);
+    s.head.rotation.y=s.lookY;s.head.rotation.x=looks?0:.35;
+    s.mouth.scale.y=talking?1+Math.abs(Math.sin(time*18))*1.8:1;
+    if(s.tails){const b=looks?0:1;s.prop.position.y=.3+Math.abs(Math.sin(time*4))*.05*b;s.prop.rotation.z=Math.sin(time*4)*.3*b;for(const a of s.arms)a.rotation.x=-1.25;}
+    else{s.arms[0].rotation.x=-1.0;s.arms[1].rotation.x=-1.05+(looks?0:Math.sin(time*7)*.06);s.arms[1].rotation.z=looks?0:Math.sin(time*5)*.08;}
+  }
+  if(!play)return;
+  const near=SIS.L.reduce((a,s)=>Math.min(a,hyp(s.x-P.x,s.z-P.z)),99);
+  const L=ROOM_LAMP.sisters;if(L.on!==SIS.lightOn){SIS.lightOn=L.on;if(near<7)talkSis(pick(SIS.L),L.on?'Ну наконец-то, светло!':'Ай! Кто выключил свет?!');}
+  if(P.hidden&&P.hidden.id==='tent'){if(!SIS.inTent){SIS.inTent=true;talkSis(SIS.L[0],SIS.cool>0?'Тсс… Только сиди тихо, мы Макара уже прогоняли.':'Тсс! Сиди тихо. Если Макар полезет, мы его прогоним.');}}
+  else SIS.inTent=false;
+  const mr=MS.lv==='flat'&&!MS.away&&roomAt(MS.x,MS.z);
+  if(mr&&mr.id==='sisters'&&SIS.makarT<=0&&near<9&&MS.state!=='check'&&subT<=0){SIS.makarT=25;
+    talkSis(pick(SIS.L),MS.state==='chase'?pick(['Макар, не бегай у нас в комнате!','Беги, мелкий, беги!']):MS.state==='grab'?'Макар, не надо!':pick(['Макар, стучаться надо!','Макар, выйди из нашей комнаты!','Мы ничего не видели!']));}
+  if(SIS.chatT<=0){SIS.chatT=15+Math.random()*12;if(near<5&&subT<=0&&!P.hidden){const s=pick(SIS.L);talkSis(s,pick(s.chat));}}
+}
+for(const s of SIS.L)INTER.push({x:1.6,z:s.z,r:1.2,label:()=>'Поговорить '+(s.tails?'с младшей':'со старшей')+' сестрёнкой',act:()=>sisterHint(s)});
 for(const s of SWITCHES)INTER.push({x:s.x,z:s.z,r:.85,label:()=>ROOM_LAMP[s.room].on?'Выключить свет':'Включить свет',act:()=>{setRoomLight(s.room,!ROOM_LAMP[s.room].on);sfx.click();}});
 INTER.push({x:wallFace('+x',6.85),z:5.0,r:1.2,label:()=>'Нажать пожарную кнопку',act:fireAlarm});
 INTER.push({x:9.15,z:3.62,r:1.2,label:()=>LIFT.state==='idle'?'Вызвать лифт':LIFT.state==='coming'?'Лифт едет…':'Заходи в лифт!',act:()=>{
@@ -2019,6 +2111,7 @@ function updateMakar(dt){
     case 'grab':case 'check':{
       const h=MS.hideTarget;
       if(!P.hidden||P.hidden!==h){MS.state='chase';MS.lostT=0;MS.lastSeen={x:P.x,z:P.z};break;}
+      if(MS.state==='check'&&h.id==='tent'&&SIS.cool<=0){coverTent();break;}
       if(follow(dt,MS.state==='grab'?D.chase:D.walk*1.2)||hyp(h.x-MS.x,h.z-MS.z)<.7){caught();}
       break;}
   }
@@ -2203,7 +2296,7 @@ function updateWorld(dt,time){
   {const home=MS.lv==='flat'&&MS.state==='sit'&&(state==='play'||state==='menu');setTV(livingTV,home&&MS.task==='soup');setTV(roomTV,home&&MS.task==='stream');
    if(TVS.some(t=>t.on)){tvT=(tvT||0)-dt;if(tvT<=0){tvT=.12;drawTV(time);}
      for(const tv of TVS)if(tv.on&&P.lv==='flat'){const v=clamp(1-hyp(tv.x-P.x,tv.z-P.z)/6,0,1);if(v>.05&&Math.random()<dt*2.5)tone(pick([523,587,659,784,880]),.12,'triangle',.03*v,0,0,panFor(tv.x,tv.z));}}}
-  updateParents(dt,time);updateGecko(dt,time);updateFlying(dt);updatePuffs(dt);
+  updateParents(dt,time);updateSisters(dt,time);updateGecko(dt,time);updateFlying(dt);updatePuffs(dt);
   if(CAR.leaving){CAR.spd=Math.min(8,CAR.spd+dt*3);carDriveStep(dt,CAR.spd);if(CAR.x<PX0-6)hideCar();}
   if(P.lv==='park'&&CAR.glow.visible){const k=.5+.5*Math.sin(time*3.2);CAR_M[0xe2512b].emissive.setRGB(.32*k,.1*k,.03*k);CAR.glowM.color.setHSL(.13,1,.4+.25*k);const sc=1.2+.4*k;CAR.mark.scale.set(sc,sc,1);}
   updateVac(dt,time);
@@ -2612,6 +2705,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={PARENTS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
