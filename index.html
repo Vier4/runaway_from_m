@@ -106,6 +106,9 @@ h1 em{font-style:normal;color:var(--makar)}
 .diff{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
 .diff button{padding:9px 14px;border-radius:10px;border:1px solid var(--line);font-weight:800;font-size:14px;background:rgba(255,255,255,.03)}
 .diff button[aria-pressed="true"]{background:var(--crayon);color:#1b1606;border-color:var(--crayon)}
+.diff button.life{border-color:#5fb0ff}.diff button.life[aria-pressed="true"]{background:#5fb0ff;border-color:#5fb0ff}
+#clock.life{cursor:pointer}
+.days{display:flex;gap:4px;justify-content:center;margin:6px 0 10px}.days span{padding:5px 7px;border-radius:8px;border:1px solid var(--line);font-weight:800;font-size:13px}.days span.today{background:#5fb0ff;color:#0d1b2a;border-color:#5fb0ff}.days span.off{opacity:.65}.sched{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left;font-size:13px;line-height:1.45}.sched h4{margin:0 0 4px;font-size:14px}.sched div.on h4{color:#5fb0ff}.sched .now{color:#5fb0ff;font-weight:800}.schedNow{font-weight:800;margin-bottom:4px}@media (max-width:520px){.sched{grid-template-columns:1fr}}
 .diffNote{font-size:13px;color:var(--muted);min-height:1.4em;margin:6px 0 18px}
 .play{font-family:var(--display);font-weight:800;font-size:18px;padding:14px 26px;border-radius:12px;background:var(--makar);color:#1a0a06;box-shadow:0 6px 0 #9c2d14;transition:transform .08s,box-shadow .08s}
 .play:active{transform:translateY(4px);box-shadow:0 2px 0 #9c2d14}
@@ -192,6 +195,7 @@ h1 em{font-style:normal;color:var(--makar)}
         <button type="button" data-d="normal" aria-pressed="true">Обычный</button>
         <button type="button" data-d="hard" aria-pressed="false">Сложный</button>
         <button type="button" data-d="hyper" aria-pressed="false">Гипер сложный</button>
+        <button type="button" data-d="life" aria-pressed="false" class="life">Жизнь Макара 📅</button>
       </div>
       <div class="diffNote" id="diffNote"></div>
       <div class="mrow">
@@ -249,6 +253,7 @@ const DIFFS={
   easy: {name:'Лёгкий', note:'3 попытки. Макар очень медленный.', walk:1.0, chase:2.1, vision:8,  fov:90,  rate:1.1, lives:3, hear:.7,  doorDelay:1.3, showMakar:true,  hunt:.1,  check:0},
   normal:{name:'Обычный',note:'2 попытки. Макар слышит двери и унитаз и иногда проверяет укрытия.', walk:1.25,chase:2.5,vision:11, fov:100, rate:1.8, lives:2, hear:1,   doorDelay:.95, showMakar:false, hunt:.25, check:.15},
   hard:  {name:'Сложный',note:'1 попытка. Макар зоркий и заглядывает в укрытия.', walk:1.5,chase:2.9,vision:14, fov:115, rate:2.8, lives:1, hear:1.35,doorDelay:.65, showMakar:false, hunt:.45, check:.35},
+  life:  {name:'Жизнь Макара',note:'Это не концовка, а свой режим. Макар живёт по расписанию: по будням спит до 7:50, едет с родителями в школу, учится с 8:30, после уроков сидит на продлёнке и в 17:00 идёт домой пешком. В выходные он дома. Здесь он тебя не ловит, а входная дверь открыта. Расписание — кнопка 📅 или клавиша J.', walk:1.0, chase:2.2, vision:0, fov:90, rate:0, lives:3, hear:.7, doorDelay:1.3, showMakar:true, hunt:0, check:0, blind:true, life:true},
   hyper: {name:'Гипер сложный',note:'5 попыток. Макар медленный, как на лёгком. Зато на кровати в комнате родителей лежат мама и папа и листают тиктоки. Если они поднимут глаза и увидят тебя, позовут Макара и сами встанут тебя ловить! Спрятаться можно под кроватью или присев у её изножья.', walk:1.0,chase:2.1,vision:8, fov:90, rate:1.1, lives:5, hear:.7, doorDelay:1.3, showMakar:false, hunt:.1, check:0, parents:true},
 };
 let D=DIFFS.normal, diffKey='normal';
@@ -1337,7 +1342,7 @@ function resetActors(){
 }
 function newGame(){
   D=DIFFS[diffKey];lives=D.lives;P.items={keys:false,shoes:false,carkeys:false,key2:false,key3:false,cardboard:false,basket:false,mask:false,plast:false,lighter:false,scissors:false,tea:false,lemon:false,energy:false,brew:false,crowbar:false,mphone:false};
-  for(const d of DOORS){d.open=false;d.ang=0;d.hold=0;if(d.id==='front')d.locked=true;}
+  for(const d of DOORS){d.open=false;d.ang=0;d.hold=0;if(d.id==='front')d.locked=!D.life;}
   DOOR.kitchen.open=true;DOOR.living.open=true;
   Object.assign(LIFT,{state:'idle',t:0,floor:1,open:0});liftBtn.material.color.set(0xff5533);
   placeItems();resetInv();for(const pk of PICKS)if(pk.item){centerPick(pk);if(ITEMS[pk.item].stash)pk.obj.visible=false;}resetActors();tPlay=0;toiletCD=0;flushCD=0;
@@ -2399,13 +2404,54 @@ function updWindowCut(dt,t){
 }
 function updateWindows(dt){for(const W of WINDOWS){const want=W.open?1.3:0;if(Math.abs(W.ang-want)>.001&&state!=='cut'){W.ang+=(want-W.ang)*Math.min(1,dt*6);W.pane.rotation.y=-W.ang;}}}
 
+/* ---------- «Жизнь Макара» mode: the week clock and Makar's schedule ----------
+   Not an ending: a mode of its own. A game minute passes every real second, starting on Monday at 7:30.
+   On weekdays Makar wakes at 7:50, his parents drive him to school, lessons start at 8:30, then the
+   after-school club, and at 17:00 he walks home. At weekends he stays at home. Day and night follow the clock. */
+const DAYS=['Понедельник','Вторник','Среда','Четверг','Пятница','Суббота','Воскресенье'],DAYS_S=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const LIFE={min:7*60+30};
+const hm=m=>`${Math.floor(m/60)%24}:${String(Math.floor(m)%60).padStart(2,'0')}`;
+// what Makar is doing at a given minute of the week
+const SCHED_WEEKDAY=[[0,'sleep','Спит'],[7*60+50,'morning','Проснулся, собирается в школу'],[8*60+5,'drive','Родители везут его в школу на машине'],[8*60+30,'lessons','Уроки в школе, 3 «Т» класс'],
+  [13*60+30,'prolong','Продлёнка'],[17*60,'walk','Идёт из школы домой пешком'],[17*60+30,'home','Дома: стримит, ест суп'],[23*60,'sleep','Спит']];
+const SCHED_WEEKEND=[[0,'sleep','Спит'],[9*60+30,'home','Выходной: весь день дома'],[23*60,'sleep','Спит']];
+function lifeNow(min=LIFE.min){
+  const day=Math.floor(min/1440)%7,t=min%1440,S=day<5?SCHED_WEEKDAY:SCHED_WEEKEND;let cur=S[0];for(const e of S)if(t>=e[0])cur=e;
+  return {day,t,phase:cur[1],label:cur[2]};
+}
+const lc=t=>t[0].toLowerCase()+t.slice(1);   // «Уроки… 3 «Т»» keeps its capital Т
+const lifeClock=()=>{const n=lifeNow();return `${DAYS_S[n.day]} ${hm(n.t)}`;};
+function updateLife(dt){
+  if(!D.life||state!=='play')return;
+  const before=lifeNow();LIFE.min+=dt;const now=lifeNow();
+  if(now.phase!==before.phase)toast(`${hm(now.t)} — Макар: ${lc(now.label)}.`,3.5);
+  if(now.day!==before.day)toast(`Наступил новый день: ${DAYS[now.day].toLowerCase()}!`,3);
+  const day=now.t>=7*60&&now.t<20*60;if(day!==isDay){isDay=day;applyTime();}   // day and night follow the clock
+}
+function showSchedule(fromPause){
+  if(state==='play'){state='sched';unlock();showHUD(false);}
+  const now=lifeNow(),body=el('div');
+  body.appendChild(el('div','schedNow',`Сейчас: ${DAYS[now.day].toLowerCase()}, ${hm(now.t)}. Макар: ${lc(now.label)}.`));
+  const days=el('div','days');DAYS_S.forEach((d,i)=>{const c=el('span',(i===now.day?'today ':'')+(i>4?'off':''),d);c.title=DAYS[i];days.appendChild(c);});body.appendChild(days);
+  const grid=el('div','sched'),weekend=now.day>4;
+  for(const [title,S,on] of [['Будни: понедельник — пятница',SCHED_WEEKDAY,!weekend],['Выходные: суббота и воскресенье',SCHED_WEEKEND,weekend]]){
+    const col=el('div',on?'on':null);col.appendChild(el('h4',null,title));let cur=0;S.forEach((e,j)=>{if(now.t>=e[0])cur=j;});
+    S.forEach(([m,ph,lab],j)=>{if(j===0&&!(on&&cur===0))return;col.appendChild(el('div',on&&j===cur?'now':null,`${hm(m)} — ${lab}`));});grid.appendChild(col);}
+  body.appendChild(grid);
+  const back=()=>fromPause?showPause():startPlay();
+  panel('Расписание Макара','По будням Макар учится в школе с 8:30 до 17:00. Одна минута в игре — одна секунда.',
+    [['Закрыть',back],['Перемотать на 1 час ⏩',()=>{LIFE.min+=60;const n=lifeNow();const day=n.t>=7*60&&n.t<20*60;if(day!==isDay){isDay=day;applyTime();}showSchedule(fromPause);},'ghost']],body);
+  panelCard.classList.add('wide');
+}
+
 // every frame: the bed, the super speed, the police on their way, the river's water
 function updateExtras(dt,time){
-  updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
+  updateLife(dt);updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
   if(RIVER.visible){texWater.offset.x=(time*.01)%1;texWater.offset.y=(time*.03)%1;}
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
 }
 function resetExtras(){
+  LIFE.min=7*60+30;{let day;if(D.life){const n=lifeNow();day=n.t>=7*60&&n.t<20*60;}else{try{day=localStorage.getItem('makar-time')==='day';}catch(e){day=isDay;}}if(day!==isDay){isDay=day;applyTime();}}
   resetBed();resetNewBed();for(const W of WINDOWS){W.open=false;W.ang=0;W.pane.rotation.y=0;}P.boostT=0;P.drank=false;policeT=0;CUT=null;HANDBREW.visible=false;MK.armR.rotation.z=0;FLOOD.visible=false;PCAR.visible=false;COP.g.visible=false;
   for(const pc of PLAY){pc.broken=false;for(const q of pc.parts){q.m.position.copy(q.p);q.m.rotation.copy(q.r);}}
   for(const s of SPL)scene.remove(s.m);SPL=[];$('vig').style.opacity=0;
@@ -2900,9 +2946,9 @@ function panel(title,text,btns,body){panelCard.classList.remove('wide');menuCard
   btns.forEach(([label,fn,cls])=>{const e=document.createElement('button');e.type='button';e.className=cls||'play';e.textContent=label;e.addEventListener('click',fn);b.appendChild(e);});}
 function showMenu(){state='menu';hush();$('sub').hidden=true;if(P.lv!=='flat'){P.lv='flat';MS.lv='flat';setLevel('flat');}showHUD(false);overlay.hidden=false;menuCard.hidden=false;panelCard.hidden=true;$('hideShade').hidden=true;$('fade').style.opacity=0;unlock();drawPlan($('plan'),{big:true});}
 function startPlay(){state='play';hush();overlay.hidden=true;showHUD(true);lock();}
-function begin(){initAudio();if(AC&&AC.state==='suspended')AC.resume();newGame();startPlay();toast(D.parents?'Ты в комнате родителей. Мама и папа лежат на кровати и листают тиктоки. Когда они поднимают глаза, не попадайся им на глаза, а то позовут Макара и сами встанут тебя ловить!':'Ты в комнате родителей. Макар ведёт стрим в своей комнате. Найди ключи и кроссовки, выберись из квартиры, спустись на лифте и убеги со двора через калитку.',6);}
+function begin(){initAudio();if(AC&&AC.state==='suspended')AC.resume();newGame();startPlay();toast(D.life?'Режим «Жизнь Макара». Сейчас понедельник, 7:30: Макар ещё спит. Посмотри расписание — 📅 или J.':D.parents?'Ты в комнате родителей. Мама и папа лежат на кровати и листают тиктоки. Когда они поднимают глаза, не попадайся им на глаза, а то позовут Макара и сами встанут тебя ловить!':'Ты в комнате родителей. Макар ведёт стрим в своей комнате. Найди ключи и кроссовки, выберись из квартиры, спустись на лифте и убеги со двора через калитку.',6);}
 function pause(){if(state!=='play')return;state='pause';hush();showPause();showHUD(false);}
-function showPause(){panel('Пауза','Макар тоже ждёт.',[['Продолжить',()=>{startPlay();}],[timeLabel(),()=>{toggleTime();showPause();},'ghost'],...(adminOpen()?[['Админ панель',()=>showAdmin(true),'ghost']]:[]),['Заново',()=>begin(),'ghost'],['В меню',showMenu,'ghost']]);}
+function showPause(){panel('Пауза','Макар тоже ждёт.',[['Продолжить',()=>{startPlay();}],...(D.life?[['Расписание 📅',()=>showSchedule(true),'ghost']]:[[timeLabel(),()=>{toggleTime();showPause();},'ghost']]),...(adminOpen()?[['Админ панель',()=>showAdmin(true),'ghost']]:[]),['Заново',()=>begin(),'ghost'],['В меню',showMenu,'ghost']]);}
 let caughtBy=null;
 function caught(by){
   if(state!=='play'||ADMIN.god)return;state='caught';caughtT=0;caughtBy=by||null;sfx.caught();lives--;renderLives();
@@ -3200,6 +3246,7 @@ addEventListener('keydown',e=>{
     if(e.code==='KeyR')geckoRelease(false);
     if(e.code==='KeyT')throwChips();
     if(e.code==='KeyO'){e.preventDefault();openPhone();}
+    if(e.code==='KeyJ'&&D.life)showSchedule();
     if((e.code==='KeyC'||e.code==='ControlLeft')&&!ADMIN.fly){P.crouch=!P.crouch;}
     if(e.code==='Space')e.preventDefault();
     if(e.code==='KeyN'){toggleTime();toast(isDay?'Теперь день ☀️':'Теперь ночь 🌙',1.4);}
@@ -3233,6 +3280,7 @@ if(isPhone)$('keysHelp').innerHTML='<kbd>Слева</kbd><span>джойстик:
 
 // menu
 const diffBtns=[...document.querySelectorAll('#diff button')];
+$('clock').addEventListener('click',()=>{if(D.life&&state==='play')showSchedule();});
 function setDiff(k){diffKey=k;D=DIFFS[k];diffBtns.forEach(b=>b.setAttribute('aria-pressed',b.dataset.d===k));$('diffNote').textContent=DIFFS[k].note;PARENTS.g.visible=!!D.parents;try{localStorage.setItem('makar-diff',k);}catch(e){}}
 diffBtns.forEach(b=>b.addEventListener('click',()=>setDiff(b.dataset.d)));
 try{const s=localStorage.getItem('makar-diff');if(s&&DIFFS[s])diffKey=s;}catch(e){}
@@ -3248,7 +3296,7 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(state=
 // the game clock: starts at the time in the menu and runs 20 times faster than real time (just for fun)
 let clockShown='';
 function updateHUD(dt){
-  {const m=(isDay?13*60+20:23*60+40)+Math.floor(tPlay*20/60),t=`🕒 ${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;if(t!==clockShown){clockShown=t;$('clock').textContent=t;}}
+  {const m=(isDay?13*60+20:23*60+40)+Math.floor(tPlay*20/60),t=D.life?'📅 '+lifeClock():`🕒 ${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;if(t!==clockShown){clockShown=t;$('clock').textContent=t;$('clock').classList.toggle('life',!!D.life);}}
   if($('flyBtns').hidden===ADMIN.fly){$('flyBtns').hidden=!ADMIN.fly;touchFly=0;}
   const st=$('status'),txt=$('statusText');let s,cls='';
   if(MS.away&&MS.lv!==P.lv){const t=Math.max(0,Math.ceil(MS.away.t));s=({walk:'Макар гуляет',shop:'Макар в магазине',swing:'Макар на качелях'}[MS.away.kind])+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
@@ -3295,6 +3343,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
