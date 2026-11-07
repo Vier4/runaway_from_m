@@ -2766,7 +2766,7 @@ function updateMakar(dt){
   if(!D.blind&&!P.hidden&&dP<.78&&!(ADMIN.fly&&P.eye>1.9)&&sightClear(MS.x,MS.z,P.x,P.z))caught();
   // chatter
   MS.sayT-=dt;if(MS.sayT<=0){
-    if(MS.state==='sit'){MS.sayT=7+Math.random()*5;const a=LINES[MS.task];let l;do l=pick(a);while(l===MS.lastLine&&a.length>1);MS.lastLine=l;say(l,3);}
+    if(MS.state==='sit'){MS.sayT=7+Math.random()*5;const a=LINES[MS.task];if(a){let l;do l=pick(a);while(l===MS.lastLine&&a.length>1);MS.lastLine=l;say(l,3);}}   // (some tasks, like checking under the bed, have no chatter)
     else{MS.sayT=14+Math.random()*10;if(MS.state==='patrol'||MS.state==='look'||MS.state==='goto')say(pick(D.life?LINES.lifeIdle:LINES.idle));}}
   // heartbeat
   MS.heartT-=dt;const near=MS.state==='chase'?1:clamp(1-dP/7,0,1);
