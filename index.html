@@ -1122,9 +1122,87 @@ const M_school=(()=>{const t=ctex(64,64,(g,w,h)=>{g.fillStyle='#d9824a';g.fillRe
  for(const x of [26,33])for(const z of [11,17])cb(x-.05,x+.05,.12,2,z-1.2,z-1.1,M_.white);   // little football goals
 }
 
+/* ---------- school No. 7 inside («Жизнь Макара») ----------
+   Three floors with the same plan: a corridor along the north wall with windows, four rooms off it to the
+   south, and the stairs at the east end. Floor 1: 1 «Р», 1 «Т», the canteen and the library (and the way out).
+   Floor 2: Makar's 3 «Т», 2 «Р», 2 «Т» and the teachers' room. Floor 3: the after-school club (продлёнка),
+   the assembly hall, music and art. Only the floor you are on is shown; each has its own colliders.
+   Seats in the classrooms are kept in SCHOOL_SEATS for the pupils. */
+const YS=-900;
+const SCHOOL=new THREE.Group();SCHOOL.position.y=YS;SCHOOL.visible=false;scene.add(SCHOOL);
+const SFLOORS=[null,new THREE.Group(),new THREE.Group(),new THREE.Group()],SCOL=[null,[],[],[]],SCHOOL_SEATS={},SCHOOL_ROOMS=[null,[],[],[]];
+for(let f=1;f<=3;f++){SFLOORS[f].visible=false;SCHOOL.add(SFLOORS[f]);}
+SCHOOL.add(new THREE.AmbientLight(0xffffff,.55));{const L=new THREE.DirectionalLight(0xffffff,.35);L.position.set(10,20,-15);SCHOOL.add(L);SCHOOL.add(L.target);}   // the classrooms' daylight (only on while you are inside)
+function sb(f,x0,x1,y0,y1,z0,z1,m,col){const me=blk(x0,x1,y0,y1,z0,z1,m,{parent:SFLOORS[f]});if(col)SCOL[f].push({x0,x1,z0,z1,tall:col!=='low'});return me;}
+function signTex(text,bg,fg,w=256,h=64,font=34){return new THREE.MeshBasicMaterial({map:ctex(w,h,(g,W,H)=>{g.fillStyle=bg;g.fillRect(0,0,W,H);g.fillStyle=fg;g.font=`bold ${font}px Arial`;g.textAlign='center';g.textBaseline='middle';
+  const L=text.split('\n');L.forEach((t,i)=>g.fillText(t,W/2,H/2+(i-(L.length-1)/2)*font*1.1+2));},false)});}
+function signAt(f,text,x,y,z,w,h,ry,bg='#1f4fbf',fg='#ffffff'){const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),signTex(text,bg,fg,Math.round(256*w/h/4)*4||256,64));m.position.set(x,y,z);m.rotation.y=ry;SFLOORS[f].add(m);return m;}
+const ROOMS_BY_FLOOR=[null,['1 «Р»','1 «Т»','Столовая','Библиотека'],['3 «Т»','2 «Р»','2 «Т»','Учительская'],['Продлёнка','Актовый зал','Кабинет музыки','Кабинет рисования']];
+{const M_wall=mat(0xeef0e6),M_wallLow=mat(0x7fb0a0),M_lino=mat(0xb9a98e),M_lino2=mat(0x9fb6c9),M_ceil=mat(0xfafafa),M_desk=mat(0xd9b98a),M_leg=mat(0x6b7280),M_chair=mat(0x2f6fd6),
+   M_board=mat(0x1f4a3a),M_win=basic(0xcfe8f5),M_doorF=mat(0x8a5a33),M_shelf=mat(0x8a6236),M_book=[mat(0xd8402f),mat(0x2f6fd6),mat(0x3fbf5a),mat(0xf2c230)];
+ for(let f=1;f<=3;f++){
+   // floor, ceiling, outer walls, the corridor's wall with a door gap into each room, the partitions
+   {const fl=new THREE.Mesh(new THREE.PlaneGeometry(48.4,13.4),f===2?M_lino2:M_lino);fl.rotation.x=-Math.PI/2;fl.position.set(24,0,6.5);SFLOORS[f].add(fl);
+    const ce=new THREE.Mesh(new THREE.PlaneGeometry(48.4,13.4),M_ceil);ce.rotation.x=Math.PI/2;ce.position.set(24,3.2,6.5);SFLOORS[f].add(ce);}
+   sb(f,-.2,48.2,0,3.2,-.2,0,M_wall,true);sb(f,-.2,44.2,0,3.2,13,13.2,M_wall,true);sb(f,-.2,0,0,3.2,-.2,13.2,M_wall,true);sb(f,48,48.2,0,3.2,-.2,4.2,M_wall,true);sb(f,44,48,0,3.2,4,4.2,M_wall,true);
+   for(let i=0;i<4;i++){const rx=i*11;sb(f,rx+(i?0:0),rx+1.2,0,3.2,4,4.2,M_wall,true);sb(f,rx+2.6,rx+11,0,3.2,4,4.2,M_wall,true);sb(f,rx+1.2,rx+2.6,2.3,3.2,4,4.2,M_wall);
+     sb(f,rx+1.15,rx+1.2,0,2.3,4,4.25,M_doorF);sb(f,rx+2.6,rx+2.65,0,2.3,4,4.25,M_doorF);
+     if(i)sb(f,rx-.1,rx+.1,0,3.2,4.2,13,M_wall,true);
+     const name=ROOMS_BY_FLOOR[f][i];signAt(f,name,rx+1.9,2.6,3.97,1.2,.32,Math.PI);   // the plate over the door, facing the corridor
+     SCHOOL_ROOMS[f].push({id:'s'+f+i,name:f+' этаж · '+name,x0:rx,x1:rx+11,school:true});
+     for(const wx of [rx+3.5,rx+7.5])sb(f,wx-1.2,wx+1.2,1.0,2.6,12.98,13,M_win);}   // windows in the rooms
+   sb(f,44,44.2,0,3.2,4.2,13,M_wall,true);
+   sb(f,0,48,0,1.1,.01,.03,M_wallLow);   // the painted lower half of the corridor walls
+   for(let wx=3;wx<44;wx+=5)sb(f,wx-1.3,wx+1.3,1.1,2.7,.03,.05,M_win);   // corridor windows on the north wall
+   signAt(f,f+' этаж',46,2.3,.06,1.4,.45,0,'#d8402f');
+   // the stairs going up and down at the east end
+   for(let k=0;k<8;k++)sb(f,44.6+k*.4,45+k*.4,0,.18*(k+1),2.4,3.9,mat(0x9a948c));sb(f,44.4,48,0,.05,.2,2.3,mat(0x9a948c));
+   SCHOOL_ROOMS[f].corr={id:'s'+f+'c',name:f+' этаж · коридор',school:true};
+ }
+ // a classroom: blackboard, the teacher's desk, rows of two-seat desks (cols × rows), seats kept for the pupils
+ function classroom(f,i,name,cols,rows,n){
+   const rx=i*11,b=new THREE.Mesh(new THREE.PlaneGeometry(4.2,1.3),signTex(name+'\nКлассная работа','#1f4a3a','#f2f2e8',336,104,30));b.position.set(rx+5.5,1.75,12.95);b.rotation.y=Math.PI;SFLOORS[f].add(b);
+   sb(f,rx+3.3,rx+7.7,1.05,2.45,12.97,13,M_board);sb(f,rx+4.6,rx+6.4,0,.75,11.4,11.95,M_desk,true);sb(f,rx+5.2,rx+5.8,0,.45,11.0,11.3,M_chair);
+   const seats=[];const X=[1.7,4.2,6.8,9.3],Z=[5.7,7.1,8.5,9.9];
+   for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const x=rx+X[c],z=Z[r];sb(f,x-.62,x+.62,.7,.75,z-.25,z+.25,M_desk);sb(f,x-.6,x-.55,0,.7,z-.22,z+.22,M_leg);sb(f,x+.55,x+.6,0,.7,z-.22,z+.22,M_leg);
+     SCOL[f].push({x0:x-.62,x1:x+.62,z0:z-.25,z1:z+.25});
+     for(const sx of [-.3,.3]){sb(f,x+sx-.2,x+sx+.2,.42,.46,z-.72,z-.38,M_chair);sb(f,x+sx-.2,x+sx+.2,.46,.85,z-.74,z-.7,M_chair);seats.push({f,x:x+sx,z:z-.55});}}
+   SCHOOL_SEATS[name]=seats.slice(0,n);
+ }
+ classroom(1,0,'1 «Р»',4,3,20);classroom(1,1,'1 «Т»',4,3,20);classroom(2,0,'3 «Т»',4,4,32);classroom(2,1,'2 «Р»',4,3,20);classroom(2,2,'2 «Т»',4,3,20);
+ // canteen: long tables with benches and the serving counter
+ for(const z of [6,8.5,11]){sb(1,23.5,31.5,.7,.76,z-.4,z+.4,mat(0xf2efe8),'low');sb(1,23.5,31.5,0,.7,z-.05,z+.05,M_leg);for(const dz of [-.75,.75])sb(1,23.5,31.5,.4,.45,z+dz-.18,z+dz+.18,M_desk);}
+ sb(1,22.4,23,0,1.05,5,12.6,mat(0xb8c2cc),true);signAt(1,'Столовая',27.5,2.6,12.95,2.4,.5,Math.PI,'#f2c230','#3a2a0a');
+ // library: shelves of books all round, a reading table
+ for(const [x0,x1,z0,z1] of [[33.3,33.7,5,12.8],[43.3,43.7,5,12.8],[34,43,12.4,12.8]]){sb(1,x0,x1,0,2.2,z0,z1,M_shelf,true);
+   for(let y=.3;y<2.1;y+=.45)for(let t=0;t<(z1-z0>1?z1-z0:x1-x0);t+=.12){const m=M_book[(t*31+y*7|0)%4];if(z1-z0>1)sb(1,x0-.02,x1+.02,y,y+.32,z0+t,z0+t+.09,m);else sb(1,x0+t,x0+t+.09,y,y+.32,z0-.02,z1+.02,m);}}
+ sb(1,36.5,40.5,.72,.78,7.5,9.5,M_desk,true);
+ // teachers' room: a big table and a sofa
+ sb(2,35,41,.72,.78,7,9.5,M_desk,true);sb(2,34,42,0,.45,11.8,12.8,mat(0x7a5ad8),true);sb(2,34,42,.45,1.0,12.55,12.8,mat(0x7a5ad8));signAt(2,'Учительская',38.5,2.6,12.95,2.6,.5,Math.PI);
+ // after-school club: a soft carpet, low tables, toy boxes and beanbags
+ {const c=new THREE.Mesh(new THREE.PlaneGeometry(8,5),mat(0x58b368));c.rotation.x=-Math.PI/2;c.position.set(5.5,.01,9.5);SFLOORS[3].add(c);
+  for(const [x,z] of [[3,6.5],[8,6.5]]){sb(3,x-1,x+1,.5,.55,z-.6,z+.6,mat(0xf2c230),'low');sb(3,x-.05,x+.05,0,.5,z-.05,z+.05,M_leg);}
+  for(const [x,z,c] of [[2,12,0xd8402f],[4,12.2,0x2f6fd6],[9,12,0x3fbf5a]]){sb(3,x-.5,x+.5,0,.6,z-.4,z+.4,mat(c),true);}
+  for(const [x,z,c] of [[3.5,9.5,0xf06aa0],[7.5,10,0x7a5ad8],[5.5,11,0xff9f43]])sph(x,.3,z,.45,mat(c),{parent:SFLOORS[3]}).scale.set(1,.65,1);
+  signAt(3,'Продлёнка',5.5,2.6,12.95,2.4,.5,Math.PI,'#3fbf5a');}
+ // assembly hall: a stage and rows of chairs
+ sb(3,11.5,21.5,0,.6,10.5,12.98,mat(0x8a5a33),true);sb(3,11.5,21.5,.6,3.2,12.9,12.98,mat(0xa8231c));
+ for(let r=0;r<4;r++)for(let c=0;c<7;c++){const x=12.7+c*1.2,z=5.5+r*1.1;sb(3,x-.22,x+.22,.42,.46,z-.2,z+.2,mat(0xa8231c));sb(3,x-.22,x+.22,.46,.9,z-.22,z-.18,mat(0xa8231c));}
+ // music: a piano; art: easels
+ sb(3,26,28,0,1.2,11.8,12.6,mat(0x111114),true);sb(3,26.05,27.95,.75,.78,11.5,11.8,M_.white);
+ for(const [x,z] of [[35,6.5],[38,6.5],[41,6.5],[35,9.5],[38,9.5],[41,9.5]]){sb(3,x-.5,x+.5,.7,1.5,z,z+.04,M_.white);sb(3,x-.03,x+.03,0,1.6,z+.1,z+.16,M_shelf);}
+ // the way out on floor 1, and a chips machine on floors 1 and 2
+ sb(1,21.2,22.8,0,2.4,.01,.06,mat(0x6b4a2b));signAt(1,'ВЫХОД',22,2.6,.07,1.2,.32,0,'#3fbf5a');
+ for(const [f,x] of [[1,31],[2,8]]){sb(f,x-.5,x+.5,0,1.9,.02,.85,mat(0xd8402f),true);sb(f,x-.4,x+.4,.8,1.7,.86,.87,basic(0xcfe8f5));
+   for(let r=0;r<3;r++)for(let c=0;c<3;c++)sb(f,x-.32+c*.24,x-.16+c*.24,.95+r*.25,1.13+r*.25,.82,.84,mat([0xf2c230,0xc0392b,0x2f6fd6][(r+c)%3]));
+   signAt(f,'ЧИПСЫ',x,1.8,.87,.8,.2,0,'#f2c230','#c0392b');}
+}
+const schoolRoomAt=(x,z)=>{const f=P.floor||1;if(z<4.1||x>44)return SCHOOL_ROOMS[f].corr;return SCHOOL_ROOMS[f].find(r=>x>=r.x0&&x<r.x1)||SCHOOL_ROOMS[f].corr;};
+function showFloor(f){P.floor=f;for(let i=1;i<=3;i++)SFLOORS[i].visible=i===f;}
+
 const YARD_ROOM={id:'yard',name:'Двор'},STREET_ROOM={id:'street',name:'Улица'},PARK_ROOM={id:'park',name:'Парковка'},RIVER_ROOM={id:'river',name:'Набережная'},CITY_ROOM={id:'city',name:'Город'};
-const baseY=lv=>lv==='yard'?YG:lv==='park'?YP:lv==='river'?YR:lv==='city'?YC:0;
-const FOG={flat:[0x07080c,10,26],yard:[0x0c1020,40,190],park:[0x0c0e11,9,34],river:[0x0b1222,40,260],city:[0x0c1020,60,240],dubai:[0xbcd6ee,300,1400]};
+const baseY=lv=>lv==='yard'?YG:lv==='park'?YP:lv==='river'?YR:lv==='city'?YC:lv==='school'?YS:0;
+const FOG={flat:[0x07080c,10,26],yard:[0x0c1020,40,190],park:[0x0c0e11,9,34],river:[0x0b1222,40,260],city:[0x0c1020,60,240],school:[0xeef0e6,30,80],dubai:[0xbcd6ee,300,1400]};
 /* Dubai, only for the Carlson ending: desert sand, a few low towers and the Burj Khalifa (230 m, tapering,
    with its spire). Far below everything else so it never shows anywhere else. */
 const DUBAI=new THREE.Group();DUBAI.position.y=-1000;DUBAI.visible=false;scene.add(DUBAI);
@@ -1135,9 +1213,9 @@ const BURJ_R=h=>h>=180?Math.max(.4,1.6-(h-180)*.025):16*Math.pow(1-h/205,1.25)+1
  const sp=new THREE.Mesh(new THREE.CylinderGeometry(.35,1.6,50,8),steel);sp.position.y=205;DUBAI.add(sp);
  for(const [x,z,w,h] of [[-120,-60,30,70],[110,-90,26,90],[-180,80,40,55],[150,120,30,60],[60,-200,24,80],[-60,-190,28,65]]){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),mat(0xb8c2cc));b.position.set(x,h/2,z);DUBAI.add(b);}
  const L=new THREE.PointLight(0xfff0d0,1.2,900,1.2);L.position.set(200,300,300);DUBAI.add(L);}
-function setLevel(lv){const [c,n,f]=FOG[lv];scene.fog.color.setHex(c);scene.fog.near=n;scene.fog.far=f;scene.background.setHex(c);YARD.visible=lv==='yard';PARK.visible=lv==='park';RIVER.visible=lv==='river';CITY.visible=lv==='city';DUBAI.visible=lv==='dubai';
+function setLevel(lv){const [c,n,f]=FOG[lv];scene.fog.color.setHex(c);scene.fog.near=n;scene.fog.far=f;scene.background.setHex(c);YARD.visible=lv==='yard';PARK.visible=lv==='park';RIVER.visible=lv==='river';CITY.visible=lv==='city';SCHOOL.visible=lv==='school';DUBAI.visible=lv==='dubai';
   // by day the sun shines only outside (it would light the flat through the walls), indoors it is just a bit brighter
-  const out=lv==='yard'||lv==='river'||lv==='city';SUN.intensity=lv==='dubai'||isDay&&out?.75:0;HEMI.intensity=lv==='dubai'?1:lv==='park'?.42:isDay?(out?1.0:.62):lv==='river'?.6:.5;}
+  const out=lv==='yard'||lv==='river'||lv==='city';SUN.intensity=lv==='dubai'||isDay&&out?.75:0;HEMI.intensity=lv==='dubai'||lv==='school'?1:lv==='park'?.42:isDay?(out?1.0:.62):lv==='river'?.6:.5;}
 // Each window shows a snapshot of what really lies outside it: the bedrooms look down into the yard.
 function renderWindowViews(){
   setLevel('yard');
@@ -1245,7 +1323,7 @@ function pushOut(p,r,x0,x1,z0,z1){
 }
 function collide(p,r){
   if(p.lv==='yard'){for(let it=0;it<3;it++){for(const c of YCOL)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);if(!GATE.open)pushOut(p,r,GATE.x0,GATE.x1,GATE.z-.06,GATE.z+.06);}return;}
-  if(p.lv==='park'||p.lv==='river'||p.lv==='city'){const C=colsOf(p.lv);for(let it=0;it<3;it++)for(const c of C)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);return;}
+  if(p.lv==='park'||p.lv==='river'||p.lv==='city'||p.lv==='school'){const C=colsOf(p.lv);for(let it=0;it<3;it++)for(const c of C)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);return;}
   for(let it=0;it<3;it++){
     for(const c of COL)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);
     for(const d of DOORS)if(doorSolid(d))pushOut(p,r,d.box.x0,d.box.x1,d.box.z0,d.box.z1);
@@ -1727,7 +1805,7 @@ function whereIs(k){
   if(it.withMakar)return 'у Макара в кармане';
   if(it.stash==='fridge'||it.stash==='bed')return (it.stash==='bed'?BED_SPOT:FRIDGE_SPOT).where;if(it.stash)return null;
   if(!pk||pk.held||pk.flying||pk.eaten||!pk.obj.visible)return null;
-  if(pk.lv==='park')return 'на парковке';if(pk.lv==='river')return 'на набережной';if(pk.lv==='city')return 'в городе';if(pk.lv==='yard')return 'во дворе';
+  if(pk.lv==='park')return 'на парковке';if(pk.lv==='river')return 'на набережной';if(pk.lv==='city')return 'в городе';if(pk.lv==='school')return 'в школе';if(pk.lv==='yard')return 'во дворе';
   const sp=it.spot;if(sp.where&&hyp(pk.cx-sp.x,pk.cz-sp.z)<.3)return sp.where.replace('на столе у систёр','у нас на столе');
   const r=roomAt(pk.cx,pk.cz);return r&&ROOM_IN[r.id]||'где-то в квартире';
 }
@@ -1808,12 +1886,12 @@ const ICONS=[['Ножниц','✂️'],['Отварчик','🥣'],['Чай','�
   ['Дерев','🌳'],['Ель','🌲'],['Берёз','🌳'],['Машин','🚗'],['Макар','🧍'],['Стиральн','🫧'],['Раковин','🚰'],['Шкаф','🗄️'],['Зеркало','🪞'],['Ковёр','🟥'],['коврик','🟥'],['Пожарн','🚨'],
   ['Рокот','📢'],['Мигалк','🚨'],['Датчик','🔴'],['ящик','📦'],['тул','🪑'],['Скамейк','🪑'],['тол','🪑'],['Качели','🎠'],['Карусель','🎠'],['Горка','🛝'],['Песочниц','🏖️']];
 const iconFor=n=>(ICONS.find(([k])=>n.includes(k))||[0,'📦'])[1];
-const colsOf=lv=>lv==='yard'?YCOL:lv==='park'?PCOL:lv==='river'?RCOL:lv==='city'?CCOL:COL;
+const colsOf=lv=>lv==='yard'?YCOL:lv==='park'?PCOL:lv==='river'?RCOL:lv==='city'?CCOL:lv==='school'?SCOL[P.floor||1]:COL;
 const boxOf=o=>new THREE.Box3().setFromObject(o);
 function centerPick(pk){const b=boxOf(pk.obj);pk.cx=(b.min.x+b.max.x)/2;pk.cz=(b.min.z+b.max.z)/2;}
 function addPick(pk){
   Object.assign(pk,{icon:iconFor(pk.name),held:false,off:{x:0,y:0,z:0},cols:pk.cols||[]});centerPick(pk);
-  pk.inter={get x(){return pk.cx;},get z(){return pk.cz;},get lv(){return pk.lv;},r:1.1,on:()=>!pk.held&&!pk.flying&&!pk.eaten&&!(pk.item&&(ITEMS[pk.item].withMakar||ITEMS[pk.item].stash)),label:()=>'Взять: '+pk.name.toLowerCase(),act:()=>pickUp(pk)};
+  pk.inter={get x(){return pk.cx;},get z(){return pk.cz;},get lv(){return pk.lv;},get floor(){return pk.lv==='school'?pk.floor:0;},r:1.1,on:()=>!pk.held&&!pk.flying&&!pk.eaten&&!(pk.item&&(ITEMS[pk.item].withMakar||ITEMS[pk.item].stash)),label:()=>'Взять: '+pk.name.toLowerCase(),act:()=>pickUp(pk)};
   INTER.push(pk.inter);PICKS.push(pk);return pk;
 }
 // a thing already in the flat: its template meshes are gathered into one group, with the colliders under it
@@ -1955,7 +2033,7 @@ const FLY=[];
 const isChips=pk=>pk&&pk.name.startsWith('Чипсы');
 function throwChips(){
   const pk=INV[invSel];if(!isChips(pk)||state!=='play')return false;if(P.hidden){toast('Сначала вылези из укрытия.');return true;}
-  INV.splice(invSel,1);invSel=clamp(invSel,0,Math.max(0,INV.length-1));pk.held=false;pk.flying=true;pk.lv=P.lv;pk.obj.visible=true;
+  INV.splice(invSel,1);invSel=clamp(invSel,0,Math.max(0,INV.length-1));pk.held=false;pk.flying=true;pk.lv=P.lv;pk.floor=P.floor;pk.obj.visible=true;
   const cp=Math.cos(P.pitch),dir=new THREE.Vector3(-Math.sin(P.yaw)*cp,Math.sin(P.pitch),-Math.cos(P.yaw)*cp);
   const pos=camera.position.clone().addScaledVector(dir,.4);pos.y-=.1;
   const o=pk.obj.position;pk.off.x+=pos.x-o.x;pk.off.y+=pos.y-o.y;pk.off.z+=pos.z-o.z;o.copy(pos);
@@ -1991,7 +2069,7 @@ function dropSel(){
   const dx=tx-(b.min.x+b.max.x)/2,dz=tz-(b.min.z+b.max.z)/2,dy=base+.005-b.min.y;
   pk.obj.position.x+=dx;pk.obj.position.y+=dy;pk.obj.position.z+=dz;pk.off.x+=dx;pk.off.y+=dy;pk.off.z+=dz;
   for(const c of pk.cols){c.x0+=dx;c.x1+=dx;c.z0+=dz;c.z1+=dz;}pk.lv=P.lv;colsOf(pk.lv).push(...pk.cols);
-  pk.cx=tx;pk.cz=tz;pk.held=false;INV.splice(invSel,1);invSel=clamp(invSel,0,Math.max(0,INV.length-1));
+  pk.cx=tx;pk.cz=tz;pk.held=false;pk.floor=P.floor;INV.splice(invSel,1);invSel=clamp(invSel,0,Math.max(0,INV.length-1));
   if(pk.item){const it=ITEMS[pk.item];it.taken=false;it.spark.visible=true;it.spot={room:null,x:tx,y:base,z:tz};P.items[pk.item]=false;}
   sfx.click();toast('Выброшено: '+pk.name,1.4);renderInv();
 }
@@ -2026,7 +2104,7 @@ let focus=null;
 function updateFocus(){
   focus=null;if(P.driving){showPrompt(nearRamp()?'Заехать на парковку':'Выйти из машины');return;}if(P.hidden){showPrompt('Вылезти');return;}if(P.swing){showPrompt('Слезть с качелей');return;}
   const fx=-Math.sin(P.yaw),fz=-Math.cos(P.yaw);let best=1e9;
-  for(const it of INTER){if((it.lv||'flat')!==P.lv||(it.on&&!it.on()))continue;const dx=it.x-P.x,dz=it.z-P.z,d=hyp(dx,dz);if(d>it.r)continue;
+  for(const it of INTER){if((it.lv||'flat')!==P.lv||(it.on&&!it.on()))continue;if(it.floor&&P.lv==='school'&&it.floor!==P.floor)continue;const dx=it.x-P.x,dz=it.z-P.z,d=hyp(dx,dz);if(d>it.r)continue;
     const dot=d<.35?1:(dx*fx+dz*fz)/d;if(dot<.5)continue;const sc=d*(2-dot)-(it.prio||0);if(sc<best){best=sc;focus=it;}}
   showPrompt(focus?focus.label():null);
 }
@@ -2551,7 +2629,7 @@ function showSchedule(fromPause){
 const DRV=Object.assign(parkCar(0,0,0,0xe2512b,'М777АК',false,CITY,null),{x:-9,z:-3,a:-Math.PI/2,v:0,where:'park',engT:0,col:{x0:0,x1:0,z0:0,z1:0}});DRV.g.visible=false;
 const RAMP={x:-9,z:-8.5};
 function placeDrv(){DRV.g.position.set(DRV.x,0,DRV.z);DRV.g.rotation.y=DRV.a;}
-function goLevel(lv,x,z,yaw,msg,after){state='ride';fadeTo(1);setTimeout(()=>{P.lv=lv;Object.assign(P,{x,z,yaw,pitch:0,crouch:false,room:null});setLevel(lv);after&&after();state='play';fadeTo(0);if(msg)toast(msg,4.5);},900);}
+function goLevel(lv,x,z,yaw,msg,after){state='ride';fadeTo(1);setTimeout(()=>{P.lv=lv;Object.assign(P,{x,z,yaw,pitch:0,crouch:false,room:null});setLevel(lv);after&&after();state='play';showHUD(true);fadeTo(0);if(msg)toast(msg,4.5);},900);}
 function driveToCity(){
   if(state!=='play')return;tone(90,.6,'sawtooth',.08,140);
   goLevel('city',-9,-3,-Math.PI/2,'Ты в городе! W/S — газ и тормоз, A/D — руль, Shift — быстрее, E — выйти. Школа Макара — за перекрёстком, на юго-востоке.',()=>{
@@ -2583,7 +2661,17 @@ INTER.push({lv:'city',get x(){return DRV.x;},get z(){return DRV.z;},r:3,on:()=>D
 INTER.push({lv:'city',x:-20,z:-13.2,r:1.8,on:()=>!P.driving,label:()=>'Зайти в подъезд (лифт на 18 этаж)',act:goUp});
 INTER.push({lv:'city',x:RAMP.x,z:RAMP.z,r:2.2,on:()=>!P.driving,label:()=>'Спуститься по пандусу на парковку',act:()=>goLevel('park',PX0+1.5,3,-Math.PI/2,DRV.where==='city'?'Подземная парковка. Машина Макара осталась наверху, в городе.':'Подземная парковка.')});
 INTER.push({lv:'park',x:PX0+1,z:3,r:2.2,on:()=>!!D.life,label:()=>'Подняться по пандусу в город',act:()=>goLevel('city',RAMP.x,RAMP.z+3,Math.PI,'Ты в городе. Школа Макара — на юго-востоке.')});
-INTER.push({lv:'city',x:20,z:19.2,r:1.8,on:()=>!P.driving,label:()=>'Войти в школу',act:()=>{toast('Двери школы пока закрыты.',2);sfx.click();}});
+INTER.push({lv:'city',x:20,z:19.2,r:1.8,on:()=>!P.driving,label:()=>'Войти в школу',act:()=>goLevel('school',22,1.3,Math.PI,'Школа № 7, 1 этаж. Класс Макара, 3 «Т», — на 2 этаже. Лестница — в конце коридора.',()=>showFloor(1))});
+INTER.push({lv:'school',x:22,z:.8,r:1.4,floor:1,label:()=>'Выйти из школы',act:()=>goLevel('city',20,17.6,0,'Ты вышел из школы.')});
+INTER.push({lv:'school',x:46,z:3.1,r:1.9,label:()=>'Лестница: на другой этаж',act:schoolStairs});
+function schoolStairs(){
+  if(state!=='play')return;state='stairs';unlock();showHUD(false);
+  const go=f=>()=>{overlay.hidden=true;lock();goLevel('school',45.2,1.5,Math.PI/2,null,()=>showFloor(f));toast(`${f} этаж: ${ROOMS_BY_FLOOR[f].join(', ')}.`,3.5);};
+  panel('Лестница','Ты на '+P.floor+' этаже. Куда пойдём?',[1,2,3].filter(f=>f!==P.floor).map(f=>[`${f} этаж — ${ROOMS_BY_FLOOR[f].slice(0,3).join(', ')}`,go(f)]).concat([['Остаться',startPlay,'ghost']]));
+}
+for(const [f,x] of [[1,31],[2,8]])INTER.push({lv:'school',x,z:1.2,r:1.4,floor:f,label:()=>'Взять чипсы из автомата 🍟',act:()=>{
+  const pk=PICKS.find(p=>isChips(p)&&!p.held&&!p.flying&&!(p.lv==='school'&&p.floor===P.floor));if(!pk){toast('Чипсы в автомате кончились!',2);return;}
+  if(pickUp(pk)){tone(520,.08,'square',.06);nz(.12,900,.25,0,.1);toast(pk.name+'! Клик или T — кинуть.',2.5);}}});
 // hiding in mum and dad's car: on weekdays at 8:05 they drive Makar to school, and you with him
 const PCAR_HIDE={id:'pcar',lv:'park',room:'park',x:-1.9,z:8.3,name:'на заднем сиденье машины родителей',cam:{x:-3.5,y:.95,z:9.1,yaw:0}};
 INTER.push({lv:'park',x:-2.3,z:8.3,r:1.5,on:()=>!!D.life&&PARENTS_CAR.g.visible,label:()=>'Спрятаться в машине родителей',act:()=>{enterHide(PCAR_HIDE);const n=lifeNow();
@@ -2603,11 +2691,13 @@ function lifeCars(now){
 
 // every frame: the bed, the super speed, the police on their way, the river's water
 function updateExtras(dt,time){
+  if(P.lv==='school')for(const pk of PICKS)if(pk.lv==='school'&&!pk.held&&!pk.flying)pk.obj.visible=pk.floor===P.floor;   // things dropped on another floor
   updateLife(dt);updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
   if(RIVER.visible){texWater.offset.x=(time*.01)%1;texWater.offset.y=(time*.03)%1;}
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
 }
 function resetExtras(){
+  showFloor(1);
   LIFE.min=7*60+30;LIFE.instant=true;{let day;if(D.life){const n=lifeNow();day=n.t>=7*60&&n.t<20*60;}else{try{day=localStorage.getItem('makar-time')==='day';}catch(e){day=isDay;}}if(day!==isDay){isDay=day;applyTime();}}
   P.driving=false;DRV.where='park';DRV.g.visible=false;dropDrvCol();PARENTS_CAR.g.visible=true;if(!PCOL.includes(PARENTS_CAR.col))PCOL.push(PARENTS_CAR.col);
   if(MS.state==='sleep')wakeUp(true);ZZZ.visible=false;DRAGON.visible=false;MK.g.rotation.order='XYZ';MK.g.rotation.set(0,0,0);MK.pupil.color.set(0x111111);
@@ -2636,12 +2726,13 @@ function updatePlayer(dt){
   if(P.stepAcc>stride){P.stepAcc=0;if(!P.crouch&&!ADMIN.fly)sfx.step();}
   P.bob+=moved*(wantRun?9:11);
   // fly mode: no walls, Space up, C down (under the ceiling indoors, up to 60 m over the yard)
-  if(ADMIN.fly){P.crouch=false;P.eye=clamp(P.eye+((keys.Space||touchFly>0?1:0)-(keys.KeyC||keys.ControlLeft||touchFly<0?1:0))*3.5*dt,.3,P.lv==='yard'||P.lv==='river'||P.lv==='city'?60:P.lv==='park'?2.8:H-.15);}
+  if(ADMIN.fly){P.crouch=false;P.eye=clamp(P.eye+((keys.Space||touchFly>0?1:0)-(keys.KeyC||keys.ControlLeft||touchFly<0?1:0))*3.5*dt,.3,P.lv==='yard'||P.lv==='river'||P.lv==='city'?60:P.lv==='park'||P.lv==='school'?2.8:H-.15);}
   else{const eye=P.crouch?.72:1.15;P.eye+=(eye-P.eye)*Math.min(1,dt*10);}
   camera.position.set(P.x,baseY(P.lv)+P.eye+Math.sin(P.bob)*.035*Math.min(1,moved/dt/2.4||0),P.z);
   camera.rotation.set(P.pitch,P.yaw,0);
-  const r=P.lv==='yard'?(P.z>GATE.z?STREET_ROOM:YARD_ROOM):P.lv==='park'?PARK_ROOM:P.lv==='river'?RIVER_ROOM:P.lv==='city'?CITY_ROOM:roomAt(P.x,P.z);if(r&&r!==P.room){P.room=r;
+  const r=P.lv==='yard'?(P.z>GATE.z?STREET_ROOM:YARD_ROOM):P.lv==='park'?PARK_ROOM:P.lv==='river'?RIVER_ROOM:P.lv==='city'?CITY_ROOM:P.lv==='school'?schoolRoomAt(P.x,P.z):roomAt(P.x,P.z);if(r&&r!==P.room){P.room=r;
     if(r.id==='bath1')toast('Умный унитаз: «Добрый вечер! Хотите музыку?»');
+    if(r.school&&toastT<.5)toast(r.name,1.6);
     if(r.id==='cab'&&state==='play')enterLift();}
   if(P.lv==='yard'&&P.z>GATE.z+.45&&state==='play')win();
 }
@@ -2777,7 +2868,7 @@ function startLook(t){MS.state='look';MS.wait=t;MS.lookBase=MS.face;MS.lookT=0;
 // Downstairs: Makar doesn't notice you going out into the yard (there you only meet him when he is out for
 // his walk); into the parking he comes running through the stairs door 7 seconds after you, and chases you, sliding around whatever is in the way.
 // If you ride back up he follows you into the flat 5 s later.
-const OUTSIDE={yard:{delay:Infinity,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:Infinity,x:()=>8.6,z:()=>4.95,face:Math.PI/2},river:{delay:Infinity,x:()=>0,z:()=>.7,face:0},city:{delay:Infinity,x:()=>-20,z:()=>-12.5,face:0}};
+const OUTSIDE={yard:{delay:Infinity,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:Infinity,x:()=>8.6,z:()=>4.95,face:Math.PI/2},river:{delay:Infinity,x:()=>0,z:()=>.7,face:0},city:{delay:Infinity,x:()=>-20,z:()=>-12.5,face:0},school:{delay:Infinity,x:()=>22,z:()=>1.2,face:Math.PI}};
 function updateMakarOutside(dt){
   if(MS.away){tickAway(dt);if(!MS.away)return;
     const a=MS.away;
@@ -3507,6 +3598,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
