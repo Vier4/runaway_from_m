@@ -85,6 +85,7 @@ button:focus-visible{outline:2px solid var(--crayon);outline-offset:3px}
 .ph{position:relative;width:250px;max-width:calc(100vw - 32px);height:500px;max-height:calc(100vh - 32px);border-radius:34px;background:#15161c;border:3px solid #2a2c36;box-shadow:0 20px 60px rgba(0,0,0,.6);padding:14px;box-sizing:border-box;display:flex;flex-direction:column;gap:10px}
 .ph.shake{animation:phshake .12s infinite}@keyframes phshake{0%{transform:translate(-3px,1px) rotate(-1deg)}50%{transform:translate(3px,-1px) rotate(1deg)}100%{transform:translate(-2px,2px)}}
 #phScreen{flex:1;border-radius:22px;background:#0b0c10;color:#f3efe6;padding:14px;display:flex;flex-direction:column;gap:8px;overflow:hidden;font-size:14px;position:relative}
+#phScreen .phAns{display:flex;flex-direction:column;gap:6px;margin-top:8px}#phScreen .phAns button{font:inherit;font-size:13px;padding:8px;border-radius:10px;border:0;background:#2f6fd6;color:#fff;cursor:pointer}
 #phNum{font-family:var(--display);font-size:30px;text-align:center;letter-spacing:.12em;min-height:40px}
 .phKeys{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .phKeys button{height:44px;border-radius:50%;background:#262833;font-size:18px;font-weight:800}
@@ -2157,6 +2158,66 @@ function updateBed(dt){
   BED.pv.rotation.z=BED.ang+(BED.k>0&&!BED.up?Math.sin(performance.now()/40)*.01:0);
 }
 function resetBed(){Object.assign(BED,{k:0,ang:0,up:false,t:0,mk:false,brew:false});BED.pv.rotation.z=0;}
+
+/* ---------- Makar's new sofa-bed ----------
+   Ordered by phone (007). Folded it is a sofa; a button on its remote pulls the mattress part out and it
+   becomes a wide bed. It hangs on the same pivot as the old bed, so it lifts the same way. If you choose to
+   keep it, it stays in every game until "Вернуть прежнюю кровать" in the admin panel. */
+const NEWBED={g:new THREE.Group(),ext:new THREE.Group(),remote:null,state:null,k:0,old:BED.pv.children.slice(),col:{x0:3.67,x1:5.67,z0:12.05,z1:12.85}};
+{const g=NEWBED.g,fab=mat(0x5b7fb8),dark=mat(0x2f3d55),wh=mat(0xf4f1ea);scene.add(g);
+ blk(3.67,5.67,.06,.3,11.3,12.08,dark,{parent:g});for(const x of [3.75,5.59])for(const z of [11.36,12.02])blk(x-.04,x+.04,0,.06,z-.04,z+.04,M_.dark,{parent:g});
+ blk(3.8,5.54,.3,.48,11.42,12.06,fab,{parent:g});blk(3.8,5.54,.3,1.0,11.3,11.5,fab,{parent:g});   // seat and back
+ for(const x of [3.67,5.54])blk(x,x+.13,.3,.72,11.3,12.08,dark,{parent:g});   // armrests
+ g.add(NEWBED.ext);blk(3.8,5.54,.12,.3,11.42,12.06,fab,{parent:NEWBED.ext});blk(3.8,5.54,.3,.32,11.42,12.06,mat(0x4a6ea6),{parent:NEWBED.ext});   // the pull-out part
+ const pil=blk(3.86,4.25,.48,.6,11.6,12.3,wh,{parent:g});pil.visible=false;NEWBED.pillow=pil;
+ const r=new THREE.Group();r.position.set(5.2,.48,11.85);r.rotation.y=.4;g.add(r);blk(-.03,.03,0,.025,-.08,.08,mat(0x15151a),{parent:r});sph(0,.028,-.04,.012,basic(0xff3030),{parent:r});NEWBED.remote=r;
+ BED.pv.attach(g);g.visible=false;}
+// show the old bed, or the new one (folded 0 … pulled out 1)
+function showNewBed(on,k=1){
+  for(const m of NEWBED.old)m.visible=!on;NEWBED.g.visible=on;NEWBED.k=k;NEWBED.ext.position.set(0,.18*k,.8*k);NEWBED.pillow.visible=on&&k>=1;
+  const i=COL.indexOf(NEWBED.col);if(on&&k>.5){if(i<0)COL.push(NEWBED.col);}else if(i>=0)COL.splice(i,1);
+}
+const newBedKept=()=>{try{return localStorage.getItem('makar-newbed')==='1';}catch(e){return false;}};
+function keepNewBed(on){try{if(on)localStorage.setItem('makar-newbed','1');else localStorage.removeItem('makar-newbed');}catch(e){}}
+function resetNewBed(){NEWBED.state=null;NEWBED.remote.visible=false;showNewBed(newBedKept(),1);}
+function deliverNewBed(){
+  fadeTo(1);tone(660,.2,'sine',.1);tone(880,.3,'sine',.1,0,.25);
+  setTimeout(()=>{NEWBED.state='folded';showNewBed(true,0);NEWBED.remote.visible=true;fadeTo(0);
+    toast('Дзынь! Курьер привёз Макару новую кровать-диван! Она стоит в комнате Макара. Нажми кнопку на пульте 🔘',5);
+    if(MS.lv==='flat'&&!MS.away)say('О! Мне привезли новую кровать?! Я ничего не заказывал…',3);},1200);
+}
+INTER.push({x:6.1,z:11.69,r:1.3,prio:1,on:()=>NEWBED.state==='folded',label:()=>'Нажать кнопку на пульте 🔘',act:()=>{NEWBED.state='opening';NEWBED.remote.visible=false;tone(900,.08,'square',.1);
+  toast('Вжжжж… Кровать-диван раскладывается!',2.5);for(let i=0;i<6;i++)nz(.05,500,.25,0,i*.25);}});
+function updateNewBed(dt){if(NEWBED.state==='opening'){showNewBed(true,Math.min(1,NEWBED.k+dt/1.6));if(NEWBED.k>=1&&state==='play'){NEWBED.state='open';startCut(NEWBED_SCRIPT,updNewBedCut);}}}
+// the cutscene: Makar sleeps in it with his favourite plush dragon
+const DRAGON=new THREE.Group();DRAGON.visible=false;scene.add(DRAGON);
+const dragonPick=PICKS.find(p=>p.name==='Плюшевый Эндер-дракон');
+{const pk=dragonPick,b=boxOf(pk.obj),c=pk.obj.clone();c.position.set(-(b.min.x+b.max.x)/2,-b.min.y,-(b.min.z+b.max.z)/2);DRAGON.add(c);}
+const NEWBED_SCRIPT=[
+  [0,()=>{camAt(6.6,1.7,13.9,5.4,.9,11.5);Object.assign(MS,{state:'run',spd:0,x:6.35,z:11.0,face:-Math.PI/2-.4,seat:null,sitK:0});MK.g.visible=true;
+    say('Ого! Кровать сама разложилась! Какая она большая!',3);}],
+  [3.4,()=>say('Так, где мой любимый дракончик? Иди сюда!',2.8)],
+  [6.4,()=>{fadeTo(1);}],
+  [7.4,()=>{CUT.sleep=true;DRAGON.visible=true;dragonPick.obj.visible=false;setRoomLight('mine',false);camAt(6.3,1.9,13.7,4.6,.6,12.0);fadeTo(0);say('Ммм… какая мягкая… Спокойной ночи, дракончик…',3);}],
+  [11,()=>{toast('Хр-р-р… пс-с-с… 💤',4);for(let i=0;i<3;i++){tone(70,.9,'sawtooth',.05,55,i*1.6);nz(.04,1200,.7,0,i*1.6+.9);}}],
+  [15.4,()=>fadeTo(1)],
+  [16.8,()=>{CUT.sleep=false;DRAGON.visible=false;dragonPick.obj.visible=!dragonPick.held;setRoomLight('mine',true);MK.g.rotation.order='XYZ';MK.g.rotation.set(0,0,0);MK.pupil.color.set(0x111111);newBedEnding();}],
+];
+function updNewBedCut(dt,t){
+  if(!CUT.sleep){animMakar(dt);return;}
+  MS.spd=0;animMakar(dt);const g=MK.g;g.rotation.order='YXZ';g.rotation.set(-Math.PI/2,Math.PI/2,0);g.position.set(5.6,.5,12.15);   // lying on his back, head to the pillow
+  MK.legL.rotation.x=MK.legR.rotation.x=0;MK.armL.rotation.x=MK.armR.rotation.x=-1.1;MK.head.rotation.x=0;MK.pupil.color.set(0xe7b48f);   // eyes shut
+  DRAGON.position.set(4.75,.95+Math.sin(t*1.4)*.02,12.15);DRAGON.rotation.set(0,Math.PI/2,0);   // in his arms, going up and down as he breathes
+}
+function newBedEnding(){
+  fadeTo(0);state='over';$('toast').hidden=true;$('sub').hidden=true;
+  const fresh=!gotEnd.newbed,wasOpen=adminOpen();gotEnd.newbed=true;saveEndings();const n=ENDINGS.findIndex(e=>e.id==='newbed')+1;
+  const done=()=>`Открыто концовок: ${endCount()} из ${ENDINGS.length}.`+(!wasOpen&&adminOpen()?' Ты прошёл все концовки и получил админ панель!':'');
+  const finish=t=>panel(`Концовка ${n}: ${ENDINGS[n-1].title}`,t,[['Начать заново',begin],...(adminOpen()?[['Админ панель',()=>showAdmin(false),'ghost']]:[]),['Концовки',()=>showEndings(),'ghost'],['В меню',showMenu,'ghost']]);
+  panel(`Концовка ${n}: ${ENDINGS[n-1].title}`,(fresh?'Новая концовка! ':'')+'Ты позвонил с телефона Макара по номеру 007 и заказал ему новую раздвижную кровать-диван. Нажал кнопку на пульте — и она разложилась. Макар сразу уснул в ней со своим любимым дракончиком. Хочешь оставить такую кровать на всю оставшуюся игру?',
+    [['Да, хочу оставить навсегда',()=>{keepNewBed(true);finish('Кровать-диван теперь у Макара навсегда, в каждой игре. Чтобы вернуть прежнюю кровать, зайди в админ панель и нажми «Вернуть прежнюю кровать». А если потом опять захочется новую — пройди эту концовку ещё раз. '+done());}],
+     ['Нет, не надо',()=>finish('Хорошо, в следующей игре у Макара будет его старая кровать. '+done()),'ghost']]);
+}
 // Makar checks under his bed now and then: the crowbar is still there? And what is this, soup?
 function makarLooksUnderBed(){
   BED.mk=true;if(BED.brew){startCut(AMB_SCRIPT,updAmb);return;}
@@ -2304,12 +2365,12 @@ function updateSplashes(dt){for(let i=SPL.length-1;i>=0;i--){const s=SPL[i],m=s.
 
 // every frame: the bed, the super speed, the police on their way, the river's water
 function updateExtras(dt,time){
-  updateBed(dt);updateSplashes(dt);
+  updateBed(dt);updateNewBed(dt);updateSplashes(dt);
   if(RIVER.visible){texWater.offset.x=(time*.01)%1;texWater.offset.y=(time*.03)%1;}
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
 }
 function resetExtras(){
-  resetBed();P.boostT=0;P.drank=false;policeT=0;CUT=null;HANDBREW.visible=false;MK.armR.rotation.z=0;FLOOD.visible=false;PCAR.visible=false;COP.g.visible=false;
+  resetBed();resetNewBed();P.boostT=0;P.drank=false;policeT=0;CUT=null;HANDBREW.visible=false;MK.armR.rotation.z=0;FLOOD.visible=false;PCAR.visible=false;COP.g.visible=false;
   for(const pc of PLAY){pc.broken=false;for(const q of pc.parts){q.m.position.copy(q.p);q.m.rotation.copy(q.r);}}
   for(const s of SPL)scene.remove(s.m);SPL=[];$('vig').style.opacity=0;
 }
@@ -2887,14 +2948,14 @@ const PH_KEYS=['1','2','3','4','5','6','7','8','9','⌫','0','📞','✖'];
 function openPhone(){if(state!=='play')return;state='phone';unlock();showHUD(false);$('prompt').hidden=true;$('toast').hidden=true;$('sub').hidden=true;$('phone').hidden=false;phNum='';phBusy=false;$('phBody').classList.remove('shake');renderPhone();}
 function closePhone(){$('phone').hidden=true;phBusy=false;if(state==='phone')startPlay();}
 function renderPhone(){
-  const sc=$('phScreen');sc.innerHTML='';sc.appendChild(el('div','label','Телефон'));sc.appendChild(el('div',null,'Набери номер. Gazon — 005'));const n=el('div',null,phNum||' ');n.id='phNum';sc.appendChild(n);
+  const sc=$('phScreen');sc.innerHTML='';sc.appendChild(el('div','label',P.items.mphone?'Телефон Макара':'Телефон'));sc.appendChild(el('div',null,P.items.mphone?'Набери номер. Gazon — 005 · Кровати — 007':'Набери номер. Gazon — 005'));const n=el('div',null,phNum||' ');n.id='phNum';sc.appendChild(n);
   const k=$('phKeys');k.innerHTML='';for(const c of PH_KEYS){const b=el('button',c==='📞'?'call':c==='✖'?'end':null,c);b.type='button';b.addEventListener('click',()=>phKey(c));k.appendChild(b);}
 }
 function phKey(c){
   if(phBusy)return;
   if(c==='✖'){closePhone();return;}
   if(c==='⌫'){phNum=phNum.slice(0,-1);renderPhone();return;}
-  if(c==='📞'){if(phNum==='005')gazonCall();else{const sc=$('phScreen');sc.appendChild(el('div','bub',phNum?'Номер '+phNum+' не отвечает 📵':'Сначала набери номер'));tone(480,.4,'sine',.1);tone(480,.4,'sine',.1,0,.6);}return;}
+  if(c==='📞'){if(phNum==='005')gazonCall();else if(phNum==='007'&&P.items.mphone)bedCall();else if(phNum==='007'){const sc=$('phScreen');sc.appendChild(el('div','bub','Номер 007 отвечает только на звонки с телефона Макара 📵'));tone(480,.4,'sine',.1);}else{const sc=$('phScreen');sc.appendChild(el('div','bub',phNum?'Номер '+phNum+' не отвечает 📵':'Сначала набери номер'));tone(480,.4,'sine',.1);tone(480,.4,'sine',.1,0,.6);}return;}
   if(phNum.length<6){phNum+=c;tone(700+(+c)*40,.08,'sine',.08);renderPhone();}
 }
 function phSay(text,me){const sc=$('phScreen');const b=el('div','bub'+(me?' me':''),text);sc.appendChild(b);sc.scrollTop=sc.scrollHeight;
@@ -2915,6 +2976,22 @@ function gazonCall(){
     $('phScreen').innerHTML='<div style="font-size:64px;text-align:center;margin-top:120px">💥</div>';hush();});
   T(18600,()=>{$('phone').hidden=true;$('phBody').classList.remove('shake');document.querySelectorAll('.hop').forEach(e=>e.remove());phBusy=false;state='ended';
     endingPanel('gazon','Ты набрал 005 и позвонил в Gazon. «Вы хотите что-то купить?» — «Нет, я хочу сдать ящерку в Gazon!» Эублефар запрыгнул прямо в телефон и уехал на склад Gazon, где ему дали самую тёплую коробку. А телефон не выдержал такой доставки и взорвался. Макар до сих пор ищет свою ящерку!');});
+}
+
+/* 007 from Makar's phone: the bed shop. Say yes and a new sofa-bed is delivered to Makar's room — ending 13
+   starts when you press the button on its remote. */
+function bedCall(){
+  phBusy=true;const sc=$('phScreen');sc.innerHTML='';sc.appendChild(el('div','gz','Кровать-Маркет'));sc.appendChild(el('div','label','Звонок… 007'));
+  for(let i=0;i<3;i++)tone(440,.35,'sine',.08,0,i*.8);
+  const T=(ms,f)=>setTimeout(()=>{if(state==='phone')f();},ms);
+  T(2300,()=>{sc.appendChild(el('div',null,'🧑‍💼'));phSay(NEWBED.state?'Здравствуйте! Новая кровать уже у вас. Нажмите кнопку на пульте!':'Здравствуйте! Это Кровать-Маркет. Хотите заказать новую кровать?');
+    if(NEWBED.state){T(5200,closePhone);return;}
+    const row=el('div','phAns');for(const [t,yes] of [['Да, хочу заказать новую кровать',true],['Нет, мне ничего не надо',false]]){const b=el('button',null,t);b.type='button';
+      b.addEventListener('click',()=>{row.remove();phSay(t,true);
+        if(!yes){T(2200,()=>phSay('Хорошо! Звоните, если передумаете. До свидания!'));T(5200,closePhone);return;}
+        T(2400,()=>phSay('Отлично! Новая раздвижная кровать-диван уже едет к Макару. Она сама раскладывается — нажмите кнопку на пульте!'));
+        T(7600,()=>{closePhone();deliverNewBed();});});row.appendChild(b);}
+    phBusy=false;sc.appendChild(row);sc.scrollTop=sc.scrollHeight;});
 }
 
 /* ---------- ending: Makar caught you for good ---------- */
@@ -2984,6 +3061,7 @@ const ENDINGS=[
   {id:'police',title:'Макара забрала полиция',hint:'Подойди к кровати Макара и жми E (или кликай) очень быстро, чтобы она поднялась. Возьми из-под кровати лом 🔧, спустись во двор и сломай им всю площадку: горку, качели, карусель и песочницу.'},
   {id:'ambulance',title:'Макара забрала скорая помощь',hint:'Возьми в холодильнике у Макара чай 🍵 и лимон 🍋: лимон выдавится в чай, и получится отварчик. Подними кровать Макара (жми E быстро-быстро) и подсунь отварчик под неё. Иногда Макар проверяет, что у него под кроватью…'},
   {id:'drown',title:'Утопили Макара',hint:'Возьми в холодильнике энергетик ⚡ и лимон 🍋: выпьешь энергетик с лимоном, и будет суперскорость на 3 минуты. Схвати телефон Макара 📱 с его стола, и Макар погонится за тобой. В лифте выбери «2 — набережная», дождись Макара у реки и кинь телефон в воду.'},
+  {id:'newbed',title:'У Макара новая кровать',hint:'Возьми телефон Макара 📱 с его стола, открой его (O или 📱) и набери 007. Закажи новую кровать, а когда её привезут, нажми кнопку на пульте в комнате Макара.'},
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
 const endCount=()=>ENDINGS.filter(e=>gotEnd[e.id]).length;
@@ -3057,6 +3135,8 @@ function showAdmin(inGame,confirmReset){
     body.appendChild(el('h3',null,'Спавн объектов'));
     const sp=el('button',null,`Создать объект (${TPL.length})`);sp.type='button';sp.addEventListener('click',showSpawn);body.appendChild(sp);
     const cl=el('button',null,`Убрать созданное (${SPAWNED.length})`);cl.type='button';cl.addEventListener('click',()=>{clearSpawned();showAdmin(true);});body.appendChild(cl);}
+  if(newBedKept()){body.appendChild(el('h3',null,'Кровать Макара'));const nb=el('button',null,'Вернуть прежнюю кровать');nb.type='button';
+    nb.addEventListener('click',()=>{keepNewBed(false);if(NEWBED.state!=='folded'&&NEWBED.state!=='opening')showNewBed(false);toast('Прежняя кровать вернулась к Макару.',2.5);showAdmin(inGame);});body.appendChild(nb);}
   body.appendChild(el('h3',null,'Концовки'));
   const r=el('button','danger',confirmReset?'Точно сбросить? Админ панель закроется':'Сбросить концовки');r.type='button';
   r.addEventListener('click',()=>{if(!confirmReset){showAdmin(inGame,true);return;}gotEnd={};saveEndings();for(const k in ADMIN)ADMIN[k]=false;P.eye=1.15;inGame?showPause():showMenu();});body.appendChild(r);
@@ -3178,6 +3258,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
