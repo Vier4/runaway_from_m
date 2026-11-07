@@ -1132,7 +1132,7 @@ const YS=-900;
 const SCHOOL=new THREE.Group();SCHOOL.position.y=YS;SCHOOL.visible=false;scene.add(SCHOOL);
 const SFLOORS=[null,new THREE.Group(),new THREE.Group(),new THREE.Group()],SCOL=[null,[],[],[]],SCHOOL_SEATS={},SCHOOL_ROOMS=[null,[],[],[]];
 for(let f=1;f<=3;f++){SFLOORS[f].visible=false;SCHOOL.add(SFLOORS[f]);}
-SCHOOL.add(new THREE.AmbientLight(0xffffff,.55));{const L=new THREE.DirectionalLight(0xffffff,.35);L.position.set(10,20,-15);SCHOOL.add(L);SCHOOL.add(L.target);}   // the classrooms' daylight (only on while you are inside)
+SCHOOL.add(new THREE.AmbientLight(0xffffff,.3));{const L=new THREE.DirectionalLight(0xffffff,.35);L.position.set(10,20,-15);SCHOOL.add(L);SCHOOL.add(L.target);}   // the classrooms' daylight (only on while you are inside)
 function sb(f,x0,x1,y0,y1,z0,z1,m,col){const me=blk(x0,x1,y0,y1,z0,z1,m,{parent:SFLOORS[f]});if(col)SCOL[f].push({x0,x1,z0,z1,tall:col!=='low'});return me;}
 function signTex(text,bg,fg,w=256,h=64,font=34){return new THREE.MeshBasicMaterial({map:ctex(w,h,(g,W,H)=>{g.fillStyle=bg;g.fillRect(0,0,W,H);g.fillStyle=fg;g.font=`bold ${font}px Arial`;g.textAlign='center';g.textBaseline='middle';
   const L=text.split('\n');L.forEach((t,i)=>g.fillText(t,W/2,H/2+(i-(L.length-1)/2)*font*1.1+2));},false)});}
@@ -1162,34 +1162,34 @@ const ROOMS_BY_FLOOR=[null,['1 «Р»','1 «Т»','Столовая','Библи
  // a classroom: blackboard, the teacher's desk, rows of two-seat desks (cols × rows), seats kept for the pupils
  function classroom(f,i,name,cols,rows,n){
    const rx=i*11,b=new THREE.Mesh(new THREE.PlaneGeometry(4.2,1.3),signTex(name+'\nКлассная работа','#1f4a3a','#f2f2e8',336,104,30));b.position.set(rx+5.5,1.75,12.95);b.rotation.y=Math.PI;SFLOORS[f].add(b);
-   sb(f,rx+3.3,rx+7.7,1.05,2.45,12.97,13,M_board);sb(f,rx+4.6,rx+6.4,0,.75,11.4,11.95,M_desk,true);sb(f,rx+5.2,rx+5.8,0,.45,11.0,11.3,M_chair);
+   sb(f,rx+3.3,rx+7.7,1.05,2.45,12.97,13,M_board);sb(f,rx+4.6,rx+6.4,0,.75,11.4,11.95,M_desk,'low');sb(f,rx+5.2,rx+5.8,0,.45,11.0,11.3,M_chair);
    const seats=[];const X=[1.7,4.2,6.8,9.3],Z=[5.7,7.1,8.5,9.9];
    for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const x=rx+X[c],z=Z[r];sb(f,x-.62,x+.62,.7,.75,z-.25,z+.25,M_desk);sb(f,x-.6,x-.55,0,.7,z-.22,z+.22,M_leg);sb(f,x+.55,x+.6,0,.7,z-.22,z+.22,M_leg);
      SCOL[f].push({x0:x-.62,x1:x+.62,z0:z-.25,z1:z+.25});
-     for(const sx of [-.3,.3]){sb(f,x+sx-.2,x+sx+.2,.42,.46,z-.72,z-.38,M_chair);sb(f,x+sx-.2,x+sx+.2,.46,.85,z-.74,z-.7,M_chair);seats.push({f,x:x+sx,z:z-.55});}}
+     for(const sx of [-.3,.3]){sb(f,x+sx-.2,x+sx+.2,.42,.46,z-.72,z-.38,M_chair);sb(f,x+sx-.2,x+sx+.2,.46,.85,z-.74,z-.7,M_chair);seats.push({f,x:x+sx,z:z-.62});}}
    SCHOOL_SEATS[name]=seats.slice(0,n);
  }
  classroom(1,0,'1 «Р»',4,3,20);classroom(1,1,'1 «Т»',4,3,20);classroom(2,0,'3 «Т»',4,4,32);classroom(2,1,'2 «Р»',4,3,20);classroom(2,2,'2 «Т»',4,3,20);
  // canteen: long tables with benches and the serving counter
  for(const z of [6,8.5,11]){sb(1,23.5,31.5,.7,.76,z-.4,z+.4,mat(0xf2efe8),'low');sb(1,23.5,31.5,0,.7,z-.05,z+.05,M_leg);for(const dz of [-.75,.75])sb(1,23.5,31.5,.4,.45,z+dz-.18,z+dz+.18,M_desk);}
- sb(1,22.4,23,0,1.05,5,12.6,mat(0xb8c2cc),true);signAt(1,'Столовая',27.5,2.6,12.95,2.4,.5,Math.PI,'#f2c230','#3a2a0a');
+ sb(1,22.4,23,0,1.05,5,12.6,mat(0xb8c2cc),'low');signAt(1,'Столовая',27.5,2.6,12.95,2.4,.5,Math.PI,'#f2c230','#3a2a0a');
  // library: shelves of books all round, a reading table
  for(const [x0,x1,z0,z1] of [[33.3,33.7,5,12.8],[43.3,43.7,5,12.8],[34,43,12.4,12.8]]){sb(1,x0,x1,0,2.2,z0,z1,M_shelf,true);
    for(let y=.3;y<2.1;y+=.45)for(let t=0;t<(z1-z0>1?z1-z0:x1-x0);t+=.12){const m=M_book[(t*31+y*7|0)%4];if(z1-z0>1)sb(1,x0-.02,x1+.02,y,y+.32,z0+t,z0+t+.09,m);else sb(1,x0+t,x0+t+.09,y,y+.32,z0-.02,z1+.02,m);}}
- sb(1,36.5,40.5,.72,.78,7.5,9.5,M_desk,true);
+ sb(1,36.5,40.5,.72,.78,7.5,9.5,M_desk,'low');
  // teachers' room: a big table and a sofa
- sb(2,35,41,.72,.78,7,9.5,M_desk,true);sb(2,34,42,0,.45,11.8,12.8,mat(0x7a5ad8),true);sb(2,34,42,.45,1.0,12.55,12.8,mat(0x7a5ad8));signAt(2,'Учительская',38.5,2.6,12.95,2.6,.5,Math.PI);
+ sb(2,35,41,.72,.78,7,9.5,M_desk,'low');sb(2,34,42,0,.45,11.8,12.8,mat(0x7a5ad8),'low');sb(2,34,42,.45,1.0,12.55,12.8,mat(0x7a5ad8));signAt(2,'Учительская',38.5,2.6,12.95,2.6,.5,Math.PI);
  // after-school club: a soft carpet, low tables, toy boxes and beanbags
  {const c=new THREE.Mesh(new THREE.PlaneGeometry(8,5),mat(0x58b368));c.rotation.x=-Math.PI/2;c.position.set(5.5,.01,9.5);SFLOORS[3].add(c);
   for(const [x,z] of [[3,6.5],[8,6.5]]){sb(3,x-1,x+1,.5,.55,z-.6,z+.6,mat(0xf2c230),'low');sb(3,x-.05,x+.05,0,.5,z-.05,z+.05,M_leg);}
-  for(const [x,z,c] of [[2,12,0xd8402f],[4,12.2,0x2f6fd6],[9,12,0x3fbf5a]]){sb(3,x-.5,x+.5,0,.6,z-.4,z+.4,mat(c),true);}
+  for(const [x,z,c] of [[2,12,0xd8402f],[4,12.2,0x2f6fd6],[9,12,0x3fbf5a]]){sb(3,x-.5,x+.5,0,.6,z-.4,z+.4,mat(c),'low');}
   for(const [x,z,c] of [[3.5,9.5,0xf06aa0],[7.5,10,0x7a5ad8],[5.5,11,0xff9f43]])sph(x,.3,z,.45,mat(c),{parent:SFLOORS[3]}).scale.set(1,.65,1);
   signAt(3,'Продлёнка',5.5,2.6,12.95,2.4,.5,Math.PI,'#3fbf5a');}
  // assembly hall: a stage and rows of chairs
- sb(3,11.5,21.5,0,.6,10.5,12.98,mat(0x8a5a33),true);sb(3,11.5,21.5,.6,3.2,12.9,12.98,mat(0xa8231c));
+ sb(3,11.5,21.5,0,.6,10.5,12.98,mat(0x8a5a33),'low');sb(3,11.5,21.5,.6,3.2,12.9,12.98,mat(0xa8231c));
  for(let r=0;r<4;r++)for(let c=0;c<7;c++){const x=12.7+c*1.2,z=5.5+r*1.1;sb(3,x-.22,x+.22,.42,.46,z-.2,z+.2,mat(0xa8231c));sb(3,x-.22,x+.22,.46,.9,z-.22,z-.18,mat(0xa8231c));}
  // music: a piano; art: easels
- sb(3,26,28,0,1.2,11.8,12.6,mat(0x111114),true);sb(3,26.05,27.95,.75,.78,11.5,11.8,M_.white);
+ sb(3,26,28,0,1.2,11.8,12.6,mat(0x111114),'low');sb(3,26.05,27.95,.75,.78,11.5,11.8,M_.white);
  for(const [x,z] of [[35,6.5],[38,6.5],[41,6.5],[35,9.5],[38,9.5],[41,9.5]]){sb(3,x-.5,x+.5,.7,1.5,z,z+.04,M_.white);sb(3,x-.03,x+.03,0,1.6,z+.1,z+.16,M_shelf);}
  // the way out on floor 1, and a chips machine on floors 1 and 2
  sb(1,21.2,22.8,0,2.4,.01,.06,mat(0x6b4a2b));signAt(1,'ВЫХОД',22,2.6,.07,1.2,.32,0,'#3fbf5a');
@@ -2050,7 +2050,8 @@ function updateFlying(dt){
     o.x+=f.vel.x*dt;o.y+=f.vel.y*dt;o.z+=f.vel.z*dt;f.pk.off.x+=o.x-ox;f.pk.off.y+=o.y-oy;f.pk.off.z+=o.z-oz;f.pk.obj.rotation.y+=f.spin*dt;f.pk.obj.rotation.x+=f.spin*.6*dt;
     const base=baseY(f.pk.lv);
     // Makar?
-    if(MS.lv===f.pk.lv&&hyp(o.x-MS.x,o.z-MS.z)<.42&&o.y>base+.2&&o.y<base+1.85){
+    if(f.pk.lv==='school'){const n=schoolHit(o.x,o.y-base,o.z);if(n){f.vel.set(0,0,0);const nx=n.x+.25,nz2=n.z+.25;f.pk.off.x+=nx-o.x;f.pk.off.z+=nz2-o.z;o.x=nx;o.z=nz2;FLY.splice(i,1);landChips(f);continue;}}
+    if(MS.lv===f.pk.lv&&(MS.lv!=='school'||MS.floor===f.pk.floor)&&hyp(o.x-MS.x,o.z-MS.z)<.42&&o.y>base+.2&&o.y<base+1.85){
       MS.stun=3;MS.state=MS.lv==='flat'?'look':MS.state;MS.wait=3.2;MS.lookBase=MS.face;MS.lookT=0;standUp();
       nz(.2,2600,.15,panFor(MS.x,MS.z),0,'bandpass');nz(.14,1600,.2,panFor(MS.x,MS.z),.08,'bandpass');
       say(pick(['Ай! Чипсы?!','Эй! Кто кидается чипсами?!','Ой! Это мои любимые, с сыром!','Хрусть! Прямо в лоб!']),2.4);toast('Попал! Макар оглушён на 3 секунды 🍟',2);
@@ -2389,7 +2390,7 @@ function endCut(id,text){CUT.flash=false;$('vig').style.opacity=0;$('toast').hid
 // someone else speaks (a doctor, a policeman)
 function talkAs(label,t,o={}){
   subBy='x';const el=$('sub');el.innerHTML='<b>'+label+'</b>';el.appendChild(document.createTextNode(t));el.hidden=false;subT=Math.max(2.4,t.length*.075);
-  if(!SS||muted)return;try{SS.cancel();const u=new SpeechSynthesisUtterance(t),v=SS.getVoices().filter(v=>/^ru/i.test(v.lang));u.lang='ru-RU';u.voice=ruVoice||v[0]||null;u.pitch=o.pitch||.8;u.rate=o.rate||1;SS.speak(u);}catch(e){}
+  if(!SS||muted)return;try{SS.cancel();const u=new SpeechSynthesisUtterance(t),v=SS.getVoices().filter(v=>/^ru/i.test(v.lang));u.lang='ru-RU';u.voice=o.female?femaleVoice(v):ruVoice||v[0]||null;u.pitch=o.pitch||.8;u.rate=o.rate||1;SS.speak(u);}catch(e){}
 }
 function siren(sec){for(let i=0;i<sec*2;i++)tone(i%2?950:700,.5,'sawtooth',.045,0,i*.5);}
 function moveTo(o,tx,tz,sp,dt){const dx=tx-o.x,dz=tz-o.z,d=hyp(dx,dz);if(d<.05){o.spd=0;return true;}const st=Math.min(d,sp*dt);o.x+=dx/d*st;o.z+=dz/d*st;o.face=Math.atan2(dx,dz);o.spd=st/dt;return false;}
@@ -2589,12 +2590,12 @@ function lifeSync(){
   const ph=lifeNow().phase,want=ph==='sleep'?'sleep':ph==='home'||ph==='morning'?'home':'school',asleep=MS.state==='sleep';
   if(want==='school'){
     if(MS.away){if(MS.away.kind!=='school')Object.assign(MS.away,{kind:'school',t:Infinity});return;}   // out on a walk: straight on to school
-    if(MS.task!=='school'){if(asleep)wakeUp(true);standUp();MS.task='school';say('Всё, чат, родители везут меня в школу! Пока!',3);goSeat();}
+    if(MS.task!=='school'||P.lv!=='flat'){if(asleep)wakeUp(true);standUp();MS.task='school';if(P.lv!=='flat'){leaveHome();return;}say('Всё, чат, родители везут меня в школу! Пока!',3);goSeat();}   // (nobody at home to see him walk to the door: he is simply gone)
     return;}
   if(MS.away&&MS.away.kind==='school')comeHome(want==='sleep');
   if(want==='sleep'){
     if(MS.away)comeHome(true);
-    if(LIFE.instant)lieDown();
+    if(LIFE.instant||P.lv!=='flat'&&!asleep&&MS.lv==='flat')lieDown();
     else if(!asleep&&MS.task!=='sleep'&&MS.lv==='flat'){standUp();MS.task='sleep';MS.seatKey='sleep';say('Всё, чат, спокойной ночи! Пойду спать.',3);goSeat();}
     return;}
   if(asleep)wakeUp();else if(MS.task==='sleep'||MS.task==='school'){MS.task='stream';MS.seatKey='desk';goSeat();}
@@ -2689,8 +2690,143 @@ function lifeCars(now){
   if(PARENTS_CAR.g.visible===gone){PARENTS_CAR.g.visible=!gone;const i=PCOL.indexOf(PARENTS_CAR.col);if(gone&&i>=0)PCOL.splice(i,1);else if(!gone&&i<0)PCOL.push(PARENTS_CAR.col);}
 }
 
+/* ---------- the people at school («Жизнь Макара») ----------
+   Makar's class 3 «Т» has 31 pupils (and Makar): his friends Egor and Matvey and Vanya in glasses. In lessons
+   they sit at their desks and the teacher stands at the board; in the breaks they run about the classroom and
+   the corridor; at 13:30 most go home and a few go up to the after-school club with Makar. The other classes
+   (1 «Р», 1 «Т», 2 «Р», 2 «Т») have 20 pupils each who just walk about their classrooms. Hug Matvey, pinch
+   his cheeks, play tag with Egor or Matvey, run from Vanya, throw chips at anyone. */
+const KMAT={},kmat=c=>KMAT[c]||(KMAT[c]=mat(c));
+function nameTag(text,color){const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:ctex(256,64,(g,w,h)=>{g.fillStyle='rgba(16,18,24,.75)';g.beginPath();g.roundRect(8,10,w-16,h-20,14);g.fill();g.fillStyle=color;g.font='bold 30px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,h/2+1);},false),depthTest:false,transparent:true}));sp.scale.set(.75,.19,1);return sp;}
+function buildKid(o){
+  const g=new THREE.Group();g.visible=false;SCHOOL.add(g);const skin=kmat(o.skin||0xf0c19c),shirt=kmat(o.shirt),pants=kmat(o.pants),hair=kmat(o.hair);
+  const L=(x,y,w,h,d,m)=>{const p=new THREE.Group();p.position.set(x,y,0);blk(-w/2,w/2,-h,0,-d/2,d/2,m,{parent:p});g.add(p);return p;};
+  const legL=L(-.08,.58,.12,.56,.13,pants),legR=L(.08,.58,.12,.56,.13,pants);for(const l of [legL,legR])blk(-.07,.07,-.58,-.52,-.08,.11,kmat(0x2a2a2a),{parent:l});
+  blk(-.17,.17,.56,1.0,-.1,.1,shirt,{parent:g});if(o.skirt)blk(-.2,.2,.42,.66,-.13,.13,kmat(o.skirt),{parent:g});
+  const armL=L(-.22,.98,.08,.42,.09,shirt),armR=L(.22,.98,.08,.42,.09,shirt);for(const a of [armL,armR])blk(-.04,.04,-.48,-.4,-.04,.04,skin,{parent:a});
+  const head=new THREE.Group();head.position.y=1.0;g.add(head);
+  blk(-.13,.13,0,.28,-.12,.12,skin,{parent:head});blk(-.14,.14,.2,.32,-.13,.13,hair,{parent:head});blk(-.14,.14,.05,.25,-.14,-.07,hair,{parent:head});
+  if(o.girl){blk(-.15,.15,-.14,.22,-.15,-.08,hair,{parent:head});blk(-.05,.05,.3,.36,-.02,.06,kmat(o.bow||0xf06aa0),{parent:head});}
+  if(o.glasses){const fr=kmat(0x111111);for(const sx of [-1,1]){blk(sx*.055-.045,sx*.055+.045,.18,.2,.12,.135,fr,{parent:head});blk(sx*.055-.045,sx*.055+.045,.1,.12,.12,.135,fr,{parent:head});
+    blk(sx*.055-.045,sx*.055-.035,.1,.2,.12,.135,fr,{parent:head});blk(sx*.055+.035,sx*.055+.045,.1,.2,.12,.135,fr,{parent:head});}blk(-.012,.012,.15,.17,.12,.135,fr,{parent:head});}
+  for(const sx of [-1,1]){blk(sx*.055-.02,sx*.055+.02,.13,.17,.12,.126,basic(0xffffff),{parent:head});blk(sx*.055-.009,sx*.055+.009,.135,.165,.126,.13,basic(0x2a1a10),{parent:head});}
+  blk(-.035,.035,.06,.075,.12,.126,kmat(0x9a3a3a),{parent:head});
+  const cheeks=o.cheeks?[-1,1].map(sx=>{const c=blk(-.03,.03,-.02,.02,0,.006,kmat(0xf28a8a),{parent:head});c.position.set(sx*.085,.09,.121);return c;}):null;
+  if(o.tag){const t=nameTag(o.tag,o.tagColor||'#ffd23f');t.position.y=1.55;g.add(t);}
+  g.scale.setScalar(o.s||1);return {g,legL,legR,armL,armR,head,cheeks,ph:0};
+}
+const SHIRTS=[0xd8402f,0x2f6fd6,0x3fbf5a,0xf2c230,0x7a5ad8,0xff9f43,0x1dd1a1,0xf06aa0,0x576574,0xffffff],HAIRS=[0x3a2414,0x6a3e1e,0xc88a3a,0x1b1b1b,0xd9b26a,0x8a4a2a],PANTS=[0x2f4a7a,0x2a2a2a,0x4a4a5a,0x3d5a8a];
+const NPCS=[];let npcRnd=17;const nr=()=>{npcRnd=(npcRnd*16807)%2147483647;return (npcRnd-1)/2147483646;};
+function addNpc(o){const girl=o.girl??nr()<.5;const look={girl,shirt:SHIRTS[(nr()*SHIRTS.length)|0],pants:girl?0x2a2a3a:PANTS[(nr()*PANTS.length)|0],hair:HAIRS[(nr()*HAIRS.length)|0],skirt:girl?SHIRTS[(nr()*SHIRTS.length)|0]:0,bow:SHIRTS[(nr()*SHIRTS.length)|0],...o};
+  const n=Object.assign({x:0,z:0,face:0,spd:0,tx:null,tz:null,wait:0,stun:0,key:'',label:girl?'ОДНОКЛАССНИЦА':'ОДНОКЛАССНИК',m:o.makar?null:buildKid(look),stuckT:0},look);NPCS.push(n);return n;}
+// Makar's class: 32 seats — Makar, Egor next to him, Matvey across the aisle, Vanya at the front
+const SEATS3T=SCHOOL_SEATS['3 «Т»'];
+const MKN=addNpc({cls:'3 «Т»',makar:true,seat:SEATS3T[13],prolong:true,girl:false});
+const EGOR=addNpc({cls:'3 «Т»',name:'Егор',label:'ЕГОР',tag:'Егор',tagColor:'#7fd0ff',girl:false,shirt:0x2f6fd6,hair:0xc88a3a,seat:SEATS3T[12],prolong:true});
+const MATVEY=addNpc({cls:'3 «Т»',name:'Матвей',label:'МАТВЕЙ',tag:'Матвей',tagColor:'#ffb3c7',girl:false,shirt:0xff9f43,hair:0x6a3e1e,cheeks:true,s:.95,seat:SEATS3T[14],prolong:true});
+const VANYA=addNpc({cls:'3 «Т»',name:'Ваня',label:'ВАНЯ',tag:'Ваня 👓',tagColor:'#c9ff7a',girl:false,shirt:0x3fbf5a,hair:0x1b1b1b,glasses:true,seat:SEATS3T[1],prolong:true,vanya:true});
+{let k=0;for(let i=0;i<32;i++){if([1,12,13,14].includes(i))continue;addNpc({cls:'3 «Т»',seat:SEATS3T[i],prolong:k++<8});}}
+const TEACHER=addNpc({cls:'3 «Т»',teacher:true,label:'УЧИЛКА',tag:'Марья Ивановна',tagColor:'#ffd23f',girl:true,s:1.32,shirt:0x7a5ad8,skirt:0x2a2a3a,hair:0x6a3e1e,bow:0x7a5ad8,prolong:true});
+for(const [cls,f,room,s] of [['1 «Р»',1,0,.86],['1 «Т»',1,1,.86],['2 «Р»',2,1,.92],['2 «Т»',2,2,.92]])for(let i=0;i<20;i++)addNpc({cls,home:f,room,s,label:'ШКОЛЬНИК',other:true});
+// the school day: before the first bell, lessons (45 min) and breaks (10 min) until 13:30, then the club until 17:00
+function schoolPhase(){const n=lifeNow();if(n.day>4)return 'closed';const t=n.t;if(t<8*60)return 'closed';if(t<8*60+30)return 'before';if(t<13*60+30)return (t-510)%55<45?'lesson':'break';if(t<17*60)return 'prolong';return 'closed';}
+const sreg=(x,z)=>z<4.1?-1:Math.min(3,Math.max(0,Math.floor(x/11)));
+function waypoint(n,tx,tz){const a=sreg(n.x,n.z),b=sreg(tx,tz);if(a===b)return [tx,tz];
+  if(a>=0){const dx=a*11+1.9;return Math.abs(n.x-dx)>.25&&n.z>4.45?[dx,4.75]:[dx,3.3];}   // out of the room through its door
+  const dx=b*11+1.9;return Math.abs(n.x-dx)>.25?[dx,3.3]:[dx,4.9];}                       // along the corridor, then in through the right door
+const ROOMR=i=>[i*11+.5,i*11+10.5,4.7,12.3],CORR=[.5,43.5,.6,3.6];
+function npcRects(n,ph){if(n.other)return [ROOMR(n.room)];return ph==='prolong'?[ROOMR(0),[.5,20,.6,3.6]]:[ROOMR(0),CORR];}
+function npcFloor(n,ph){return n.other?n.home:ph==='prolong'?3:2;}
+function npcHere(n,ph){if(ph==='closed')return false;if(n.makar)return !!(MS.away&&MS.away.kind==='school');if(ph==='prolong')return !n.other&&n.prolong;return true;}
+function randIn(R){return [R[0]+nr()*(R[1]-R[0]),R[2]+nr()*(R[3]-R[2])];}
+function npcMove(n,tx,tz,sp,dt,ghost){
+  const [wx,wz]=waypoint(n,tx,tz),dx=wx-n.x,dz=wz-n.z,d=hyp(dx,dz);if(d<.05){n.spd=0;return hyp(tx-n.x,tz-n.z);}
+  const st=Math.min(d,sp*dt),ox=n.x,oz=n.z;n.x+=dx/d*st;n.z+=dz/d*st;if(!ghost){const o={x:n.x,z:n.z,lv:'school'};collide(o,.16);n.x=o.x;n.z=o.z;}
+  n.face+=clamp(angDiff(Math.atan2(dx,dz),n.face),-9*dt,9*dt);n.spd=hyp(n.x-ox,n.z-oz)/dt;
+  if(n.spd<sp*.25)n.stuckT+=dt;else n.stuckT=0;return hyp(tx-n.x,tz-n.z);
+}
+const schoolSight=(ax,az,bx,bz)=>!SCOL[P.floor].some(c=>c.tall&&segBox(ax,az,bx,bz,c.x0,c.x1,c.z0,c.z1));
+function kidSay(n,t){talkAs(n.label,t,{pitch:n.teacher?1.05:n.makar?1.4:1.6+(n.girl?.15:0),female:n.girl,rate:n.teacher?.95:1.1});}
+const KID_OUCH=['Ай!','Эй, кто кидается?!','Ой, чипсы! Ням-ням!','Марья Ивановна, он кидается!','Ну всё, держись!','Хрусть! Прямо в лоб!'];
+const SCH={ph:'',chatT:4,tag:null,teacherSaid:'',hearts:[]};
+// tag: whoever "водит" chases the other; touching swaps; 60 seconds
+function startTag(n){if(SCH.tag)stopTag(true);SCH.tag={n,t:60,it:'npc',grace:1.5,you:0,them:0};kidSay(n,n===EGOR?'Давай! Я вожу, убегай!':'Ура, догонялки! Я вожу!');toast(`Догонялки с ${n===EGOR?'Егором':'Матвеем'}! Сначала водит ${n.name}: убегай! (60 секунд)`,4);}
+function stopTag(quiet){const T=SCH.tag;if(!T)return;SCH.tag=null;if(!quiet)toast(`Догонялки закончились! Ты осалил ${T.n===EGOR?'Егора':'Матвея'}: ${T.you}, а он тебя: ${T.them}.`,4.5);}
+function hugMatvey(){MATVEY.hold=2.2;kidSay(MATVEY,'Ой! Обнимашки! Ты мой лучший друг!');for(let i=0;i<6;i++){const h=new THREE.Sprite(new THREE.SpriteMaterial({map:HEART,transparent:true,depthWrite:false}));h.scale.set(.28,.28,1);h.position.set(MATVEY.x+(Math.random()-.5)*.6,1.2+Math.random()*.4,MATVEY.z+(Math.random()-.5)*.6);SCHOOL.add(h);SCH.hearts.push({s:h,t:0});}tone(880,.15,'sine',.08);tone(1175,.2,'sine',.08,0,.15);}
+const HEART=ctex(64,64,(g,w,h)=>{g.font='48px serif';g.textAlign='center';g.textBaseline='middle';g.fillText('❤️',w/2,h/2+2);},false);
+function pinchMatvey(){MATVEY.hold=1.6;MATVEY.cheekT=1.6;kidSay(MATVEY,'Ай-ай-ай, мои щёчки! Хи-хи-хи!');nz(.04,2500,.1);}
+INTER.push({lv:'school',get x(){return MATVEY.x;},get z(){return MATVEY.z;},get floor(){return MATVEY.f;},r:1.4,prio:.5,on:()=>MATVEY.m.g.visible,label:()=>'Матвей: обнять, щёчки, догонялки',act:()=>{
+  state='kid';unlock();showHUD(false);const back=f=>()=>{startPlay();f&&f();};
+  panel('Матвей','«Привет! Во что поиграем?»',[['Обнять Матвея 🤗',back(hugMatvey)],['Потрогать за щёчки',back(pinchMatvey)],SCH.tag&&SCH.tag.n===MATVEY?['Хватит играть в догонялки',back(()=>stopTag())]:['Поиграть в догонялки',back(()=>startTag(MATVEY))],['Ничего',back(),'ghost']]);}});
+INTER.push({lv:'school',get x(){return EGOR.x;},get z(){return EGOR.z;},get floor(){return EGOR.f;},r:1.4,prio:.5,on:()=>EGOR.m.g.visible,label:()=>SCH.tag&&SCH.tag.n===EGOR?'Хватит играть с Егором':'Поиграть с Егором в догонялки',act:()=>SCH.tag&&SCH.tag.n===EGOR?stopTag():startTag(EGOR)});
+function schoolHit(x,y,z){
+  if(P.lv!=='school')return null;
+  for(const n of NPCS){if(n.makar||!n.m.g.visible)continue;const s=n.s||1;if(hyp(x-n.x,z-n.z)<.24*s+.08&&y>.15&&y<1.35*s){
+    n.stun=1.5;nz(.2,2600,.15,panFor(n.x,n.z),0,'bandpass');
+    if(n.teacher)kidSay(n,pick(['Это ещё что такое?! Кто кидается чипсами?!','Так! Чипсами в учителя?! Двойка!','Немедленно прекрати!']));
+    else if(n===VANYA)kidSay(n,'Ай! Мои очки! Ну всё, я тебя догоню!');else kidSay(n,pick(KID_OUCH));
+    if(n===VANYA){n.coolT=0;}toast('Попал! 🍟',1.2);return n;}}
+  return null;
+}
+// a kid's pose: sitting at the desk, standing, walking, spinning from a chip, being hugged
+function poseKid(n,dt,sit){
+  const m=n.m,s=n.s||1;m.ph+=dt*n.spd*5;const a=Math.min(1,n.spd/1.8)*.7;m.g.position.set(n.x,sit?-(.58*s-.45):Math.abs(Math.sin(m.ph))*.03,n.z);m.g.rotation.y=n.face+(n.stun>0?n.stun*9:0);
+  m.legL.rotation.x=sit?-1.25:Math.sin(m.ph)*a;m.legR.rotation.x=sit?-1.25:-Math.sin(m.ph)*a;
+  m.armL.rotation.x=sit?-.95:-Math.sin(m.ph)*a*.8;m.armR.rotation.x=sit?-.95:Math.sin(m.ph)*a*.8;m.head.rotation.x=sit?.18:0;
+  if(n.hold>0){m.armL.rotation.x=m.armR.rotation.x=-1.6;m.armL.rotation.z=.6;m.armR.rotation.z=-.6;}else m.armL.rotation.z=m.armR.rotation.z=0;
+  if(n.teacher&&sit==='board'){m.armR.rotation.x=-2.1+Math.sin(performance.now()/300)*.15;}
+  if(m.cheeks){const k=n.cheekT>0?1.9:1;for(const c of m.cheeks)c.scale.setScalar(k);}
+}
+function updateSchool(dt){
+  const ph=schoolPhase(),inside=P.lv==='school';
+  if(inside&&ph!==SCH.ph&&SCH.ph){if(ph==='lesson'){toast('🔔 Звонок на урок!',2.5);[784,659,784,659].forEach((f,i)=>tone(f,.25,'sine',.1,0,i*.28));}
+    else if(ph==='break'&&SCH.ph==='lesson'){toast('🔔 Перемена!',2.5);[659,784,988].forEach((f,i)=>tone(f,.25,'sine',.1,0,i*.25));}
+    else if(ph==='prolong'){toast('Уроки кончились! Почти все ушли домой, а Макар, Егор, Матвей и Ваня пошли на продлёнку — на 3 этаж.',5);}
+    else if(ph==='closed')toast('Продлёнка кончилась. Все ушли домой, школа опустела.',4);}
+  SCH.ph=ph;
+  if(SCH.tag&&(!inside||SCH.tag.n.f!==P.floor||!SCH.tag.n.m.g.visible))stopTag(true);
+  for(const h of SCH.hearts){h.t+=dt;h.s.position.y+=dt*.6;h.s.material.opacity=1-h.t/1.4;if(h.t>1.4){SCHOOL.remove(h.s);}}SCH.hearts=SCH.hearts.filter(h=>h.t<=1.4);
+  SCH.chatT-=dt;
+  for(const n of NPCS){
+    const here=inside&&npcHere(n,ph),f=npcFloor(n,ph),key=ph+f+(here?1:0);n.f=f;
+    const show=here&&f===P.floor;if(n.makar){if(inside)MK.g.visible=show;if(here){MS.lv='school';MS.floor=f;}}else n.m.g.visible=show;   // (Makar is only ours to show while you are in the school)
+    if(!here)continue;
+    const seat=n.teacher?{x:5.5,z:12.2}:n.seat,atDesk=ph==='lesson'&&(seat||n.teacher)&&!n.other;
+    if(n.key!==key){n.key=key;n.tx=null;n.mode=null;   // a new part of the day: put them where they belong
+      if(atDesk){n.x=seat.x;n.z=seat.z;n.face=n.teacher?Math.PI:0;}else{const [x,z]=randIn(npcRects(n,ph)[0]);n.x=x;n.z=z;}}
+    if(!show)continue;
+    for(const k of ['stun','hold','cheekT','coolT','lost'])if(n[k]>0)n[k]-=dt;
+    let sit=false;const dP=hyp(P.x-n.x,P.z-n.z);
+    if(n.stun>0||n.hold>0){n.spd=0;if(n.hold>0)n.face=Math.atan2(P.x-n.x,P.z-n.z);}
+    else if(SCH.tag&&SCH.tag.n===n){   // tag
+      const T=SCH.tag;T.t-=dt;T.grace-=dt;
+      if(T.it==='npc'){npcMove(n,P.x,P.z,3.6,dt);if(T.grace<=0&&dP<.75){T.them++;T.it='you';T.grace=1.5;kidSay(n,'Осалил! Теперь ты водишь!');toast('Тебя осалили! Теперь ты водишь — догони '+(n===EGOR?'Егора':'Матвея')+'!',2.5);}}
+      else{const ax=n.x-P.x,az=n.z-P.z,d=hyp(ax,az)||1,R=sreg(n.x,n.z)<0?CORR:ROOMR(sreg(n.x,n.z));   // run away, staying inside
+        npcMove(n,clamp(n.x+ax/d*3,R[0],R[1]),clamp(n.z+az/d*3,R[2],R[3]),3.3,dt);if(n.stuckT>.6){const [x,z]=randIn(CORR);npcMove(n,x,z,3.3,dt);}
+        if(T.grace<=0&&dP<.9){T.you++;T.it='npc';T.grace=1.5;kidSay(n,'Ай! Ладно, теперь я вожу!');toast('Осалил! Теперь водит '+n.name+'. Убегай!',2.5);}}
+      if(T.t<=0)stopTag();}
+    else if(n.vanya&&n.mode==='chase'){   // Vanya after you
+      const sees=!P.hidden&&dP<10&&schoolSight(n.x,n.z,P.x,P.z);if(sees)n.lost=4;npcMove(n,P.x,P.z,3.3,dt);
+      if(dP<.75){n.mode=null;n.coolT=14;kidSay(n,'Попался! Ха-ха! Теперь ты водишь!');}else if(n.lost<=0){n.mode=null;n.coolT=8;kidSay(n,'Эх, убежал… Ничего, я тебя ещё догоню!');}}
+    else if(atDesk){   // in the lesson: at the desk (or at the board), walking back to it if needed
+      const d=npcMove(n,seat.x,seat.z,1.8,dt,true);if(d<.08){n.x=seat.x;n.z=seat.z;n.face=n.teacher?Math.PI:0;n.spd=0;sit=n.teacher?'board':true;}}
+    else{   // free time: wander
+      if(n.tx===null||n.stuckT>1.2){if((n.wait-=dt)<=0){const R=npcRects(n,ph),[x,z]=randIn(R[nr()<.6||R.length<2?0:1]);n.tx=x;n.tz=z;n.wait=.5+nr()*3;n.stuckT=0;}else n.spd=0;}
+      else if(npcMove(n,n.tx,n.tz,n.teacher?.9:1+((n.s||1)-.9)*2,dt)<.3)n.tx=null;}
+    if(n.vanya&&n.mode!=='chase'&&!(n.coolT>0)&&!P.hidden&&dP<8&&schoolSight(n.x,n.z,P.x,P.z)&&!(SCH.tag)){n.mode='chase';n.lost=4;kidSay(n,'Эй! Ты кто такой? Стой! Я тебя догоню!');
+      if(ph==='lesson')setTimeout(()=>{if(TEACHER.m.g.visible)kidSay(TEACHER,'Ваня! Сядь на место! Урок идёт!');},2600);}
+    if(n.makar){Object.assign(MS,{x:n.x,z:n.z,face:n.face,spd:n.spd,state:sit?'sit':'walk',seat:sit?{x:n.x,z:n.z,ax:n.x,az:n.z-.3,face:0}:null,task:'school'});if(!(MS.stun>0))animMakar(dt);
+      if(dP<2.6&&(MS.sayT-=dt)<=0){MS.sayT=9;say(pick(['Ты что тут делаешь?! А ну марш домой!','Это мой класс! Не позорь меня перед всеми!','Чат, мой младший брат пришёл ко мне в школу…','Тсс! Марья Ивановна увидит!']),3);}}
+    else poseKid(n,dt,sit);
+    if(!n.makar&&!n.teacher&&!n.vanya&&dP<1.5&&SCH.chatT<=0&&subT<=0&&n.stun<=0){SCH.chatT=7;kidSay(n,pick(n.other?['Привет! Ты из какого класса?','Пошли в столовую!','А у нас сегодня физкультура!','Ты новенький?']:['Ты брат Макара? Похож!','Привет! Будешь с нами играть?','Макар опять стрим вёл на перемене!','А у меня есть фишки!']));}
+  }
+  if(inside&&TEACHER.m.g.visible&&ph==='lesson'&&P.room&&P.room.id==='s20'&&SCH.teacherSaid!=='in'){SCH.teacherSaid='in';kidSay(TEACHER,'Ты новенький? Проходи, садись и не мешай уроку!');}
+  if(!(P.room&&P.room.id==='s20'))SCH.teacherSaid='';
+}
+
 // every frame: the bed, the super speed, the police on their way, the river's water
 function updateExtras(dt,time){
+  if(D.life&&(state==='play'||state==='anim'))updateSchool(dt);
   if(P.lv==='school')for(const pk of PICKS)if(pk.lv==='school'&&!pk.held&&!pk.flying)pk.obj.visible=pk.floor===P.floor;   // things dropped on another floor
   updateLife(dt);updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
   if(RIVER.visible){texWater.offset.x=(time*.01)%1;texWater.offset.y=(time*.03)%1;}
@@ -2929,6 +3065,7 @@ function updateMakar(dt){
   if(MS.state==='sleep'&&!MS.stun){poseSleep(dt);return;}
   if(MS.stun>0){if(MS.state==='sleep')wakeUp(true);MS.stun-=dt;MS.spd=0;MS.lookT+=dt;MS.face=MS.lookBase+Math.sin(MS.lookT*9)*.25;if(MS.lv!=='away')animMakar(dt);MK.head.rotation.z=Math.sin(MS.lookT*7)*.35;if(MS.stun<=0)MK.head.rotation.z=0;return;}
   if(HC.on&&P.lv==='yard'){updateHaircut(dt);return;}
+  if(D.life&&MS.away&&MS.away.kind==='school'&&(P.lv==='school'||MS.lv==='school')){if(P.lv!=='school'){MS.lv='away';MK.g.visible=false;}return;}   // (see updateSchool)
   if(P.lv!=='flat'){updateMakarOutside(dt);return;}
   if(MS.away&&MS.lv!=='yard'){MS.spd=0;tickAway(dt);return;}
   if(MS.away&&MS.lv==='yard'){MS.spd=0;upT-=dt;if(upT<=0)comeHome();return;}   // he chased you in the yard and follows you up
@@ -3563,7 +3700,7 @@ function updateHUD(dt){
   else if(MS.state==='investigate'){s='Макар идёт на шум';}
   else if(LIFT.state==='coming'){s='Лифт: '+LIFT.floor+' этаж';}
   else if(MS.state==='sleep'&&MS.lv===P.lv){s='Макар спит 💤';}
-  else if(MS.state==='sit'&&MS.lv===P.lv){s={stream:'Макар ведёт стрим',poop:'Макар какает',soup:'Макар ест суп',pet:'Макар гладит ящерку',bedcheck:'Макар смотрит под кроватью'}[MS.task]||'Макар занят';}
+  else if(MS.state==='sit'&&MS.lv===P.lv){s={stream:'Макар ведёт стрим',poop:'Макар какает',soup:'Макар ест суп',pet:'Макар гладит ящерку',bedcheck:'Макар смотрит под кроватью',school:'Макар на уроке'}[MS.task]||'Макар занят';}
   else s=MS.lv===P.lv&&hyp(MS.x-P.x,MS.z-P.z)<5?'Макар где-то рядом':'Тихо…';
   if(P.boostT>0){const b=Math.ceil(P.boostT);s=`⚡ ${Math.floor(b/60)}:${String(b%60).padStart(2,'0')} · `+s;}
   if(txt.textContent!==s)txt.textContent=s;st.className='hud plate '+cls;
@@ -3598,6 +3735,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
