@@ -2726,14 +2726,17 @@ function endingPanel(id,text){
   const n=ENDINGS.findIndex(e=>e.id===id)+1;
   let t=(fresh?'Новая концовка! ':'')+text+` Открыто концовок: ${endCount()} из ${ENDINGS.length}.`;
   if(!wasOpen&&adminOpen())t+=' Ты прошёл все концовки и получил админ панель!';
-  panel(`Концовка ${n}: ${ENDINGS[n-1].title}`,t,[['Начать заново',begin],...(adminOpen()?[['Админ панель',()=>showAdmin(false),'ghost']]:[]),['Концовки',showEndings,'ghost'],['В меню',showMenu,'ghost']]);
+  panel(`Концовка ${n}: ${ENDINGS[n-1].title}`,t,[['Начать заново',begin],...(adminOpen()?[['Админ панель',()=>showAdmin(false),'ghost']]:[]),['Концовки',()=>showEndings(),'ghost'],['В меню',showMenu,'ghost']]);
 }
-function showEndings(){
+// the endings can be reset from here at any time (asks once more first)
+function showEndings(confirmReset){
   const body=document.createDocumentFragment();
   ENDINGS.forEach((e,i)=>{const got=!!gotEnd[e.id],c=el('div','endc'+(got?' got':''));c.appendChild(el('b',null,String(i+1)));
     const d=el('div');d.appendChild(el('strong',null,e.title+(got?' ✓':'')));d.appendChild(el('span','endSt',got?'Пройдена':'Не пройдена'));d.appendChild(el('span',null,'Как пройти: '+e.hint));c.appendChild(d);body.appendChild(c);});
   body.appendChild(el('div','endNote'+(adminOpen()?' on':''),adminOpen()?'Все концовки пройдены: админ панель открыта!':'Пройди все концовки, и получишь админ панель.'));
-  panel('Концовки',`Открыто ${endCount()} из ${ENDINGS.length}.`,[...(adminOpen()?[['Админ панель',()=>showAdmin(false)]]:[]),['В меню',showMenu,'ghost']],body);
+  const reset=()=>{if(!confirmReset){showEndings(true);return;}gotEnd={};saveEndings();for(const k in ADMIN)ADMIN[k]=false;P.eye=1.15;showEndings();};
+  panel('Концовки',confirmReset?'Точно сбросить все концовки? Пройденные концовки снова станут не пройденными'+(adminOpen()?', а админ панель закроется.':'.'):`Открыто ${endCount()} из ${ENDINGS.length}.`,
+    [...(adminOpen()&&!confirmReset?[['Админ панель',()=>showAdmin(false)]]:[]),...(endCount()?[[confirmReset?'Да, сбросить':'Сбросить концовки',reset,'ghost']]:[]),...(confirmReset?[['Отмена',()=>showEndings(),'ghost']]:[]),['В меню',showMenu,'ghost']],body);
 }
 const ADMIN={freeze:false,god:false,fast:false,fly:false};
 const ADMIN_TOGGLES=[['freeze','Макар замер'],['god','Макар не ловит'],['fast','Супер-бег'],['fly','Режим полёта']];
@@ -2847,7 +2850,7 @@ diffBtns.forEach(b=>b.addEventListener('click',()=>setDiff(b.dataset.d)));
 try{const s=localStorage.getItem('makar-diff');if(s&&DIFFS[s])diffKey=s;}catch(e){}
 setDiff(diffKey);
 $('playBtn').addEventListener('click',begin);
-$('endBtn').addEventListener('click',showEndings);
+$('endBtn').addEventListener('click',()=>showEndings());
 $('timeBtn').addEventListener('click',toggleTime);
 $('adminBtn').addEventListener('click',()=>showAdmin(false));
 renderMenuBtns();
