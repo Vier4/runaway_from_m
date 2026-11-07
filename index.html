@@ -1380,6 +1380,7 @@ const LINES={
   toilet:['Опять этот унитаз поёт…','Кто включил умный унитаз?!'],
   vacuum:['Кто включил пылесос?!','Чат, у нас тут пылесос сам поехал…','Опять этот пылесос жужжит!'],
   flush:['Кто там в туалете?'],
+  lifeIdle:['Уроки сделал? Нет. Ну и ладно!','Чат, завтра опять в школу…','Где мой дракончик?','Ванька опять очки потерял, ха-ха!','Мама сказала: в 23:00 спать!'],
   idle:['Где ты, мелкий?','Ключи я хорошо спрятал!','Из квартиры не выйдешь!','Мама сказала за тобой следить!'],
   check:['А ну-ка, кто тут прячется?','Я знаю, где ты!'],
   door:['Открывай!'],
@@ -2144,7 +2145,7 @@ function checkMix(){
    Once up it stays for 10 seconds: under it lies Makar's crowbar, and you can slip the brew under it. */
 const BED={pv:new THREE.Group(),k:0,ang:0,up:false,t:0,mk:false,brew:false};
 {BED.pv.position.set(3.72,.42,11.69);scene.add(BED.pv);const t=TPL.find(t=>t.name==='Кровать'),orig=t.meshes;t.meshes=orig.map(m=>m.clone());for(const m of orig)BED.pv.attach(m);}
-INTER.push({x:6.1,z:11.69,r:1.1,mash:true,on:()=>!BED.up&&!BED.mk,label:()=>BED.k>.05?'Жми быстрее! Кровать поднимается…':'Поднять кровать Макара (жми E быстро-быстро)',
+INTER.push({x:6.1,z:11.69,r:1.1,mash:true,on:()=>!BED.up&&!BED.mk&&MS.state!=='sleep',label:()=>BED.k>.05?'Жми быстрее! Кровать поднимается…':'Поднять кровать Макара (жми E быстро-быстро)',
   act:()=>{BED.k+=.2;nz(.05,900,.06);if(BED.k>=1)raiseBed();}});
 INTER.push({x:5.6,z:11.69,r:1.6,prio:1,on:()=>BED.up&&P.items.brew,label:()=>'Подсунуть отварчик под кровать',act:()=>{
   useUp('brew');BED.brew=true;const it=ITEMS.brew;it.spot={room:'mine',x:4.4,y:0,z:11.69};it.mesh.position.set(4.4,0,11.69);it.mesh.visible=true;it.stash='bed';
@@ -2421,8 +2422,45 @@ function lifeNow(min=LIFE.min){
 }
 const lc=t=>t[0].toLowerCase()+t.slice(1);   // «Уроки… 3 «Т»» keeps its capital Т
 const lifeClock=()=>{const n=lifeNow();return `${DAYS_S[n.day]} ${hm(n.t)}`;};
+/* Makar follows the schedule: asleep in his bed, at home, or out (at school). Whatever the clock jumps to
+   (fast-forward included), he catches up: goes to bed, gets up, leaves for school or comes back. */
+const ZZZ=new THREE.Sprite(new THREE.SpriteMaterial({map:ctex(128,64,(g,w,h)=>{g.font='bold 40px Arial';g.fillStyle='#bfe3ff';g.fillText('Z',8,52);g.font='bold 30px Arial';g.fillText('z',52,40);g.font='bold 22px Arial';g.fillText('z',86,26);},false),transparent:true,depthWrite:false}));
+ZZZ.scale.set(.6,.3,1);ZZZ.visible=false;scene.add(ZZZ);
+const bedZ=()=>NEWBED.g.visible&&NEWBED.k>.5?12.05:11.69;
+function lieDown(){
+  standUp();Object.assign(MS,{state:'sleep',task:'sleep',seat:null,spd:0,path:[],x:6.15,z:bedZ(),face:-Math.PI/2});ZZZ.visible=true;
+  if(!dragonPick.held){dragonPick.obj.visible=false;DRAGON.visible=true;}   // he hugs his plush dragon
+}
+function wakeUp(quiet){
+  if(MS.state!=='sleep')return;const g=MK.g;g.rotation.order='XYZ';g.rotation.set(0,0,0);MK.pupil.color.set(0x111111);ZZZ.visible=false;
+  if(DRAGON.visible){DRAGON.visible=false;dragonPick.obj.visible=!dragonPick.held;}
+  Object.assign(MS,{state:'look',task:'stream',seatKey:'desk',x:6.15,z:11.69,face:Math.PI/2,lookBase:Math.PI/2,lookT:0,wait:2.5,path:[]});
+  if(!quiet)say(pick(['Ох… Уже утро? Доброе утро, чат!','Будильник, замолчи… Ладно, встаю!','А-а-а-а… *зевает* Я проснулся!']),3);
+}
+function poseSleep(dt){
+  MS.spd=0;animMakar(dt);const g=MK.g,t=performance.now()/1000,z=bedZ();g.rotation.order='YXZ';g.rotation.set(-Math.PI/2,Math.PI/2,0);g.position.set(5.6,.55,z);
+  MK.legL.rotation.x=MK.legR.rotation.x=0;MK.armL.rotation.x=MK.armR.rotation.x=-1.1;MK.head.rotation.x=0;MK.pupil.color.set(0xe7b48f);
+  DRAGON.visible=!dragonPick.held;DRAGON.position.set(4.75,.98+Math.sin(t*1.4)*.02,z);DRAGON.rotation.set(0,Math.PI/2,0);
+  ZZZ.position.set(3.95,1.3+(t*.25)%.5,z);ZZZ.material.opacity=1-((t*.25)%.5)*1.6;
+  if(P.lv==='flat'&&(MS.snoreT=(MS.snoreT||0)-dt)<=0){MS.snoreT=3.2;const d=hyp(4.6-P.x,z-P.z);if(d<8){const v=clamp(1-d/8,0,1);tone(70,.9,'sawtooth',.05*v,55,0,panFor(4.6,z));nz(.03*v,1200,.7,panFor(4.6,z),.9);}}
+}
+function lifeSync(){
+  const ph=lifeNow().phase,want=ph==='sleep'?'sleep':ph==='home'||ph==='morning'?'home':'school',asleep=MS.state==='sleep';
+  if(want==='school'){
+    if(MS.away){if(MS.away.kind!=='school')Object.assign(MS.away,{kind:'school',t:Infinity});return;}   // out on a walk: straight on to school
+    if(MS.task!=='school'){if(asleep)wakeUp(true);standUp();MS.task='school';say('Всё, чат, родители везут меня в школу! Пока!',3);goSeat();}
+    return;}
+  if(MS.away&&MS.away.kind==='school')comeHome(want==='sleep');
+  if(want==='sleep'){
+    if(MS.away)comeHome(true);
+    if(LIFE.instant)lieDown();
+    else if(!asleep&&MS.task!=='sleep'&&MS.lv==='flat'){standUp();MS.task='sleep';MS.seatKey='sleep';say('Всё, чат, спокойной ночи! Пойду спать.',3);goSeat();}
+    return;}
+  if(asleep)wakeUp();else if(MS.task==='sleep'||MS.task==='school'){MS.task='stream';MS.seatKey='desk';goSeat();}
+}
 function updateLife(dt){
   if(!D.life||state!=='play')return;
+  lifeSync();LIFE.instant=false;
   const before=lifeNow();LIFE.min+=dt;const now=lifeNow();
   if(now.phase!==before.phase)toast(`${hm(now.t)} — Макар: ${lc(now.label)}.`,3.5);
   if(now.day!==before.day)toast(`Наступил новый день: ${DAYS[now.day].toLowerCase()}!`,3);
@@ -2451,7 +2489,8 @@ function updateExtras(dt,time){
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
 }
 function resetExtras(){
-  LIFE.min=7*60+30;{let day;if(D.life){const n=lifeNow();day=n.t>=7*60&&n.t<20*60;}else{try{day=localStorage.getItem('makar-time')==='day';}catch(e){day=isDay;}}if(day!==isDay){isDay=day;applyTime();}}
+  LIFE.min=7*60+30;LIFE.instant=true;{let day;if(D.life){const n=lifeNow();day=n.t>=7*60&&n.t<20*60;}else{try{day=localStorage.getItem('makar-time')==='day';}catch(e){day=isDay;}}if(day!==isDay){isDay=day;applyTime();}}
+  if(MS.state==='sleep')wakeUp(true);ZZZ.visible=false;DRAGON.visible=false;MK.g.rotation.order='XYZ';MK.g.rotation.set(0,0,0);MK.pupil.color.set(0x111111);
   resetBed();resetNewBed();for(const W of WINDOWS){W.open=false;W.ang=0;W.pane.rotation.y=0;}P.boostT=0;P.drank=false;policeT=0;CUT=null;HANDBREW.visible=false;MK.armR.rotation.z=0;FLOOD.visible=false;PCAR.visible=false;COP.g.visible=false;
   for(const pc of PLAY){pc.broken=false;for(const q of pc.parts){q.m.position.copy(q.p);q.m.rotation.copy(q.r);}}
   for(const s of SPL)scene.remove(s.m);SPL=[];$('vig').style.opacity=0;
@@ -2518,13 +2557,14 @@ function follow(dt,speed){
 const SEATS={
   desk:{x:5.2,z:13.2,ax:5.2,az:12.55,face:0},
   pet:{x:5.72,z:13.1,ax:5.72,az:12.8,face:0,stand:true},   // standing by the terrarium
-  bed:{x:6.05,z:11.69,ax:6.15,az:11.69,face:-Math.PI/2,stand:true},   // at the foot of his bed, lifting it
+  bed:{x:6.05,z:11.69,ax:6.15,az:11.69,face:-Math.PI/2,stand:true},
+  sleep:{x:6.05,z:11.69,ax:6.15,az:11.69,face:-Math.PI/2,stand:true},   // at the foot of his bed, then he lies down   // at the foot of his bed, lifting it
   soup:{x:5.9,z:2.25,ax:5.9,az:2.95,face:-Math.PI/2},   // the chair facing the living-room TV
   bath2:{x:1.21,z:5.9,ax:1.21,az:5.2,face:Math.PI,door:'bath2'},
   wc3:{x:6.42,z:4.8,ax:5.75,az:4.8,face:-Math.PI/2,door:'wc3'},
   bath1:{x:1.2,z:6.66,ax:1.25,az:7.42,face:0,door:'bath1'},
 };
-const SIT_TIME={stream:[28,42],poop:[14,22],soup:[15,22],pet:[7,10],bedcheck:[4,5]};
+const SIT_TIME={sleep:[1e9,1e9],school:[1,1],stream:[28,42],poop:[14,22],soup:[15,22],pet:[7,10],bedcheck:[4,5]};
 function startTask(t){
   MS.task=t;
   if(t==='patrol'){MS.patrolLeft=2+(Math.random()*2|0);startPatrol();return;}
@@ -2532,26 +2572,26 @@ function startTask(t){
   if(t==='pet'&&GECKO.mode!=='terr'){say('А где моя ящерка?! Кто её взял?!',2.8);MS.aware=Math.max(MS.aware,.5);startTask('patrol');MS.task='patrol';return;}
   MS.seatKey=t==='poop'?pick(['bath2','wc3','bath1']):t==='soup'?'soup':t==='pet'?'pet':t==='bedcheck'?'bed':'desk';goSeat();
 }
-function goSeat(){if(MS.task==='walk'||MS.task==='shop'||MS.task==='swing'){MS.state='goto';MS.path=buildPath(MS.x,MS.z,4.4,7.07);return;}   // out of the front door
+function goSeat(){if(MS.task==='walk'||MS.task==='shop'||MS.task==='swing'||MS.task==='school'){MS.state='goto';MS.path=buildPath(MS.x,MS.z,4.4,7.07);return;}   // out of the front door
   const s=SEATS[MS.seatKey];MS.state='goto';MS.path=buildPath(MS.x,MS.z,s.ax,s.az);}
 // while you have his scissors he can't sit still: off to the swings, again and again
-function swingAgain(){if(!P.items.scissors||MS.away)return false;say(LINES.leave.swing,3);startTask('swing');return true;}
+function swingAgain(){if(!P.items.scissors||MS.away||MS.task==='sleep'||MS.task==='school')return false;say(LINES.leave.swing,3);startTask('swing');return true;}
 function nextTask(){
   if(swingAgain())return;
   if(MS.task!=='stream'){startTask('stream');return;}
   const t=pick(['poop','soup','poop','soup','patrol','pet','bedcheck',...(BED.brew?['bedcheck','bedcheck']:[]),...(tPlay>40?['walk','shop','swing']:[])]);say(LINES.leave[t],3);startTask(t);
 }
 function resumeTask(){if(MS.task!=='swing'&&swingAgain())return;if(MS.task==='patrol'){if(--MS.patrolLeft>0)startPatrol();else nextTask();}else goSeat();}
-function arrive(){if(MS.task==='walk'||MS.task==='shop'||MS.task==='swing')leaveHome();else sitDown();}
+function arrive(){if(MS.task==='walk'||MS.task==='shop'||MS.task==='swing'||MS.task==='school')leaveHome();else sitDown();}
 /* Going out: Makar leaves by the front door for 2–3 minutes and takes the keys with him (the flat keys,
    and for the shop also the car keys; the car is gone from the parking meanwhile). On a walk he strolls
    in the yard, so you can meet him there. */
 function leaveHome(){
-  const kind=MS.task;MS.away={kind,t:120+Math.random()*60};sfx.door(4.97,7.07);standUp();
+  const kind=MS.task;MS.away={kind,t:kind==='school'?Infinity:120+Math.random()*60};sfx.door(4.97,7.07);standUp();   // (from school he comes back by the schedule)
   let missing=false;for(const k of kind==='shop'?['keys','carkeys']:kind==='walk'?['keys']:[]){const it=ITEMS[k];if(it.taken)missing=true;else{it.withMakar=true;it.mesh.visible=false;it.spark.visible=false;}}
   if(kind==='shop')Object.assign(MS.away,{phase:'toCar',pt:25,wp:0});   // 25 s down the stairs and across the parking to his car
   Object.assign(MS,{lv:'away',state:'away',spd:0,path:[]});MK.g.visible=false;
-  toast(kind==='swing'?'Макар ушёл во двор качаться на качелях! Вернётся через 2–3 минуты.':kind==='walk'?'Макар ушёл гулять во двор и забрал ключи! Вернётся через 2–3 минуты.':'Макар пошёл на парковку к машине: поедет в магазин! Ключи от квартиры и от машины забрал с собой. Вернётся через 2–3 минуты.',5);
+  toast(kind==='school'?'Макар ушёл: родители везут его в школу. Вернётся в 17:30.':kind==='swing'?'Макар ушёл во двор качаться на качелях! Вернётся через 2–3 минуты.':kind==='walk'?'Макар ушёл гулять во двор и забрал ключи! Вернётся через 2–3 минуты.':'Макар пошёл на парковку к машине: поедет в магазин! Ключи от квартиры и от машины забрал с собой. Вернётся через 2–3 минуты.',5);
   if(missing)setTimeout(()=>say('А где мои ключи?! Ладно, потом найду.',2.5),400);
 }
 function returnKeys(){for(const k of ['keys','carkeys']){const it=ITEMS[k];if(!it.withMakar)continue;it.withMakar=false;
@@ -2560,7 +2600,7 @@ function returnKeys(){for(const k of ['keys','carkeys']){const it=ITEMS[k];if(!i
 function comeHome(silent){
   const kind=MS.away&&MS.away.kind;MS.away=null;returnKeys();MK.g.visible=true;
   Object.assign(MS,{lv:'flat',x:4.4,z:7.07,face:Math.PI,state:'look',wait:2,path:[],seat:null,sitK:0,lookBase:Math.PI,lookT:0,aware:0,task:'stream',seatKey:'desk'});
-  if(!silent){sfx.door(4.97,7.07);say(kind==='shop'?'Я вернулся из магазина! Купил чипсов!':kind==='swing'?'Накачался! Хорошо на качелях!':'Нагулялся! Ключи положил на место.',3);if(P.lv==='flat')toast('Макар вернулся домой!',2.5);}
+  if(!silent){sfx.door(4.97,7.07);say(kind==='school'?'Я пришёл из школы! Чат, я снова с вами!':kind==='shop'?'Я вернулся из магазина! Купил чипсов!':kind==='swing'?'Накачался! Хорошо на качелях!':'Нагулялся! Ключи положил на место.',3);if(P.lv==='flat')toast('Макар вернулся домой!',2.5);}
 }
 function tickAway(dt){
   const a=MS.away;if(!a)return;
@@ -2590,6 +2630,7 @@ function sitDown(){
   if(s.door&&DOOR[s.door].open)toggleDoor(DOOR[s.door],'makar');
   if(MS.task==='stream')say(pick(LINES.back));
   if(MS.task==='bedcheck')makarLooksUnderBed();
+  if(MS.task==='sleep')lieDown();
 }
 function standUp(){if(!MS.seat)return;MS.x=MS.seat.ax;MS.z=MS.seat.az;MS.seat=null;}
 function updateSit(dt){
@@ -2673,7 +2714,8 @@ function slideTo(tx,tz,speed,dt){
   }
 }
 function updateMakar(dt){
-  if(MS.stun>0){MS.stun-=dt;MS.spd=0;MS.lookT+=dt;MS.face=MS.lookBase+Math.sin(MS.lookT*9)*.25;if(MS.lv!=='away')animMakar(dt);MK.head.rotation.z=Math.sin(MS.lookT*7)*.35;if(MS.stun<=0)MK.head.rotation.z=0;return;}
+  if(MS.state==='sleep'&&!MS.stun){poseSleep(dt);return;}
+  if(MS.stun>0){if(MS.state==='sleep')wakeUp(true);MS.stun-=dt;MS.spd=0;MS.lookT+=dt;MS.face=MS.lookBase+Math.sin(MS.lookT*9)*.25;if(MS.lv!=='away')animMakar(dt);MK.head.rotation.z=Math.sin(MS.lookT*7)*.35;if(MS.stun<=0)MK.head.rotation.z=0;return;}
   if(HC.on&&P.lv==='yard'){updateHaircut(dt);return;}
   if(P.lv!=='flat'){updateMakarOutside(dt);return;}
   if(MS.away&&MS.lv!=='yard'){MS.spd=0;tickAway(dt);return;}
@@ -2725,7 +2767,7 @@ function updateMakar(dt){
   // chatter
   MS.sayT-=dt;if(MS.sayT<=0){
     if(MS.state==='sit'){MS.sayT=7+Math.random()*5;const a=LINES[MS.task];let l;do l=pick(a);while(l===MS.lastLine&&a.length>1);MS.lastLine=l;say(l,3);}
-    else{MS.sayT=14+Math.random()*10;if(MS.state==='patrol'||MS.state==='look'||MS.state==='goto')say(pick(LINES.idle));}}
+    else{MS.sayT=14+Math.random()*10;if(MS.state==='patrol'||MS.state==='look'||MS.state==='goto')say(pick(D.life?LINES.lifeIdle:LINES.idle));}}
   // heartbeat
   MS.heartT-=dt;const near=MS.state==='chase'?1:clamp(1-dP/7,0,1);
   if(near>.05&&MS.heartT<=0){sfx.heart(.4+near*.6);MS.heartT=MS.state==='chase'?.45:1.1-near*.5;}
@@ -3299,7 +3341,7 @@ function updateHUD(dt){
   {const m=(isDay?13*60+20:23*60+40)+Math.floor(tPlay*20/60),t=D.life?'📅 '+lifeClock():`🕒 ${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;if(t!==clockShown){clockShown=t;$('clock').textContent=t;$('clock').classList.toggle('life',!!D.life);}}
   if($('flyBtns').hidden===ADMIN.fly){$('flyBtns').hidden=!ADMIN.fly;touchFly=0;}
   const st=$('status'),txt=$('statusText');let s,cls='';
-  if(MS.away&&MS.lv!==P.lv){const t=Math.max(0,Math.ceil(MS.away.t));s=({walk:'Макар гуляет',shop:'Макар в магазине',swing:'Макар на качелях'}[MS.away.kind])+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
+  if(MS.away&&MS.lv!==P.lv){const t=Math.max(0,Math.ceil(MS.away.t));s=MS.away.kind==='school'?'Макар в школе':({walk:'Макар гуляет',shop:'Макар в магазине',swing:'Макар на качелях'}[MS.away.kind])+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
   else if(P.hidden){s='Ты спрятался';cls='hid';if(MS.state==='grab'||MS.state==='check'){s='Макар идёт к укрытию!';cls='alert';}}
   else if(P.lv!=='flat'&&MS.lv!==P.lv&&!MS.away){s='Макар дома и тебя не заметил';}
   else if(P.lv!=='flat'&&MS.lv!==P.lv){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
@@ -3308,6 +3350,7 @@ function updateHUD(dt){
   else if(MS.aware>.05){s='Макар что-то заметил';}
   else if(MS.state==='investigate'){s='Макар идёт на шум';}
   else if(LIFT.state==='coming'){s='Лифт: '+LIFT.floor+' этаж';}
+  else if(MS.state==='sleep'&&MS.lv===P.lv){s='Макар спит 💤';}
   else if(MS.state==='sit'&&MS.lv===P.lv){s={stream:'Макар ведёт стрим',poop:'Макар какает',soup:'Макар ест суп',pet:'Макар гладит ящерку',bedcheck:'Макар смотрит под кроватью'}[MS.task]||'Макар занят';}
   else s=MS.lv===P.lv&&hyp(MS.x-P.x,MS.z-P.z)<5?'Макар где-то рядом':'Тихо…';
   if(P.boostT>0){const b=Math.ceil(P.boostT);s=`⚡ ${Math.floor(b/60)}:${String(b%60).padStart(2,'0')} · `+s;}
