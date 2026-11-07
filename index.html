@@ -475,7 +475,7 @@ const WINDOWS=[];
 function windowAt(side,x,z,w,noRad){
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=NORM_ROT[side];scene.add(g);
   const t=texMoscow.clone();t.needsUpdate=true;t.repeat.set(.42,1);t.offset.x=sr()*.58;
-  const glass=new THREE.Mesh(new THREE.PlaneGeometry(w,1.35),new THREE.MeshBasicMaterial({map:t}));glass.position.set(0,1.6,.004);g.add(glass);WINDOWS.push({side,x,z,w,glass});
+  const glass=new THREE.Mesh(new THREE.PlaneGeometry(w,1.35),new THREE.MeshBasicMaterial({map:t}));glass.position.set(0,1.6,.004);g.add(glass);WINDOWS.push({side,x,z,w,glass,g});
   const fr=M_.white,hw=w/2;
   blk(-hw-.05,hw+.05,.88,.94,0,.07,fr,{parent:g});blk(-hw-.05,hw+.05,2.28,2.34,0,.07,fr,{parent:g});
   blk(-hw-.05,-hw,.88,2.34,0,.07,fr,{parent:g});blk(hw,hw+.05,.88,2.34,0,.07,fr,{parent:g});
@@ -2363,14 +2363,50 @@ function updDrown(dt,t){
 function updateSplashes(dt){for(let i=SPL.length-1;i>=0;i--){const s=SPL[i],m=s.m;if(!s.bub)s.vy-=9.8*dt;m.position.x+=s.vx*dt;m.position.y+=s.vy*dt;m.position.z+=s.vz*dt;
   if(s.bub?m.position.y>s.y0:m.position.y<s.y0-.1){scene.remove(m);SPL.splice(i,1);}}}
 
+/* ---------- ending: jumped out of the window ----------
+   Every window has a little top pane (форточка). Open it, and then you can jump out: you fall past the
+   windows down to the yard… and wake up in bed. It was only a dream. */
+for(const W of WINDOWS){
+  const hw=W.w/2,pv=new THREE.Group();pv.position.set(-hw,2.15,.035);W.g.add(pv);   // hinged on its left side
+  blk(0,hw-.03,-.12,.12,-.012,.012,new THREE.MeshPhongMaterial({color:0xcfe8f5,transparent:true,opacity:.35,shininess:90}),{parent:pv});
+  blk(0,.02,-.13,.13,-.015,.015,M_.white,{parent:pv});blk(hw-.05,hw-.03,-.13,.13,-.015,.015,M_.white,{parent:pv});
+  Object.assign(W,{pane:pv,open:false,ang:0});
+}
+for(const W of WINDOWS){const n=W.side==='+z'?1:-1,r=NORM_ROT[W.side];
+  INTER.push({x:W.x+Math.sin(r)*.75,z:W.z+Math.cos(r)*.75,r:1.0,on:()=>!INV.includes(CARL.pk),label:()=>W.open?'Прыгнуть в окно':'Открыть форточку',
+    act:()=>{if(!W.open){W.open=true;nz(.06,1500,.15);tone(300,.1,'square',.04);toast('Форточка открыта. Свежий воздух!',2);return;}jumpOut(W);}});}
+function jumpOut(W){
+  const r=NORM_ROT[W.side];startCut(WINDOW_SCRIPT,updWindowCut);
+  CUT.W=W;CUT.out={x:-Math.sin(r),z:-Math.cos(r)};CUT.y=1.6;CUT.v=0;
+}
+const WINDOW_SCRIPT=[
+  [0,()=>{toast('Ух!..',1.5);nz(.15,700,.4);}],
+  [.7,()=>{setLevel('yard');CUT.fall=true;toast('А-а-а-а-а-а-а-а!!!',3);nz(.25,500,2.6,0,0,'bandpass');}],
+  [3.4,()=>{const f=$('fade');f.style.background='#fff';f.style.opacity=1;nz(.4,300,.4);}],
+  [4.6,()=>{CUT.fall=false;setLevel('flat');for(const W of WINDOWS){W.open=false;W.ang=0;W.pane.rotation.y=0;}
+    camAt(8.9,.9,10.2,8.9,2.7,9.7);$('fade').style.opacity=0;}],   // lying on mum and dad's bed, looking at the ceiling
+  [5.6,()=>{toast('Ой!.. Где я?',2);}],
+  [7.4,()=>{camAt(8.9,1.25,10.2,8.9,.9,12.6);toast('Фух! Это был просто сон…',3);}],   // sitting up
+  [10.6,()=>fadeTo(1)],
+  [12,()=>endCut('window','Ты открыл форточку и прыгнул в окно… и проснулся! Фух, это был просто страшный сон. В жизни из окна прыгать нельзя — никогда, это совсем не игра.')],
+];
+function updWindowCut(dt,t){
+  const W=CUT.W,o=CUT.out;
+  W.ang=Math.min(1.3,W.ang+dt*3);W.pane.rotation.y=-W.ang;
+  if(t<.7){const k=t/.7;camAt(W.x-o.x*(.8-k*1.4),1.55+k*.4,W.z-o.z*(.8-k*1.4),W.x+o.x*3,1.2-k,W.z+o.z*3);}   // through the window
+  else if(CUT.fall){CUT.v+=9.8*dt;CUT.y=Math.max(YG+3,CUT.y-CUT.v*dt);const x=W.x+o.x*1.2,z=W.z+o.z*1.2;
+    camAt(x,CUT.y,z,x+o.x*4,CUT.y-6,z+o.z*4);}
+}
+function updateWindows(dt){for(const W of WINDOWS){const want=W.open?1.3:0;if(Math.abs(W.ang-want)>.001&&state!=='cut'){W.ang+=(want-W.ang)*Math.min(1,dt*6);W.pane.rotation.y=-W.ang;}}}
+
 // every frame: the bed, the super speed, the police on their way, the river's water
 function updateExtras(dt,time){
-  updateBed(dt);updateNewBed(dt);updateSplashes(dt);
+  updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
   if(RIVER.visible){texWater.offset.x=(time*.01)%1;texWater.offset.y=(time*.03)%1;}
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
 }
 function resetExtras(){
-  resetBed();resetNewBed();P.boostT=0;P.drank=false;policeT=0;CUT=null;HANDBREW.visible=false;MK.armR.rotation.z=0;FLOOD.visible=false;PCAR.visible=false;COP.g.visible=false;
+  resetBed();resetNewBed();for(const W of WINDOWS){W.open=false;W.ang=0;W.pane.rotation.y=0;}P.boostT=0;P.drank=false;policeT=0;CUT=null;HANDBREW.visible=false;MK.armR.rotation.z=0;FLOOD.visible=false;PCAR.visible=false;COP.g.visible=false;
   for(const pc of PLAY){pc.broken=false;for(const q of pc.parts){q.m.position.copy(q.p);q.m.rotation.copy(q.r);}}
   for(const s of SPL)scene.remove(s.m);SPL=[];$('vig').style.opacity=0;
 }
@@ -3062,6 +3098,7 @@ const ENDINGS=[
   {id:'ambulance',title:'Макара забрала скорая помощь',hint:'Возьми в холодильнике у Макара чай 🍵 и лимон 🍋: лимон выдавится в чай, и получится отварчик. Подними кровать Макара (жми E быстро-быстро) и подсунь отварчик под неё. Иногда Макар проверяет, что у него под кроватью…'},
   {id:'drown',title:'Утопили Макара',hint:'Возьми в холодильнике энергетик ⚡ и лимон 🍋: выпьешь энергетик с лимоном, и будет суперскорость на 3 минуты. Схвати телефон Макара 📱 с его стола, и Макар погонится за тобой. В лифте выбери «2 — набережная», дождись Макара у реки и кинь телефон в воду.'},
   {id:'newbed',title:'У Макара новая кровать',hint:'Возьми телефон Макара 📱 с его стола, открой его (O или 📱) и набери 007. Закажи новую кровать, а когда её привезут, нажми кнопку на пульте в комнате Макара.'},
+  {id:'window',title:'Спрыгнул в окно',hint:'Подойди к любому окну в квартире, открой форточку и прыгни в окно.'},
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
 const endCount=()=>ENDINGS.filter(e=>gotEnd[e.id]).length;
