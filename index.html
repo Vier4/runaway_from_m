@@ -1983,6 +1983,18 @@ function propPick(name){
   addPick({name,obj:g,lv:'flat',cols,prop:true});
 }
 for(const n of ['Монитор','Клавиатура','Мышка','Плюшевый Эндер-дракон','Мяч','Чашка','Тарелка борща','Туалетная бумага','Кубики','Микрофон','Веб-камера','Кольцевая лампа','Ночник','Стул','Компьютерный стул'])propPick(n);
+/* Makar's chair can be carried off and put down anywhere, but not from under him. When he sits down at his desk
+   and it is somewhere else he fetches it; while it is in your inventory he streams standing up. */
+const CHAIR=PICKS.find(p=>p.name==='Компьютерный стул'),chairUsed=()=>MS.lv==='flat'&&MS.state==='sit'&&MS.seat===SEATS.desk;
+{const on=CHAIR.inter.on;CHAIR.inter.on=()=>on()&&!chairUsed();CHAIR.inter.r=1.4;CHAIR.inter.prio=.4;}
+function chairHome(){
+  const o=CHAIR.off,a=colsOf(CHAIR.lv);for(const c of CHAIR.cols){const i=a.indexOf(c);if(i>=0)a.splice(i,1);c.x0-=o.x;c.x1-=o.x;c.z0-=o.z;c.z1-=o.z;}COL.push(...CHAIR.cols);
+  CHAIR.obj.position.x-=o.x;CHAIR.obj.position.y-=o.y;CHAIR.obj.position.z-=o.z;CHAIR.off={x:0,y:0,z:0};CHAIR.lv='flat';CHAIR.obj.visible=true;centerPick(CHAIR);
+}
+function updateChair(){
+  if(SEATS.desk.stand!==CHAIR.held){SEATS.desk.stand=CHAIR.held;if(CHAIR.held&&chairUsed()&&P.lv==='flat')say('Кто утащил мой стул?! Чат, стримлю стоя!',3.5);}
+  if(!CHAIR.held&&chairUsed()&&(CHAIR.off.x||CHAIR.off.y||CHAIR.off.z)){chairHome();if(P.lv==='flat')say('Кто переставил мой стул?! Поставлю на место.',3.5);}
+}
 for(const k in ITEMS)addPick({name:ITEMS[k].name,obj:ITEMS[k].mesh,lv:ITEMS[k].lv||'flat',homeLv:ITEMS[k].lv||'flat',item:k});
 // chip packets lying all over the parking (you can pick them up like anything else)
 {let k=53;const rnd=()=>{k=(k*16807)%2147483647;return (k-1)/2147483646;};
@@ -2148,13 +2160,15 @@ function updateFlying(dt){
 function dropSel(){
   const pk=INV[invSel];if(!pk||state!=='play')return;if(P.hidden){toast('Сначала вылези из укрытия.');return;}
   pk.obj.visible=true;const b=boxOf(pk.obj),sx=b.max.x-b.min.x,sz=b.max.z-b.min.z;
-  const d=.7+Math.min(3,Math.max(sx,sz)/2),tx=P.x-Math.sin(P.yaw)*d,tz=P.z-Math.cos(P.yaw)*d,base=baseY(P.lv);
+  let d=.7+Math.min(3,Math.max(sx,sz)/2);
+  if(pk.cols.length){const free=k=>{const x=P.x-Math.sin(P.yaw)*k,z=P.z-Math.cos(P.yaw)*k;return !colsOf(P.lv).some(c=>x+sx/2>c.x0&&x-sx/2<c.x1&&z+sz/2>c.z0&&z-sz/2<c.z1);};while(d>.55&&!free(d))d-=.05;if(!free(d)){pk.obj.visible=false;toast('Здесь не поставить: мало места.',2);return;}}   // furniture stands where there is room for it
+  const tx=P.x-Math.sin(P.yaw)*d,tz=P.z-Math.cos(P.yaw)*d,base=baseY(P.lv);
   const dx=tx-(b.min.x+b.max.x)/2,dz=tz-(b.min.z+b.max.z)/2,dy=base+.005-b.min.y;
   pk.obj.position.x+=dx;pk.obj.position.y+=dy;pk.obj.position.z+=dz;pk.off.x+=dx;pk.off.y+=dy;pk.off.z+=dz;
   for(const c of pk.cols){c.x0+=dx;c.x1+=dx;c.z0+=dz;c.z1+=dz;}pk.lv=P.lv;colsOf(pk.lv).push(...pk.cols);
   pk.cx=tx;pk.cz=tz;pk.held=false;pk.floor=P.floor;INV.splice(invSel,1);invSel=clamp(invSel,0,Math.max(0,INV.length-1));
   if(pk.item){const it=ITEMS[pk.item];it.taken=false;it.spark.visible=true;it.spot={room:null,x:tx,y:base,z:tz};P.items[pk.item]=false;}
-  sfx.click();toast('Выброшено: '+pk.name,1.4);renderInv();
+  sfx.click();toast((pk.cols.length?'Поставлено: ':'Выброшено: ')+pk.name,1.4);renderInv();
 }
 // a new game puts every prop back where it stood and empties the inventory
 function resetInv(){
@@ -2172,7 +2186,7 @@ function renderInv(pop){
     if(pk){d.appendChild(el('span',null,pk.icon));d.title=pk.name;}d.addEventListener('click',()=>selectSlot(i));bar.appendChild(d);}
   if(GECKO.mode==='held'){const d=el('div','islot sel');d.appendChild(el('span',null,'🦎'));d.title='Эублефар на руках';d.addEventListener('click',()=>geckoRelease(false));bar.appendChild(d);}
   const pk=INV[invSel];
-  $('invName').textContent=isChips(pk)?pk.name+(isPhone?' · нажми ещё раз — кинуть в Макара':' · клик или T — кинуть · Q — выбросить'):GECKO.mode==='held'&&!pk?'🦎 Эублефар на руках · '+(isPhone?'нажми на 🦎, чтобы отпустить':'R — отпустить'):pk?pk.name+(isPhone?' · нажми ещё раз, чтобы выбросить':' · Q — выбросить'):`Инвентарь ${INV.length}/${INV_SIZE} · E — взять`;
+  $('invName').textContent=isChips(pk)?pk.name+(isPhone?' · нажми ещё раз — кинуть в Макара':' · клик или T — кинуть · Q — выбросить'):GECKO.mode==='held'&&!pk?'🦎 Эублефар на руках · '+(isPhone?'нажми на 🦎, чтобы отпустить':'R — отпустить'):pk?pk.name+(pk.cols.length?(isPhone?' · нажми ещё раз, чтобы поставить':' · Q — поставить'):isPhone?' · нажми ещё раз, чтобы выбросить':' · Q — выбросить'):`Инвентарь ${INV.length}/${INV_SIZE} · E — взять`;
 }
 
 function toggleDoor(d,who){
@@ -2961,12 +2975,12 @@ function resetLab(){
    At the board every answer is a bad one. */
 const SWAP={st:'',thumpT:3,board:null};   // st: '' nothing yet, 'locked' he is in the wardrobe, 'dressed' you are him
 const SWAP_G=new THREE.Group();SWAP_G.visible=false;scene.add(SWAP_G);
-const SWAP_CLOTHES=[{id:'hood',name:'худи Макара',x:4.7,z:11.69},{id:'jeans',name:'джинсы Макара',x:6.3,z:12.6},{id:'shoes',name:'кроссовки Макара',x:6.3,z:10.25},{id:'bag',name:'школьный рюкзак Макара',x:4.2,z:13.3}];
+const SWAP_CLOTHES=[{id:'hood',name:'худи Макара',x:4.7,z:11.69},{id:'jeans',name:'джинсы Макара',x:5.1,z:10.6},{id:'shoes',name:'кроссовки Макара',x:6.3,z:10.25},{id:'bag',name:'школьный рюкзак Макара',x:6.35,z:11}];
 {const o={parent:SWAP_G},hood=mat(0xe2512b),jeans=mat(0x2f4a7a),byId=id=>SWAP_CLOTHES.find(c=>c.id===id),put=(id,...m)=>{byId(id).m=m;};
  put('hood',blk(4.42,4.98,.555,.62,11.42,11.96,hood,o),blk(4.2,4.42,.555,.6,11.6,11.78,hood,o),blk(4.98,5.2,.555,.6,11.6,11.78,hood,o));
- put('jeans',blk(6.08,6.26,.012,.05,12.1,13.05,jeans,o),blk(6.34,6.52,.012,.05,12.1,13.05,jeans,o),blk(6.08,6.52,.012,.06,11.9,12.15,jeans,o));
+ put('jeans',blk(4.88,5.06,.012,.05,10.2,11.15,jeans,o),blk(5.14,5.32,.012,.05,10.2,11.15,jeans,o),blk(4.88,5.32,.012,.06,10,10.25,jeans,o));
  put('shoes',blk(6.12,6.26,0,.11,10.1,10.4,M_.white,o),blk(6.34,6.48,0,.11,10.1,10.4,M_.white,o));
- put('bag',blk(4.02,4.38,0,.46,13.18,13.42,mat(0x2f6fd6),o),blk(4.08,4.32,.06,.3,13.42,13.46,mat(0xf2c230),o));}
+ put('bag',blk(6.17,6.53,0,.46,10.88,11.12,mat(0x2f6fd6),o),blk(6.23,6.47,.06,.3,10.84,10.88,mat(0xf2c230),o));}
 const SWAP_LOCK=new THREE.Group();SWAP_LOCK.position.set(4.33,1.1,10.6);SWAP_G.add(SWAP_LOCK);blk(-.03,.03,-.1,.02,-.07,.07,M_.gold,{parent:SWAP_LOCK});blk(-.012,.012,.02,.09,-.05,.05,M_.metal,{parent:SWAP_LOCK});
 const SWAP_DIARY=new THREE.Mesh(new THREE.PlaneGeometry(.66,.46),new THREE.MeshBasicMaterial({map:ctex(660,460,(g,W,H)=>{g.fillStyle='#fdfbf2';g.fillRect(0,0,W,H);g.fillStyle='#1f4fbf';g.font='bold 44px Arial';g.textAlign='center';g.fillText('ДНЕВНИК',W/2,54);
   g.textAlign='left';[['Математика','2'],['Русский язык','1'],['Окружающий мир','1'],['Поведение','2']].forEach(([a,b],i)=>{const y=118+i*62;g.fillStyle='#222';g.font='34px Arial';g.fillText(a,40,y);g.fillStyle='#d8201c';g.font='bold 52px Georgia';g.fillText(b,560,y+6);g.strokeStyle='#b8c4e0';g.beginPath();g.moveTo(30,y+16);g.lineTo(W-30,y+16);g.stroke();});
@@ -2975,7 +2989,7 @@ const swapWorn=()=>SWAP_CLOTHES.filter(c=>c.worn).length;
 function swapLock(){
   state='ride';fadeTo(1);toast('Тихо-тихо… Ты затолкал спящего Макара в шкаф и запер его на замок!',4);nz(.18,500,.5,0,.5);nz(.22,300,.3,0,1.1);tone(1400,.08,'square',.1,0,1.4);
   setTimeout(()=>{if(state!=='ride')return;wakeUp(true);standUp();Object.assign(MS,{away:{kind:'locked',t:Infinity},lv:'away',state:'away',task:'locked',spd:0,path:[],seat:null,sitK:0});MK.g.visible=false;
-    SWAP.st='locked';SWAP_G.visible=true;state='play';fadeTo(0);toast('Теперь надень всю его одежду: худи на кровати, джинсы на полу, кроссовки у двери и рюкзак у стола.',6);},1700);
+    SWAP.st='locked';SWAP_G.visible=true;state='play';fadeTo(0);toast('Теперь надень всю его одежду: худи на кровати, джинсы на полу у шкафа, кроссовки у двери и рюкзак у кровати.',6);},1700);
 }
 function swapWear(c){
   c.worn=true;for(const m of c.m)m.visible=false;tone(620,.12,'triangle',.12);nz(.08,1500,.2);
@@ -3409,6 +3423,7 @@ function walkHome(dt){
 
 // every frame: the bed, the super speed, the police on their way, the river's water
 function updateExtras(dt,time){
+  updateChair();
   if(D.life&&(state==='play'||state==='anim'))updateSchool(dt);
   if(P.lv==='school')for(const pk of PICKS)if(pk.lv==='school'&&!pk.held&&!pk.flying)pk.obj.visible=pk.floor===P.floor;   // things dropped on another floor
   updateLife(dt);updateLab(dt,time);if(state==='play')updateSwap(dt);if(P.lv==='bronya')updateBronya(dt);updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
