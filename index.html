@@ -2824,6 +2824,20 @@ function updateSchool(dt){
   if(!(P.room&&P.room.id==='s20'))SCH.teacherSaid='';
 }
 
+/* ---------- 17:00–17:30: Makar walks home from school through the town ----------
+   Out of the school gate, west along the pavement, across the zebra by his house and in at his door. Where he
+   is on the way depends only on the clock, so you meet him wherever he should be by then. */
+const WALK_HOME=[[20,19],[20,6.6],[-20,6.6],[-20,-6.6],[-20,-13.2]];
+const WALK_LEN=WALK_HOME.slice(1).reduce((a,p,i)=>a+hyp(p[0]-WALK_HOME[i][0],p[1]-WALK_HOME[i][1]),0);
+function walkHome(dt){
+  const k=clamp((lifeNow().t-17*60)/30,0,1);let d=k*WALK_LEN,i=0;
+  for(;i<WALK_HOME.length-2;i++){const l=hyp(WALK_HOME[i+1][0]-WALK_HOME[i][0],WALK_HOME[i+1][1]-WALK_HOME[i][1]);if(d<=l)break;d-=l;}
+  const [ax,az]=WALK_HOME[i],[bx,bz]=WALK_HOME[i+1],l=hyp(bx-ax,bz-az)||1,u=Math.min(1,d/l);
+  if(MS.lv!=='city'){Object.assign(MS,{lv:'city',seat:null,sitK:0,sayT:2});MK.g.visible=true;}
+  Object.assign(MS,{x:ax+(bx-ax)*u,z:az+(bz-az)*u,face:Math.atan2(bx-ax,bz-az),spd:WALK_LEN/30,state:'walk',task:'school'});animMakar(dt);
+  const dP=hyp(P.x-MS.x,P.z-MS.z);if(dP<3.5&&!P.driving&&(MS.sayT-=dt)<=0){MS.sayT=9;say(pick(['О! Ты что, тоже в городе? Иди домой!','Чат, я иду из школы пешком. Ноги уже устали…','Не ходи за мной! Я сам дойду!','Уроки кончились, ура! Сейчас буду стримить!']),3);}
+}
+
 // every frame: the bed, the super speed, the police on their way, the river's water
 function updateExtras(dt,time){
   if(D.life&&(state==='play'||state==='anim'))updateSchool(dt);
@@ -3065,6 +3079,7 @@ function updateMakar(dt){
   if(MS.state==='sleep'&&!MS.stun){poseSleep(dt);return;}
   if(MS.stun>0){if(MS.state==='sleep')wakeUp(true);MS.stun-=dt;MS.spd=0;MS.lookT+=dt;MS.face=MS.lookBase+Math.sin(MS.lookT*9)*.25;if(MS.lv!=='away')animMakar(dt);MK.head.rotation.z=Math.sin(MS.lookT*7)*.35;if(MS.stun<=0)MK.head.rotation.z=0;return;}
   if(HC.on&&P.lv==='yard'){updateHaircut(dt);return;}
+  if(D.life&&MS.away&&MS.away.kind==='school'&&lifeNow().phase==='walk'){if(P.lv==='city')walkHome(dt);else if(MS.lv==='city'){MS.lv='away';MK.g.visible=false;}return;}
   if(D.life&&MS.away&&MS.away.kind==='school'&&(P.lv==='school'||MS.lv==='school')){if(P.lv!=='school'){MS.lv='away';MK.g.visible=false;}return;}   // (see updateSchool)
   if(P.lv!=='flat'){updateMakarOutside(dt);return;}
   if(MS.away&&MS.lv!=='yard'){MS.spd=0;tickAway(dt);return;}
@@ -3690,7 +3705,7 @@ function updateHUD(dt){
   {const m=(isDay?13*60+20:23*60+40)+Math.floor(tPlay*20/60),t=D.life?'📅 '+lifeClock():`🕒 ${String(Math.floor(m/60)%24).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;if(t!==clockShown){clockShown=t;$('clock').textContent=t;$('clock').classList.toggle('life',!!D.life);}}
   if($('flyBtns').hidden===ADMIN.fly){$('flyBtns').hidden=!ADMIN.fly;touchFly=0;}
   const st=$('status'),txt=$('statusText');let s,cls='';
-  if(MS.away&&MS.lv!==P.lv){const t=Math.max(0,Math.ceil(MS.away.t));s=MS.away.kind==='school'?'Макар в школе':({walk:'Макар гуляет',shop:'Макар в магазине',swing:'Макар на качелях'}[MS.away.kind])+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
+  if(MS.away&&MS.lv!==P.lv){const t=Math.max(0,Math.ceil(MS.away.t));s=MS.away.kind==='school'?(D.life&&lifeNow().phase==='walk'?'Макар идёт из школы домой':'Макар в школе'):({walk:'Макар гуляет',shop:'Макар в магазине',swing:'Макар на качелях'}[MS.away.kind])+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
   else if(P.hidden){s='Ты спрятался';cls='hid';if(MS.state==='grab'||MS.state==='check'){s='Макар идёт к укрытию!';cls='alert';}}
   else if(P.lv!=='flat'&&MS.lv!==P.lv&&!MS.away){s='Макар дома и тебя не заметил';}
   else if(P.lv!=='flat'&&MS.lv!==P.lv){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
@@ -3701,6 +3716,7 @@ function updateHUD(dt){
   else if(LIFT.state==='coming'){s='Лифт: '+LIFT.floor+' этаж';}
   else if(MS.state==='sleep'&&MS.lv===P.lv){s='Макар спит 💤';}
   else if(MS.state==='sit'&&MS.lv===P.lv){s={stream:'Макар ведёт стрим',poop:'Макар какает',soup:'Макар ест суп',pet:'Макар гладит ящерку',bedcheck:'Макар смотрит под кроватью',school:'Макар на уроке'}[MS.task]||'Макар занят';}
+  else if(D.life&&MS.away&&MS.away.kind==='school')s=lifeNow().phase==='walk'?'Макар идёт из школы домой':'Макар в школе';
   else s=MS.lv===P.lv&&hyp(MS.x-P.x,MS.z-P.z)<5?'Макар где-то рядом':'Тихо…';
   if(P.boostT>0){const b=Math.ceil(P.boostT);s=`⚡ ${Math.floor(b/60)}:${String(b%60).padStart(2,'0')} · `+s;}
   if(txt.textContent!==s)txt.textContent=s;st.className='hud plate '+cls;
