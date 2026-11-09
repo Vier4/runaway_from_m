@@ -3543,8 +3543,62 @@ function openShop(){
   if(state!=='play')return;state='kid';unlock();showHUD(false);$('prompt').hidden=true;const back=f=>()=>{startPlay();f&&f();},rich=HS.money>=100000&&!HS.lighters;
   panel('Магазин «Продукты»',HS.lighters?'Продавщица: «Ты уже скупил все зажигалки в городе! Больше нету».':rich?'Продавщица: «Ого, сколько денег! Что возьмёшь?»':'Продавщица: «Здравствуй! Хлеб, молоко, конфеты… А денег-то у тебя и нету».',[...(rich?[['Купить очень много зажигалок: 100 000 ₽ 🔥',back(buyLighters)]]:[]),['Выйти',back(),'ghost']]);
 }
-function buyLighters(){HS.money=0;HS.lighters=1000;renderMoney();for(let i=0;i<8;i++)tone(1200+i*60,.04,'square',.05,0,i*.07);toast('Продавщица: «Тысяча зажигалок?! Ну, как скажешь». 🔥 У тебя теперь полные карманы зажигалок.',5);}
+function buyLighters(){HS.money=0;HS.lighters=1000;renderMoney();for(let i=0;i<8;i++)tone(1200+i*60,.04,'square',.05,0,i*.07);toast('Продавщица: «Тысяча зажигалок?! Ну, как скажешь». 🔥 Теперь в школу, в 3 «Т», пока там идут уроки или перемена.',6);}
 INTER.push({lv:'city',x:26,z:-16.9,r:1.9,on:()=>!P.driving,label:()=>'Зайти в магазин «Продукты»',act:openShop});
+
+/* ---------- ending: the school burns («Жизнь Макара») ----------
+   With a thousand lighters you win over the whole of 3 «Т». Vanya won't have it and runs to tell, they all stop him
+   and promise him a кондетка, he bawls «6-7!» across the school, the police come, the school is already on fire,
+   and everyone is evacuated. Nobody gets hurt, and the ending says so. */
+const FIRE_T=ctex(64,64,(g,w,h)=>{g.font='52px serif';g.textAlign='center';g.textBaseline='middle';g.fillText('🔥',w/2,h/2+4);},false);
+const BF={sprites:[],kids:[],evac:[]};
+function fireSprite(par,x,y,z,s){const f=new THREE.Sprite(new THREE.SpriteMaterial({map:FIRE_T,transparent:true,depthWrite:false}));f.position.set(x,y,z);f.scale.set(s,s,1);f.visible=false;par.add(f);BF.sprites.push({f,s,x:0});return f;}
+const EVAC=new THREE.Group();EVAC.visible=false;CITY.add(EVAC);
+{const look=[0xd8402f,0x2f6fd6,0x3fbf5a,0xf2c230,0x7a5ad8,0xff9f43,0xf06aa0,0x1dd1a1];
+ const add=(o,x,z)=>{const m=buildKid({pants:0x2f4a7a,hair:0x3a2414,shirt:look[BF.evac.length%8],...o});EVAC.add(m.g);m.g.visible=true;const n={m,x,z,face:Math.PI,spd:0,stun:0,hold:0,s:o.s||1};BF.evac.push(n);};
+ add({tag:'Егор',tagColor:'#7fd0ff',shirt:0x2f6fd6,hair:0xc88a3a},17.6,12);add({tag:'Матвей',tagColor:'#ffb3c7',shirt:0xff9f43,hair:0x6a3e1e,cheeks:true,s:.95},19.1,12);add({tag:'Ваня 👓',tagColor:'#c9ff7a',shirt:0x3fbf5a,hair:0x1b1b1b,glasses:true},20.6,12);add({tag:'Марья Ивановна',girl:true,s:1.32,shirt:0x7a5ad8,skirt:0x2a2a3a,hair:0x6a3e1e},22.4,11.6);
+ for(let r=0;r<3;r++)for(let c=0;c<8;c++)add({girl:(r+c)%2===0,skirt:look[(r*3+c)%8],hair:[0x3a2414,0xc88a3a,0x1b1b1b,0x6a3e1e][(r+c)%4],bow:look[c]},13.2+c*1.55+(r%2)*.5,13.6+r*1.3);
+ for(let i=0;i<30;i++)fireSprite(CITY,8.6+Math.random()*22.8,2+Math.random()*10,19.7,3+Math.random()*3);}
+const CITY_FIRES=BF.sprites.slice();
+function burnReady(){const ph=schoolPhase();if(!HS.lighters||SWAP.st||LAB.st||!['before','lesson','break'].includes(ph)||!EGOR.m.g.visible||P.z<4.2)return false;return sreg(P.x,P.z)===classRoom(ph).i;}
+INTER.push({lv:'school',get floor(){return classRoom(schoolPhase()).f;},get x(){return P.x-Math.sin(P.yaw)*.5;},get z(){return P.z-Math.cos(P.yaw)*.5;},r:1,on:burnReady,label:()=>'Раздать зажигалки и объединить весь 3 «Т» 🔥',act:startBurn});
+function startBurn(){
+  if(state!=='play')return;stopTag(true);const R=classRoom(schoolPhase()),cx=R.i*11+5.5;BF.kids=NPCS.filter(n=>n.cls==='3 «Т»'&&!n.makar&&!n.teacher);BF.cx=cx;BF.vx=Math.min(39,R.i*11+7);
+  BF.kids.forEach((n,i)=>{Object.assign(n,{x:cx-3.8+(i%6)*1.5,z:10.2-Math.floor(i/6)*.9,face:Math.PI*2,spd:0,stun:0,hold:0,mode:null,tx:null});n.m.g.visible=true;});
+  VANYA.vr=null;BF.yell=false;BF.out=false;BF.ring=false;startCut(BURN_SCRIPT,updBurn);
+}
+const everyone=t=>talkAs('ВЕСЬ КЛАСС',t,{pitch:1.5,rate:1.05});
+const BURN_SCRIPT=[
+  [0,()=>{camAt(BF.cx,YS+1.65,11.9,BF.cx,YS+1.1,5.5);toast('Ты раздал всему классу зажигалки 🔥',3.2);kidSay(EGOR,'Ого! Тысяча зажигалок?! Я с тобой!');}],
+  [3,()=>kidSay(MATVEY,'И я с вами! Только щёчки не трогайте!')],
+  [5.6,()=>everyone('Мы все с тобой!')],
+  [8,()=>{kidSay(VANYA,'А я не буду! Я всё расскажу! Всем расскажу!');VANYA.vr=[[BF.cx-3.6,4.7],[BF.cx-3.6,2.6],[BF.cx+3,2]];}],
+  [11,()=>fadeTo(1)],
+  [11.8,()=>{BF.ring=true;Object.assign(VANYA,{x:BF.vx,z:2,face:-Math.PI/2,spd:0,vr:null});camAt(BF.vx-6.2,YS+1.6,2,BF.vx,YS+1,2);
+    BF.kids.filter(n=>n!==VANYA).forEach((n,i)=>{const a=i*2.4,r=1+(i%5)*.75;n.x=clamp(BF.vx+.4+Math.cos(a)*r*1.5,BF.vx-3,BF.vx+5);n.z=clamp(2+Math.sin(a)*r,.8,3.3);if(n.x<BF.vx+.8&&Math.abs(n.z-2)<.75)n.z=n.z<2?.85:3.15;   /* (nobody between the camera and Vanya) */n.face=Math.atan2(BF.vx-n.x,2-n.z);n.spd=0;});fadeTo(0);kidSay(EGOR,'Стой, Ваня! Никому не говори!');}],
+  [14.6,()=>everyone('Ваня, мы дадим тебе за это кондетку!')],
+  [18,()=>kidSay(VANYA,'Кондетку?.. Кондетку?!')],
+  [20.4,()=>{BF.yell=true;kidSay(VANYA,'ШЕСТЬ-СЕМЬ!!!');toast('Ваня заорал на всю школу: «6-7!!!»',3.6);const t=nameTag('6-7!!!','#ffd23f');t.scale.set(2.2,.55,1);t.position.set(BF.vx,2.4,2);SCHOOL.add(t);BF.tag=t;for(let i=0;i<4;i++)tone(760-i*90,.45,'square',.09,500,i*.22);}],
+  [23.6,()=>{siren(5);toast('Кто-то вызвал полицию, она уже едет! 🚓',3);}],
+  [25,()=>{CUT.flash=true;for(let i=0;i<26;i++)fireSprite(SCHOOL,BF.vx-2.5+Math.random()*12,.5+Math.random()*1.9,.6+Math.random()*3,.8+Math.random()*.8);BF.burn=CUT.t;for(let i=0;i<8;i++){tone(1100,.3,'square',.05,0,i*.6);tone(880,.3,'square',.05,0,i*.6+.3);}nz(.25,500,3);talkAs('УЧИЛКА','Пожар! Все на улицу! Срочная эвакуация!',{pitch:1.05,female:true});}],
+  [29.4,()=>fadeTo(1)],
+  [30.4,()=>{BF.out=true;CUT.flash=false;$('vig').style.opacity=0;if(BF.tag){SCHOOL.remove(BF.tag);BF.tag=null;}setLevel('city');EVAC.visible=true;CITY.add(PCAR);PCAR.position.set(27.5,0,3);PCAR.rotation.y=0;PCAR.visible=true;
+    Object.assign(COPS,{x:25,z:8.6,face:Math.PI,spd:0});COP.g.visible=true;for(const b of CITY_FIRES)b.f.visible=true;if(MS.away&&MS.away.kind==='school'){Object.assign(MS,{lv:'city',x:15,z:11.4,face:Math.PI,state:'run',spd:0,seat:null,sitK:0});MK.g.visible=true;}
+    camAt(20,YC+2.1,3.2,20,YC+4.4,26);fadeTo(0);toast('Всех срочно эвакуировали. Никто не пострадал!',4.5);nz(.2,400,4);siren(4);}],
+  [32.4,()=>talkAs('ПОЛИЦИЯ','Все вышли? Посчитали всех! Кто это устроил?!',{pitch:.7,rate:.95})],
+  [35.6,()=>{if(MS.lv==='city')say('Эй! Это же моя школа! А где мой монитор?!',3);}],
+  [38.4,()=>talkAs('ВАНЯ','А где моя кондетка?!',{pitch:1.6,rate:1.1})],
+  [41,()=>fadeTo(1)],
+  [42.4,()=>endCut('burn','Ты продал родителям Егора всю технику Макара, купил тысячу зажигалок и объединил весь 3 «Т». Ваня побежал всем рассказывать, вы пообещали ему кондетку, а он заорал на всю школу «6-7!». Приехала полиция, но школа уже горела. Всех срочно эвакуировали, и никто не пострадал. Это только игра: в жизни с огнём играть нельзя, а при пожаре сразу зови взрослых и звони 112.')],
+];
+function updBurn(dt,t){
+  for(const b of BF.sprites){if(!b.f.parent||!b.f.visible&&!(BF.burn&&b.f.parent===SCHOOL&&t>BF.burn+Math.abs(Math.sin(b.s*91))*3))continue;b.f.visible=true;const k=b.s*(1+Math.sin(t*9+b.s*31)*.12);b.f.scale.set(k,k*1.15,1);}
+  if(BF.out){const on=Math.sin(t*12)>0;PLIGHT.r.color.setHex(on?0xff2020:0x300000);PLIGHT.b.color.setHex(on?0x101040:0x2050ff);for(const n of BF.evac)poseKid(n,dt,false);poseWalker(COP,COPS,dt,YC);if(MS.lv==='city')animMakar(dt);return;}
+  if(VANYA.vr&&VANYA.vr.length&&moveTo(VANYA,VANYA.vr[0][0],VANYA.vr[0][1],3.2,dt))VANYA.vr.shift();
+  for(const n of BF.kids)poseKid(n,dt,false);
+  if(BF.yell){const m=VANYA.m;m.armL.rotation.x=m.armR.rotation.x=-2.8;m.g.position.y=Math.abs(Math.sin(t*9))*.12;m.g.scale.setScalar(1+Math.sin(t*20)*.04);}
+}
+function resetBurn(){for(const b of BF.sprites){if(CITY_FIRES.includes(b))b.f.visible=false;else if(b.f.parent)b.f.parent.remove(b.f);}BF.sprites=CITY_FIRES.slice();BF.burn=0;if(BF.tag){SCHOOL.remove(BF.tag);BF.tag=null;}EVAC.visible=false;YARD.add(PCAR);PCAR.rotation.y=0;VANYA.m.g.scale.setScalar(1);}
 
 // the school day: before the first bell, lessons (45 min) and breaks (10 min) until 13:30, then the club until 17:00
 function schoolPhase(){const n=lifeNow();if(n.day>4)return 'closed';const t=n.t;if(t<8*60)return 'closed';if(t<8*60+30)return 'before';if(t<13*60+30)return (t-510)%55<45?'lesson':'break';if(t<17*60)return 'prolong';return 'closed';}
@@ -3766,7 +3820,7 @@ function updateExtras(dt,time){
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
 }
 function resetExtras(){
-  repairEgor();MV.at=0;HS.sold.clear();HS.money=HS.lighters=0;renderMoney();
+  resetBurn();repairEgor();MV.at=0;HS.sold.clear();HS.money=HS.lighters=0;renderMoney();
   showFloor(1);
   LIFE.min=7*60+30;LIFE.instant=true;{let day;if(D.life){const n=lifeNow();day=n.t>=7*60&&n.t<20*60;}else{try{day=localStorage.getItem('makar-time')==='day';}catch(e){day=isDay;}}if(day!==isDay){isDay=day;applyTime();}}
   P.driving=false;DRV.where='park';DRV.g.visible=false;dropDrvCol();PARENTS_CAR.g.visible=true;if(!PCOL.includes(PARENTS_CAR.col))PCOL.push(PARENTS_CAR.col);
@@ -4482,6 +4536,7 @@ const ENDINGS=[
   {id:'swap',title:'Подменил Макара',hint:'В режиме «Жизнь Макара», пока Макар спит, подойди к его шкафу и запри Макара внутри. Надень всю его одежду: худи, джинсы, кроссовки и рюкзак. В будни приди в школу на 3 этаж, в 3 «Т», сядь на его место и получи очень плохие оценки.'},
   {id:'bronya',title:'Приехал к Броне домой',hint:'Возьми телефон Макара 📱, открой его (O или 📱) и набери 676767. Купи билет в Дубай за все деньги родителей. Смотри в окно такси и самолёта, а в Дубае поговори с Броней и попрощайся.'},
   {id:'borsch',title:'Весь мир в противогазе',hint:'В режиме «Жизнь Макара» возьми энергетик из холодильника и тарелку борща с кухонного стола: они смешаются, и ты получишь суперскорость на 60 секунд. В будни приди на урок 3 «Т», и начнётся такое, что наденет противогаз даже планета Земля.'},
+  {id:'burn',title:'Сжёг школу',hint:'В режиме «Жизнь Макара» собери у Макара всю технику и продай родителям Егора за 100 000 ₽. В магазине «Продукты» купи тысячу зажигалок. Потом приди в школу к 3 «Т», пока идут уроки или перемена, и раздай всем зажигалки.'},
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
 const endCount=()=>ENDINGS.filter(e=>gotEnd[e.id]).length;
@@ -4687,6 +4742,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='trip')updateTrip(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={HS,TECHN,pickUp:p=>pickUp(p),MV,MHM,matveyHome:()=>matveyHome(),repairEgor:()=>repairEgor(),HSMASH,EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={BF,startBurn:()=>startBurn(),burnReady:()=>burnReady(),classRoom2:()=>classRoom(schoolPhase()),HS,TECHN,pickUp:p=>pickUp(p),MV,MHM,matveyHome:()=>matveyHome(),repairEgor:()=>repairEgor(),HSMASH,EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
