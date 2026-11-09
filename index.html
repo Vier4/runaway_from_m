@@ -1280,8 +1280,8 @@ const schoolRoomAt=(x,z)=>{const f=P.floor||1;if(z<4.1||x>44)return SCHOOL_ROOMS
 function showFloor(f){P.floor=f;for(let i=1;i<=3;i++)SFLOORS[i].visible=i===f;}
 
 const YARD_ROOM={id:'yard',name:'Двор'},STREET_ROOM={id:'street',name:'Улица'},PARK_ROOM={id:'park',name:'Парковка'},RIVER_ROOM={id:'river',name:'Набережная'},CITY_ROOM={id:'city',name:'Город'};
-const baseY=lv=>lv==='yard'?YG:lv==='park'?YP:lv==='river'?YR:lv==='city'?YC:lv==='school'?YS:lv==='bronya'?YB:lv==='egor'?YE:0;
-const FOG={flat:[0x07080c,10,26],yard:[0x0c1020,40,190],park:[0x0c0e11,9,34],river:[0x0b1222,40,260],city:[0x0c1020,60,240],school:[0xeef0e6,30,80],trip:[0xf0a878,80,380],bronya:[0xf4e6cf,40,90],egor:[0xd8d2c0,30,70],dubai:[0xbcd6ee,300,1400],space:[0x02030a,5000,9000]};
+const baseY=lv=>lv==='yard'?YG:lv==='park'?YP:lv==='river'?YR:lv==='city'?YC:lv==='school'?YS:lv==='bronya'?YB:lv==='egor'?YE:lv==='ehome'?YH:0;
+const FOG={flat:[0x07080c,10,26],yard:[0x0c1020,40,190],park:[0x0c0e11,9,34],river:[0x0b1222,40,260],city:[0x0c1020,60,240],school:[0xeef0e6,30,80],trip:[0xf0a878,80,380],bronya:[0xf4e6cf,40,90],ehome:[0xf2ece0,20,60],egor:[0xd8d2c0,30,70],dubai:[0xbcd6ee,300,1400],space:[0x02030a,5000,9000]};
 /* Dubai, only for the Carlson ending: desert sand, a few low towers and the Burj Khalifa (230 m, tapering,
    with its spire). Far below everything else so it never shows anywhere else. */
 const DUBAI=new THREE.Group();DUBAI.position.y=-1000;DUBAI.visible=false;scene.add(DUBAI);
@@ -1292,9 +1292,9 @@ const BURJ_R=h=>h>=180?Math.max(.4,1.6-(h-180)*.025):16*Math.pow(1-h/205,1.25)+1
  const sp=new THREE.Mesh(new THREE.CylinderGeometry(.35,1.6,50,8),steel);sp.position.y=205;DUBAI.add(sp);
  for(const [x,z,w,h] of [[-120,-60,30,70],[110,-90,26,90],[-180,80,40,55],[150,120,30,60],[60,-200,24,80],[-60,-190,28,65]]){const b=new THREE.Mesh(new THREE.BoxGeometry(w,h,w),mat(0xb8c2cc));b.position.set(x,h/2,z);DUBAI.add(b);}
  const L=new THREE.PointLight(0xfff0d0,1.2,900,1.2);L.position.set(200,300,300);DUBAI.add(L);}
-function setLevel(lv){const [c,n,f]=FOG[lv];scene.fog.color.setHex(c);scene.fog.near=n;scene.fog.far=f;scene.background.setHex(c);YARD.visible=lv==='yard';PARK.visible=lv==='park';RIVER.visible=lv==='river';CITY.visible=lv==='city';SCHOOL.visible=lv==='school';DUBAI.visible=lv==='dubai';SPACE.visible=lv==='space';TRIPG.visible=lv==='trip';BRONYA.visible=lv==='bronya';EGORH.visible=lv==='egor';
+function setLevel(lv){const [c,n,f]=FOG[lv];scene.fog.color.setHex(c);scene.fog.near=n;scene.fog.far=f;scene.background.setHex(c);YARD.visible=lv==='yard';PARK.visible=lv==='park';RIVER.visible=lv==='river';CITY.visible=lv==='city';SCHOOL.visible=lv==='school';DUBAI.visible=lv==='dubai';SPACE.visible=lv==='space';TRIPG.visible=lv==='trip';BRONYA.visible=lv==='bronya';EGORH.visible=lv==='egor';EHOME.visible=lv==='ehome';
   // by day the sun shines only outside (it would light the flat through the walls), indoors it is just a bit brighter
-  const out=lv==='yard'||lv==='river'||lv==='city';SUN.intensity=lv==='dubai'||lv==='trip'||isDay&&out?.75:0;HEMI.intensity=lv==='trip'||lv==='bronya'||lv==='egor'?1:lv==='school'&&!isDay?.42:lv==='dubai'||lv==='school'?1:lv==='park'?.42:isDay?(out?1.0:.62):lv==='river'?.6:.5;}
+  const out=lv==='yard'||lv==='river'||lv==='city';SUN.intensity=lv==='dubai'||lv==='trip'||isDay&&out?.75:0;HEMI.intensity=lv==='trip'||lv==='bronya'||lv==='egor'||lv==='ehome'?1:lv==='school'&&!isDay?.42:lv==='dubai'||lv==='school'?1:lv==='park'?.42:isDay?(out?1.0:.62):lv==='river'?.6:.5;}
 // Each window shows a snapshot of what really lies outside it: the bedrooms look down into the yard.
 function renderWindowViews(){
   setLevel('yard');
@@ -1403,7 +1403,7 @@ function pushOut(p,r,x0,x1,z0,z1){
 }
 function collide(p,r){
   if(p.lv==='yard'){for(let it=0;it<3;it++){for(const c of YCOL)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);if(!GATE.open)pushOut(p,r,GATE.x0,GATE.x1,GATE.z-.06,GATE.z+.06);}return;}
-  if(p.lv==='park'||p.lv==='river'||p.lv==='city'||p.lv==='school'||p.lv==='bronya'||p.lv==='egor'){const C=colsOf(p.lv);for(let it=0;it<3;it++)for(const c of C)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);return;}
+  if(p.lv==='park'||p.lv==='river'||p.lv==='city'||p.lv==='school'||p.lv==='bronya'||p.lv==='egor'||p.lv==='ehome'){const C=colsOf(p.lv);for(let it=0;it<3;it++)for(const c of C)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);return;}
   for(let it=0;it<3;it++){
     for(const c of COL)pushOut(p,r,c.x0,c.x1,c.z0,c.z1);
     for(const d of DOORS)if(doorSolid(d))pushOut(p,r,d.box.x0,d.box.x1,d.box.z0,d.box.z1);
@@ -1886,7 +1886,7 @@ function whereIs(k){
   if(it.withMakar)return 'у Макара в кармане';
   if(it.stash==='fridge'||it.stash==='bed')return (it.stash==='bed'?BED_SPOT:FRIDGE_SPOT).where;if(it.stash)return null;
   if(!pk||pk.held||pk.flying||pk.eaten||!pk.obj.visible)return null;
-  if(pk.lv==='park')return 'на парковке';if(pk.lv==='river')return 'на набережной';if(pk.lv==='city')return 'в городе';if(pk.lv==='school')return 'в школе';if(pk.lv==='yard')return 'во дворе';
+  if(pk.lv==='park')return 'на парковке';if(pk.lv==='river')return 'на набережной';if(pk.lv==='city')return 'в городе';if(pk.lv==='school')return 'в школе';if(pk.lv==='ehome')return 'у Егора дома';if(pk.lv==='yard')return 'во дворе';
   const sp=it.spot;if(sp.where&&hyp(pk.cx-sp.x,pk.cz-sp.z)<.3)return sp.where.replace('на столе у систёр','у нас на столе');
   const r=roomAt(pk.cx,pk.cz);return r&&ROOM_IN[r.id]||'где-то в квартире';
 }
@@ -1968,7 +1968,7 @@ const ICONS=[['Ножниц','✂️'],['Отварчик','🥣'],['Чай','�
   ['Дерев','🌳'],['Ель','🌲'],['Берёз','🌳'],['Машин','🚗'],['Макар','🧍'],['Стиральн','🫧'],['Раковин','🚰'],['Шкаф','🗄️'],['Зеркало','🪞'],['Ковёр','🟥'],['коврик','🟥'],['Пожарн','🚨'],
   ['Рокот','📢'],['Мигалк','🚨'],['Датчик','🔴'],['ящик','📦'],['тул','🪑'],['Скамейк','🪑'],['тол','🪑'],['Качели','🎠'],['Карусель','🎠'],['Горка','🛝'],['Песочниц','🏖️']];
 const iconFor=n=>(ICONS.find(([k])=>n.includes(k))||[0,'📦'])[1];
-const colsOf=lv=>lv==='yard'?YCOL:lv==='park'?PCOL:lv==='river'?RCOL:lv==='city'?CCOL:lv==='school'?SCOL[P.floor||1]:lv==='bronya'?BCOL:lv==='egor'?ECOL:COL;
+const colsOf=lv=>lv==='yard'?YCOL:lv==='park'?PCOL:lv==='river'?RCOL:lv==='city'?CCOL:lv==='school'?SCOL[P.floor||1]:lv==='bronya'?BCOL:lv==='egor'?ECOL:lv==='ehome'?HCOL:COL;
 const boxOf=o=>new THREE.Box3().setFromObject(o);
 function centerPick(pk){const b=boxOf(pk.obj);pk.cx=(b.min.x+b.max.x)/2;pk.cz=(b.min.z+b.max.z)/2;}
 function addPick(pk){
@@ -3293,6 +3293,7 @@ BCOL.push({x0:BR.x-.2,x1:BR.x+.2,z0:BR.z-.2,z1:BR.z+.2});
 INTER.push({lv:'river',x:12,z:.35,r:1.8,label:()=>'Войти в подъезд Егора',act:()=>{if(state!=='play')return;sfx.chime();toast('Лифт едет наверх… 2… 3… 4…',2);goLevel('egor',3.7,1.2,Math.PI,'Подъезд Егора, 5 этаж. Его дверь напротив лифта.');}});
 INTER.push({lv:'egor',x:3.7,z:.5,r:1.4,label:()=>'Лифт вниз: на набережную',act:()=>{if(state!=='play')return;sfx.chime();goLevel('river',12,1,Math.PI,'Ты снова на набережной.');}});
 INTER.push({lv:'egor',x:6.3,z:4.6,r:1.5,label:()=>'Позвонить в дверь Егора',act:()=>{
+  if(D.life){ringEgor();return;}
   [988,784].forEach((f,i)=>tone(f,.3,'sine',.12,0,i*.3));const n=lifeNow(),ph=schoolPhase();
   setTimeout(()=>{if(state!=='play'||P.lv!=='egor')return;
     if(!D.life)talkAs('ЕГОР','Кто там? А, привет! Заходи потом, я делаю уроки!',{pitch:1.6,rate:1.1});
@@ -3301,6 +3302,76 @@ INTER.push({lv:'egor',x:6.3,z:4.6,r:1.5,label:()=>'Позвонить в две�
     else if(ph!=='closed')talkAs('МАМА ЕГОРА','Егор ещё в школе. Приходи вечером!',{pitch:1.1,female:true});
     else if(n.t>=22*60||n.t<7*60)talkAs('МАМА ЕГОРА','Тише! Егор уже спит!',{pitch:1.1,female:true});
     else talkAs('ЕГОР','Кто там? А, это ты! Я скоро к Макару пойду. Звони на 67!',{pitch:1.6,rate:1.1});},900);}});
+
+/* ---------- Egor's flat («Жизнь Макара»), behind his door on the 5th floor ----------
+   14×10 m: a corridor down the middle, the living room and the kitchen to the west, Egor's room and his parents'
+   bedroom to the east. Ring the bell and his mum Alina opens up. Egor is at home whenever he is not at school or
+   round at Makar's. His dad Pasha watches TV, Alina cooks and his little brother Leonchik toddles about.
+   Furniture is built in named pieces (HPIECES). */
+const YH=-2100,EHOME=new THREE.Group();EHOME.position.y=YH;EHOME.visible=false;scene.add(EHOME);EHOME.add(new THREE.AmbientLight(0xffffff,.35));
+const HCOL=[],HPIECES=[];
+function hb(x0,x1,y0,y1,z0,z1,m,col){const me=blk(x0,x1,y0,y1,z0,z1,m,{parent:EHOME});if(col)HCOL.push({x0,x1,z0,z1,tall:col!=='low'});return me;}
+function hpc(name,acc,x,z,build){const from=EHOME.children.length;build();HPIECES.push({name,acc,x,z,broken:false,parts:EHOME.children.slice(from)});}
+{const W=mat(0xf0e6d2),WD=mat(0x8a6236),WL=mat(0xd9b98a),WH=mat(0xf4f4f0),DK=mat(0x22242a),GL=basic(0xcfe8f5);
+ {const f=new THREE.Mesh(new THREE.PlaneGeometry(14.4,10.4),mat(0xb98a55));f.rotation.x=-Math.PI/2;f.position.set(7,0,5);EHOME.add(f);
+  const c=new THREE.Mesh(new THREE.PlaneGeometry(14.4,10.4),mat(0xfafafa));c.rotation.x=Math.PI/2;c.position.set(7,2.7,5);EHOME.add(c);}
+ hb(-.2,14.2,0,2.7,-.2,0,W,true);hb(-.2,14.2,0,2.7,10,10.2,W,true);hb(-.2,0,0,2.7,-.2,10.2,W,true);hb(14,14.2,0,2.7,-.2,10.2,W,true);
+ for(const x of [5,9]){for(const [a,b] of [[0,2],[3.2,7],[8.2,10]])hb(x-.08,x+.08,0,2.7,a,b,W,true);for(const [a,b] of [[2,3.2],[7,8.2]])hb(x-.08,x+.08,2.1,2.7,a,b,W);}
+ hb(0,4.92,0,2.7,4.92,5.08,W,true);hb(9.08,14,0,2.7,4.92,5.08,W,true);
+ hb(9.1,14,0,2.7,4.9,4.92,mat(0x9fc4e8));   // Egor's blue wall
+ for(const [x,z0,z1] of [[2.5,.01,.02],[11.5,.01,.02],[2.5,9.98,9.99],[11.5,9.98,9.99]])hb(x-.8,x+.8,1,2.1,z0,z1,GL);
+ hb(6.4,7.6,0,2.2,.01,.06,mat(0x6b3f22));hb(5.2,5.9,0,.35,.3,1.3,WD,'low');hb(5.09,5.11,1.3,1.9,1.5,1.9,GL);   // the front door, a shoe rack, a mirror
+ {const c=new THREE.Mesh(new THREE.PlaneGeometry(3,2),mat(0xa8402f));c.rotation.x=-Math.PI/2;c.position.set(2.5,.01,2.7);EHOME.add(c);}
+ hpc('Диван','диван',2.5,4.2,()=>{hb(1.2,3.8,0,.45,4,4.85,mat(0x58b368),'low');hb(1.2,3.8,.45,.98,4.68,4.85,mat(0x4a9a58));});
+ hpc('Телевизор','телевизор',2.5,.7,()=>{hb(1.7,3.3,0,.5,.2,.7,WD,'low');hb(1.8,3.2,.6,1.4,.4,.46,DK);hb(1.85,3.15,.65,1.35,.46,.47,basic(0x4aa3ff));});
+ hpc('Столик','столик',2.5,2.7,()=>{hb(1.9,3.1,.4,.45,2.3,3.1,WL,'low');hb(2.45,2.55,0,.4,2.65,2.75,DK);});
+ hpc('Плита','плиту',.5,7.5,()=>{hb(.1,.75,0,.9,6.6,8.4,WH,'low');hb(.15,.7,.9,.92,7.1,7.9,DK);for(const z of [7.3,7.7])cyl(.42,.92,.94,z,.1,mat(0xc0392b),{parent:EHOME,seg:12});});
+ hpc('Холодильник','холодильник',.5,9.4,()=>{hb(.1,.85,0,1.85,9,9.85,WH,true);hb(.85,.88,.9,1.5,9.1,9.14,DK);});
+ hpc('Кухонный стол','кухонный стол',3,8.2,()=>{hb(2.2,3.8,.72,.78,7.6,8.8,WL,'low');for(const [x,z] of [[2.3,7.7],[3.7,7.7],[2.3,8.7],[3.7,8.7]])hb(x-.03,x+.03,0,.72,z-.03,z+.03,WD);});
+ {const c=new THREE.Mesh(new THREE.PlaneGeometry(2.4,2),mat(0x2f6fd6));c.rotation.x=-Math.PI/2;c.position.set(11.4,.01,2.6);EHOME.add(c);}
+ hpc('Кровать Егора','кровать Егора',12.9,.6,()=>{hb(11.8,13.9,0,.45,.1,1,mat(0x2f6fd6),'low');hb(13.3,13.85,.45,.56,.2,.9,WH);});
+ hpc('Компьютер','компьютер',13.4,3.6,()=>{hb(12.9,13.9,.72,.76,2.9,4.4,WL,'low');hb(13.7,13.75,.8,1.2,3.3,4,DK);hb(13.68,13.7,.83,1.17,3.35,3.95,basic(0x4aff9a));});
+ hpc('Полка с игрушками','полку с игрушками',10.5,4.5,()=>{hb(9.6,11.4,0,1.8,4.55,4.9,WD,true);[[9.9,.5,0xd8402f],[10.5,1,0xf2c230],[11.1,1.45,0x3fbf5a]].forEach(([x,y,c])=>hb(x-.13,x+.13,y,y+.26,4.42,4.55,mat(c)));});
+ hpc('Мяч','мяч',10.2,1.2,()=>{sph(10.2,.17,1.2,.17,mat(0xf2f2f2),{parent:EHOME});});
+ hpc('Кровать родителей','кровать родителей',12.5,8.5,()=>{hb(11.2,13.9,0,.5,7.4,9.6,mat(0xc77aa8),'low');hb(13.3,13.85,.5,.62,7.6,9.4,WH);});
+ hpc('Шкаф','шкаф',10.2,9.6,()=>{hb(9.3,11,0,2.2,9.4,9.9,WD,true);});
+ hpc('Кроватка Леончика','кроватку Леончика',13.3,5.7,()=>{hb(12.7,13.9,0,.3,5.2,6.2,WH,'low');for(let x=12.7;x<=13.9;x+=.2)for(const z of [5.2,6.2])hb(x-.015,x+.015,.3,.75,z-.015,z+.015,WH);});
+}
+const EROOMS={living:{id:'e0',name:'Гостиная',school:true},kitchen:{id:'e1',name:'Кухня',school:true},hall:{id:'e2',name:'Коридор',school:true},egor:{id:'e3',name:'Комната Егора',school:true},parents:{id:'e4',name:'Спальня родителей',school:true}};
+const egorRoomAt=(x,z)=>x<5?(z<5?EROOMS.living:EROOMS.kitchen):x>9?(z<5?EROOMS.egor:EROOMS.parents):EROOMS.hall;
+function homePerson(o){const n={face:0,spd:0,stun:0,hold:0,li:0,...o,m:buildKid(o)};EHOME.add(n.m.g);n.m.g.visible=true;n.home={x:n.x,z:n.z,face:n.face};return n;}
+const EFAM={
+  egor:homePerson({who:'Егором',label:'ЕГОР',tag:'Егор',tagColor:'#7fd0ff',girl:false,shirt:0x2f6fd6,pants:0x2f4a7a,hair:0xc88a3a,x:11.4,z:2.6,pitch:1.6,lines:['Привет! Круто, что ты пришёл!','Хочешь посмотреть мою комнату?','Только маме не говори, что мы тут шумим!']}),
+  alina:homePerson({who:'тётей Алиной',label:'АЛИНА',tag:'Алина',tagColor:'#ffb3c7',girl:true,s:1.3,shirt:0xd94f8a,skirt:0x4a4a5a,pants:0x2a2a3a,hair:0x8a4a2a,bow:0xd94f8a,x:1.15,z:7.5,face:-Math.PI/2,pitch:1.05,lines:['Ты голодный? Скоро будет суп!','Разувайся, пожалуйста!','Только не бегайте по дому!']}),
+  pasha:homePerson({who:'дядей Пашей',label:'ПАША',tag:'Паша',tagColor:'#ffd23f',girl:false,s:1.36,shirt:0x3d6fb0,pants:0x2a2a3a,hair:0x2a2a2a,x:2.5,z:4.4,face:Math.PI,pitch:.75,sit:true,lines:['О, привет! Садись, футбол смотрим.','Гол! Ты видел?!','Хочешь бутерброд?']}),
+  leon:homePerson({who:'Леончиком',label:'ЛЕОНЧИК',tag:'Леончик',tagColor:'#c9ff7a',girl:false,s:.55,shirt:0xf2c230,pants:0xffffff,hair:0xd9b26a,x:2.5,z:1.6,pitch:2,lines:['Агу!','Ма-ма-ма!','Хи-хи-хи!','Дай!']})};
+const egorAtHome=()=>schoolPhase()==='closed'&&!frBusy(EGOR)&&!labNight();
+const egorAsleep=()=>{const t=lifeNow().t;return egorAtHome()&&(t>=22*60||t<7*60);};
+for(const k in EFAM){const n=EFAM[k];INTER.push({lv:'ehome',get x(){return n.x;},get z(){return n.z;},r:1.5,prio:.4,on:()=>n.m.g.visible,label:()=>k==='egor'&&egorAsleep()?'Егор спит':'Поговорить с '+n.who,
+  act:()=>{if(k==='egor'&&egorAsleep()){talkAs('ЕГОР','Хр-р-р… пс-с-с…',{pitch:1.6});return;}talkAs(n.label,n.lines[n.li++%n.lines.length],{pitch:n.pitch,female:n.girl});n.hold=1.6;}});}
+function ringEgor(){
+  if(state!=='play')return;state='door';unlock();showHUD(false);$('prompt').hidden=true;[988,784].forEach((f,i)=>tone(f,.3,'sine',.12,0,i*.3));
+  const home=egorAtHome(),where=frBusy(EGOR)?'он сейчас в гостях у Макара':labNight()?'он сегодня ночует в школе, у них там какой-то эксперимент':'он ещё в школе и придёт после 17:00';
+  const enter=()=>{overlay.hidden=true;lock();Object.assign(EFAM.alina,{x:7,z:2.6,path:[[6.2,7.6],[4.2,7.6],[1.15,7.5]]});goLevel('ehome',7,1.3,Math.PI,home?'Ты в гостях у Егора. Его комната — первая дверь налево.':'Ты в квартире Егора. Самого Егора нет, но можно посмотреть.');};
+  panel('Квартира Егора',egorAsleep()?'Дверь открывает мама Егора, тётя Алина: «Тише! Егор уже спит. Ну, заходи, только не шуми».':home?'Дверь открывает мама Егора, тётя Алина: «Привет! Ты к Егору? Заходи, он у себя в комнате!»':`Дверь открывает мама Егора, тётя Алина: «Привет! А Егора нет дома: ${where}. Но можешь зайти и посмотреть».`,[['Зайти в квартиру',enter],['Уйти',startPlay,'ghost']]);
+}
+INTER.push({lv:'ehome',x:7,z:.7,r:1.3,label:()=>'Выйти в подъезд',act:()=>goLevel('egor',6.3,4,0,'Подъезд Егора, 5 этаж.')});
+function updateEgorHouse(dt){
+  const asleep=egorAsleep();EFAM.egor.m.g.visible=egorAtHome();
+  for(const k in EFAM){const n=EFAM[k];if(!n.m.g.visible)continue;if(n.hold>0)n.hold-=dt;
+    if(k==='egor'&&asleep){Object.assign(n,{x:12.3,z:.55,spd:0});poseKid(n,dt,false);n.m.g.rotation.order='YXZ';n.m.g.rotation.set(-Math.PI/2,-Math.PI/2,0);n.m.g.position.y=.55;continue;}
+    if(n.m.g.rotation.order==='YXZ'){n.m.g.rotation.order='XYZ';n.m.g.rotation.set(0,n.face,0);}
+    if(n.path&&n.path.length){if(moveTo(n,n.path[0][0],n.path[0][1],1.5,dt))n.path.shift();if(!n.path.length)n.face=n.home.face;}
+    else if(n.hold>0){n.spd=0;if(!n.sit)n.face=Math.atan2(P.x-n.x,P.z-n.z);}
+    else if(k==='egor'||k==='leon'){   // Egor walks about his room, Leonchik toddles round the living room
+      const R=k==='egor'?[9.6,13.4,1.3,4.2]:[.7,4.3,1.3,3.8];
+      if(n.tx==null){n.spd=0;if((n.wait=(n.wait||0)-dt)<=0){n.tx=R[0]+Math.random()*(R[1]-R[0]);n.tz=R[2]+Math.random()*(R[3]-R[2]);n.wait=1+Math.random()*3;}}
+      else if(moveTo(n,n.tx,n.tz,k==='leon'?.55:1.1,dt))n.tx=null;}
+    else n.spd=0;
+    poseKid(n,dt,!!n.sit);
+    if(k==='alina'&&!(n.path&&n.path.length)&&n.hold<=0)n.m.armR.rotation.x=-1.1+Math.sin(performance.now()/260)*.25;   // stirring the soup
+  }
+}
 
 // the school day: before the first bell, lessons (45 min) and breaks (10 min) until 13:30, then the club until 17:00
 function schoolPhase(){const n=lifeNow();if(n.day>4)return 'closed';const t=n.t;if(t<8*60)return 'closed';if(t<8*60+30)return 'before';if(t<13*60+30)return (t-510)%55<45?'lesson':'break';if(t<17*60)return 'prolong';return 'closed';}
@@ -3514,6 +3585,7 @@ function updateExtras(dt,time){
   updateChair();
   if(D.life&&(state==='play'||state==='anim'))updateSchool(dt);
   if(P.lv==='school')for(const pk of PICKS)if(pk.lv==='school'&&!pk.held&&!pk.flying)pk.obj.visible=pk.floor===P.floor;   // things dropped on another floor
+  if(state==='play'&&P.lv==='ehome')updateEgorHouse(dt);
   updateLife(dt);updateLab(dt,time);if(state==='play')updateSwap(dt);if(P.lv==='bronya')updateBronya(dt);updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
   if(RIVER.visible){texWater.offset.x=(time*.01)%1;texWater.offset.y=(time*.03)%1;}
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
@@ -3548,11 +3620,11 @@ function updatePlayer(dt){
   if(P.stepAcc>stride){P.stepAcc=0;if(!P.crouch&&!ADMIN.fly)sfx.step();}
   P.bob+=moved*(wantRun?9:11);
   // fly mode: no walls, Space up, C down (under the ceiling indoors, up to 60 m over the yard)
-  if(ADMIN.fly){P.crouch=false;P.eye=clamp(P.eye+((keys.Space||touchFly>0?1:0)-(keys.KeyC||keys.ControlLeft||touchFly<0?1:0))*3.5*dt,.3,P.lv==='yard'||P.lv==='river'||P.lv==='city'?60:P.lv==='park'||P.lv==='school'?2.8:H-.15);}
+  if(ADMIN.fly){P.crouch=false;P.eye=clamp(P.eye+((keys.Space||touchFly>0?1:0)-(keys.KeyC||keys.ControlLeft||touchFly<0?1:0))*3.5*dt,.3,P.lv==='yard'||P.lv==='river'||P.lv==='city'?60:P.lv==='park'||P.lv==='school'||P.lv==='ehome'?2.5:H-.15);}
   else{const eye=P.crouch?.72:1.15;P.eye+=(eye-P.eye)*Math.min(1,dt*10);}
   camera.position.set(P.x,baseY(P.lv)+P.eye+Math.sin(P.bob)*.035*Math.min(1,moved/dt/2.4||0),P.z);
   camera.rotation.set(P.pitch,P.yaw,0);
-  const r=P.lv==='yard'?(P.z>GATE.z?STREET_ROOM:YARD_ROOM):P.lv==='park'?PARK_ROOM:P.lv==='river'?RIVER_ROOM:P.lv==='city'?CITY_ROOM:P.lv==='school'?schoolRoomAt(P.x,P.z):P.lv==='bronya'?BRONYA_ROOM:P.lv==='egor'?EGOR_ROOM:roomAt(P.x,P.z);if(r&&r!==P.room){P.room=r;
+  const r=P.lv==='yard'?(P.z>GATE.z?STREET_ROOM:YARD_ROOM):P.lv==='park'?PARK_ROOM:P.lv==='river'?RIVER_ROOM:P.lv==='city'?CITY_ROOM:P.lv==='school'?schoolRoomAt(P.x,P.z):P.lv==='bronya'?BRONYA_ROOM:P.lv==='egor'?EGOR_ROOM:P.lv==='ehome'?egorRoomAt(P.x,P.z):roomAt(P.x,P.z);if(r&&r!==P.room){P.room=r;
     if(r.id==='bath1')toast('Умный унитаз: «Добрый вечер! Хотите музыку?»');
     if(r.school&&toastT<.5)toast(r.name,1.6);
     if(r.id==='cab'&&state==='play')enterLift();}
@@ -3691,7 +3763,7 @@ function startLook(t){MS.state='look';MS.wait=t;MS.lookBase=MS.face;MS.lookT=0;
 // Downstairs: Makar doesn't notice you going out into the yard (there you only meet him when he is out for
 // his walk); into the parking he comes running through the stairs door 7 seconds after you, and chases you, sliding around whatever is in the way.
 // If you ride back up he follows you into the flat 5 s later.
-const OUTSIDE={yard:{delay:Infinity,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:Infinity,x:()=>8.6,z:()=>4.95,face:Math.PI/2},river:{delay:Infinity,x:()=>0,z:()=>.7,face:0},city:{delay:Infinity,x:()=>-20,z:()=>-12.5,face:0},school:{delay:Infinity,x:()=>22,z:()=>1.2,face:Math.PI},bronya:{delay:Infinity,x:()=>5.5,z:()=>7,face:Math.PI},egor:{delay:Infinity,x:()=>7,z:()=>2.5,face:-Math.PI/2}};
+const OUTSIDE={yard:{delay:Infinity,x:()=>ENTR.x,z:()=>ENTR.z+.9,face:0},park:{delay:Infinity,x:()=>8.6,z:()=>4.95,face:Math.PI/2},river:{delay:Infinity,x:()=>0,z:()=>.7,face:0},city:{delay:Infinity,x:()=>-20,z:()=>-12.5,face:0},school:{delay:Infinity,x:()=>22,z:()=>1.2,face:Math.PI},bronya:{delay:Infinity,x:()=>5.5,z:()=>7,face:Math.PI},egor:{delay:Infinity,x:()=>7,z:()=>2.5,face:-Math.PI/2},ehome:{delay:Infinity,x:()=>7,z:()=>1.2,face:0}};
 function updateMakarOutside(dt){
   if(MS.away){tickAway(dt);if(!MS.away)return;
     const a=MS.away;
@@ -4438,6 +4510,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='trip')updateTrip(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
