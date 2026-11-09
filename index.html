@@ -3089,7 +3089,7 @@ const FR={L:[{n:EGOR,name:'Егор',st:'out',path:[],from:0,until:0,idleT:0,lin
 const FR_DAYS=['m','e','b','m','e','b','b'],FR_SPOTS=[[4.35,12.75],[6.35,12.9],[6.35,10.7],[5.4,12.45]];   // who comes on each day (e, m or both); where they stand in Makar's room
 const frBusy=n=>FR.L.some(f=>f.n===n&&f.st!=='out');
 function frWanted(f,n){
-  if(n.phase!=='home'||SWAP.st||LAB.st)return false;
+  if(n.phase!=='home'||SWAP.st||LAB.st||MS.away&&MS.away.kind==='matvey')return false;
   if(LIFE.min>=f.from&&LIFE.min<f.until)return true;
   const d=FR_DAYS[n.day];return (d==='b'||d===(f.n===EGOR?'e':'m'))&&n.t>=(n.day<5?17*60+40:11*60)&&n.t<20*60+30;
 }
@@ -3475,6 +3475,40 @@ INTER.push({lv:'mhome',x:22.5,z:5.4,r:1.6,label:()=>'Попрыгать на б�
 for(const x of [20.6,22.2])INTER.push({lv:'mhome',x,z:1.5,r:1.2,label:()=>'Поиграть в автомат 🕹️',act:()=>{[523,659,784,1046,784,1046].forEach((f,i)=>tone(f,.1,'square',.06,0,i*.1));toast(`Новый рекорд: ${100+Math.floor(Math.random()*900)} очков! 🕹️`,2.4);}});
 INTER.push({lv:'mhome',x:28.4,z:11.6,r:1.4,label:()=>'Взять мороженое 🍦',act:()=>{nz(.1,1800,.4);toast(pick(['Клубничное! Вкусно! 🍦','Шоколадное! Ням! 🍦','Ванильное, с посыпкой! 🍦']),2.2);}});
 INTER.push({lv:'mhome',x:25,z:12.9,r:1.5,label:()=>'Съесть кусочек торта 🍰',act:()=>{toast('Ммм, какой торт! Матвей разрешает брать сколько хочешь.',2.4);}});
+/* 676767676767: call Makar over to Matvey's. It only works while you are at Matvey's, and he can only come when he
+   is at home and awake. He stays for 150 game minutes (or until the schedule wants him), wandering about gawping. */
+const MV={at:0,tx:null,tz:0,wait:0,li:0,lines:['Вау! Матвей, откуда столько игрушек?!','Чат, смотрите, это дом Матвея!','Можно я заберу вот этого мишку?','Тут круче, чем у меня на стриме!','Подписывайтесь, сегодня стрим из гостей!']};
+function makarCall(){
+  const sc=$('phScreen'),noPick=t=>{sc.appendChild(el('div','bub',t));tone(480,.4,'sine',.1);};
+  if(P.items.mphone){noPick('Телефон Макара у тебя в руках, вот он и не отвечает 📱');return;}
+  const n=lifeNow();if(n.phase==='sleep'){noPick('Макар спит и не берёт трубку 💤');return;}
+  phBusy=true;$('phBody').classList.add('calling');sc.innerHTML='';sc.appendChild(el('div','gz','Макар'));sc.appendChild(el('div','label','Звонок… 676767676767'));for(let i=0;i<3;i++)tone(440,.35,'sine',.08,0,i*.8);
+  const T=(ms,g)=>setTimeout(()=>{if(state==='phone')g();},ms),a=MS.away&&MS.away.kind;
+  const no=P.lv!=='mhome'?'А ты сам где? Приезжай к Матвею и звони оттуда, тогда и я приеду!':a==='matvey'||MV.at?'Так я уже у Матвея! Ну, или почти!':SWAP.st||LAB.st?'Сейчас никак не могу!':n.phase==='morning'?'Некогда, я в школу собираюсь!':n.phase!=='home'?'Я же в школе! Позвони, когда буду дома!':a?'Я сейчас не дома, позвони попозже!':null;
+  T(2200,()=>phSay('Алло? Это Макар! Чат, мне звонят!'));
+  T(4000,()=>phSay('Приезжай в гости к Матвею!',true));
+  if(no){T(6200,()=>phSay(no));T(9800,closePhone);return;}
+  T(6200,()=>phSay('К Матвею? Ого! Уже еду! Чат, сегодня стрим из гостей!'));
+  T(9400,()=>{MV.at=LIFE.min+7;closePhone();toast('Макар едет к Матвею. Скоро будет!',3);});
+}
+function updateMakarVisit(){
+  if(!MV.at||LIFE.min<MV.at)return;MV.at=0;if(lifeNow().phase!=='home'||MS.away||SWAP.st||LAB.st||MS.state==='sleep')return;
+  const withM=frBusy(MATVEY);standUp();Object.assign(MS,{away:{kind:'matvey',t:150},lv:P.lv==='mhome'?'mhome':'away',x:15,z:2.2,face:0,state:'walk',spd:0,path:[],seat:null,sitK:0,sayT:5,task:'visit',stun:0});MK.g.visible=P.lv==='mhome';MV.tx=null;
+  if(P.lv!=='mhome')return;tone(300,.25,'square',.06);[988,784].forEach((f,i)=>tone(f,.3,'sine',.12,0,.4+i*.3));toast(withM?'Дзынь! К дому приехали Макар и Матвей!':'Дзынь! К Матвею приехал Макар!',3.5);say(withM?'Матвей, поехали к тебе, я сказал! Чат, мы в гостях!':'Чат, я приехал к Матвею! Смотрите, какой дом!',3.2);
+  setTimeout(()=>{if(state==='play'&&P.lv==='mhome'&&MHM.m.g.visible&&!matveyAsleep())talkAs('МАТВЕЙ','Ой, Макар приехал! Только игрушки не забирай!',{pitch:1.7});},3600);
+}
+function makarAtMatvey(dt){
+  if((MS.away.t-=dt)<=0){if(P.lv==='mhome'){say('Всё, чат, мне пора домой. Пока, Матвей!',3);toast('Макар уехал домой.',2.5);}comeHome(true);return;}
+  if(P.lv!=='mhome'){if(MS.lv==='mhome'){MS.lv='away';MK.g.visible=false;}return;}
+  if(MS.lv!=='mhome'){Object.assign(MS,{lv:'mhome',x:15,z:2.2,state:'walk',spd:0,seat:null,sitK:0});MK.g.visible=true;MV.tx=null;}
+  const R=[[8.1,10.4,1.2,11.3],[12.4,17.6,6.2,13.4]],left=x=>x<11;
+  if(MV.tx===null){MS.spd=0;if((MV.wait-=dt)<=0){const r=R[Math.random()<.5?0:1];MV.tx=r[0]+Math.random()*(r[1]-r[0]);MV.tz=r[2]+Math.random()*(r[3]-r[2]);MV.wait=1+Math.random()*3;}}
+  else if(left(MS.x)!==left(MV.tx)){const dx=left(MS.x)?10.6:11.4,ox=left(MS.x)?11.4:10.6;moveTo(MS,hyp(MS.x-dx,MS.z-6)<.2||Math.abs(MS.x-11)<.4?ox:dx,6,1.7,dt);}   // through the toy-room door
+  else if(moveTo(MS,MV.tx,MV.tz,1.7,dt))MV.tx=null;
+  animMakar(dt);
+  if(hyp(P.x-MS.x,P.z-MS.z)<3.2&&(MS.sayT-=dt)<=0){MS.sayT=9;say(MV.lines[MV.li++%MV.lines.length],3);}
+}
+INTER.push({lv:'mhome',get x(){return MS.x;},get z(){return MS.z;},r:1.5,prio:.5,on:()=>MS.lv==='mhome'&&MK.g.visible,label:()=>'Поговорить с Макаром',act:()=>{MS.sayT=9;say(MV.lines[MV.li++%MV.lines.length],3);}});
 function updateMatveyHouse(dt){
   for(const h of MH.hearts){h.t+=dt;h.s.position.y+=dt*.6;h.s.material.opacity=1-h.t/1.4;if(h.t>1.4)MHOME.remove(h.s);}MH.hearts=MH.hearts.filter(h=>h.t<=1.4);
   const n=MHM,asleep=matveyAsleep();n.m.g.visible=matveyHome();if(!n.m.g.visible)return;
@@ -3701,12 +3735,13 @@ function updateExtras(dt,time){
   if(P.lv==='school')for(const pk of PICKS)if(pk.lv==='school'&&!pk.held&&!pk.flying)pk.obj.visible=pk.floor===P.floor;   // things dropped on another floor
   if((state==='play'||state==='anim')&&P.lv==='ehome')updateEgorHouse(dt);
   if((state==='play'||state==='anim')&&P.lv==='mhome')updateMatveyHouse(dt);
+  if(D.life&&state==='play')updateMakarVisit();
   updateLife(dt);updateLab(dt,time);if(state==='play')updateSwap(dt);if(P.lv==='bronya')updateBronya(dt);updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
   if(RIVER.visible){texWater.offset.x=(time*.01)%1;texWater.offset.y=(time*.03)%1;}
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
 }
 function resetExtras(){
-  repairEgor();
+  repairEgor();MV.at=0;
   showFloor(1);
   LIFE.min=7*60+30;LIFE.instant=true;{let day;if(D.life){const n=lifeNow();day=n.t>=7*60&&n.t<20*60;}else{try{day=localStorage.getItem('makar-time')==='day';}catch(e){day=isDay;}}if(day!==isDay){isDay=day;applyTime();}}
   P.driving=false;DRV.where='park';DRV.g.visible=false;dropDrvCol();PARENTS_CAR.g.visible=true;if(!PCOL.includes(PARENTS_CAR.col))PCOL.push(PARENTS_CAR.col);
@@ -3823,7 +3858,7 @@ function comeHome(silent){
   const kind=MS.away&&MS.away.kind;MS.away=null;returnKeys();MK.g.visible=true;
   Object.assign(MS,{lv:'flat',x:4.4,z:7.07,face:Math.PI,state:'look',wait:2,path:[],seat:null,sitK:0,lookBase:Math.PI,lookT:0,aware:0,task:'stream',seatKey:'desk'});
   if(D.life&&P.lv!=='flat'){const s=SEATS.desk;Object.assign(MS,{x:s.x,z:s.z,face:s.face,state:'sit',seat:s,sitK:1,wait:18+Math.random()*10});return;}   // nobody saw him come in: he is already at his desk
-  if(!silent){sfx.door(4.97,7.07);say(kind==='school'?'Я пришёл из школы! Чат, я снова с вами!':kind==='shop'?'Я вернулся из магазина! Купил чипсов!':kind==='swing'?'Накачался! Хорошо на качелях!':'Нагулялся! Ключи положил на место.',3);if(P.lv==='flat')toast('Макар вернулся домой!',2.5);}
+  if(!silent){sfx.door(4.97,7.07);say(kind==='matvey'?'Я вернулся от Матвея! Чат, какие у него игрушки!':kind==='school'?'Я пришёл из школы! Чат, я снова с вами!':kind==='shop'?'Я вернулся из магазина! Купил чипсов!':kind==='swing'?'Накачался! Хорошо на качелях!':'Нагулялся! Ключи положил на место.',3);if(P.lv==='flat')toast('Макар вернулся домой!',2.5);}
 }
 function tickAway(dt){
   const a=MS.away;if(!a)return;
@@ -3941,6 +3976,7 @@ function updateMakar(dt){
   if(FR.game){updateFrGame(dt);return;}
   if(MS.stun>0){if(MS.state==='sleep')wakeUp(true);MS.stun-=dt;MS.spd=0;MS.lookT+=dt;MS.face=MS.lookBase+Math.sin(MS.lookT*9)*.25;if(MS.lv!=='away')animMakar(dt);MK.head.rotation.z=Math.sin(MS.lookT*7)*.35;if(MS.stun<=0)MK.head.rotation.z=0;return;}
   if(HC.on&&P.lv==='yard'){updateHaircut(dt);return;}
+  if(D.life&&MS.away&&MS.away.kind==='matvey'){makarAtMatvey(dt);return;}
   if(D.life&&MS.away&&MS.away.kind==='school'&&lifeNow().phase==='walk'){if(P.lv==='city')walkHome(dt);else if(MS.lv==='city'){MS.lv='away';MK.g.visible=false;}return;}
   if(D.life&&MS.away&&MS.away.kind==='school'&&(P.lv==='school'||MS.lv==='school')){if(P.lv!=='school'){MS.lv='away';MK.g.visible=false;}return;}   // (see updateSchool)
   if(P.lv!=='flat'){updateMakarOutside(dt);return;}
@@ -4298,7 +4334,7 @@ const PH_KEYS=['1','2','3','4','5','6','7','8','9','⌫','0','📞','✖'];
 function openPhone(){if(state!=='play')return;state='phone';unlock();showHUD(false);$('prompt').hidden=true;$('toast').hidden=true;$('sub').hidden=true;$('phone').hidden=false;phNum='';phBusy=false;$('phBody').classList.remove('shake','calling');renderPhone();}
 function closePhone(){$('phone').hidden=true;phBusy=false;if(state==='phone')startPlay();}
 function renderPhone(){
-  const sc=$('phScreen');sc.innerHTML='';sc.appendChild(el('div','label',P.items.mphone?'Телефон Макара':'Телефон'));const n=el('div',null,phNum||' ');n.id='phNum';if(phNum.length>7)n.style.fontSize=phNum.length>9?'19px':'24px';sc.appendChild(n);sc.appendChild(el('div','phHint','Gazon — 005'+(P.items.mphone?' · Кровати — 007 · Авиабилеты — 676767':'')+(D.life?' · Егор — 67 · Матвей — 6767 · Такси к Матвею — 6767676767':'')));
+  const sc=$('phScreen');sc.innerHTML='';sc.appendChild(el('div','label',P.items.mphone?'Телефон Макара':'Телефон'));const n=el('div',null,phNum||' ');n.id='phNum';if(phNum.length>7)n.style.fontSize=phNum.length>9?'19px':'24px';sc.appendChild(n);sc.appendChild(el('div','phHint','Gazon — 005'+(P.items.mphone?' · Кровати — 007 · Авиабилеты — 676767':'')+(D.life?' · Егор — 67 · Матвей — 6767 · Такси к Матвею — 6767676767'+(P.lv==='mhome'?' · Макар — 676767676767':''):'')));
   const k=$('phKeys');if(k.children.length)return;   // the keys stay the same buttons, or a quick second tap would land on a key that is gone
   for(const c of PH_KEYS){const b=el('button',c==='📞'?'call':c==='✖'?'end':null,c);b.type='button';
     if(c==='✖')b.addEventListener('click',()=>phKey(c));else{b.addEventListener('pointerdown',e=>{e.preventDefault();phKey(c);});b.addEventListener('click',e=>{if(!e.detail)phKey(c);});}   // counted the moment a finger touches the key
@@ -4309,7 +4345,7 @@ function phKey(c){
   if(phBusy)return;
   if(c==='✖'){closePhone();return;}
   if(c==='⌫'){phNum=phNum.slice(0,-1);renderPhone();return;}
-  if(c==='📞'){if(phNum==='005')gazonCall();else if(phNum==='007'&&P.items.mphone)bedCall();else if(D.life&&(phNum==='67'||phNum==='6767'))friendCall(FR.L[phNum==='67'?0:1]);else if(D.life&&phNum==='6767676767')taxiCall();else if(phNum==='676767'&&P.items.mphone)ticketCall();else if(phNum==='676767'){const sc=$('phScreen');sc.appendChild(el('div','bub','Билеты продают только с телефона Макара 📵'));tone(480,.4,'sine',.1);}else if(phNum==='007'){const sc=$('phScreen');sc.appendChild(el('div','bub','Номер 007 отвечает только на звонки с телефона Макара 📵'));tone(480,.4,'sine',.1);}else{const sc=$('phScreen');sc.appendChild(el('div','bub',phNum?'Номер '+phNum+' не отвечает 📵':'Сначала набери номер'));tone(480,.4,'sine',.1);tone(480,.4,'sine',.1,0,.6);}return;}
+  if(c==='📞'){if(phNum==='005')gazonCall();else if(phNum==='007'&&P.items.mphone)bedCall();else if(D.life&&(phNum==='67'||phNum==='6767'))friendCall(FR.L[phNum==='67'?0:1]);else if(D.life&&phNum==='6767676767')taxiCall();else if(D.life&&phNum==='676767676767')makarCall();else if(phNum==='676767'&&P.items.mphone)ticketCall();else if(phNum==='676767'){const sc=$('phScreen');sc.appendChild(el('div','bub','Билеты продают только с телефона Макара 📵'));tone(480,.4,'sine',.1);}else if(phNum==='007'){const sc=$('phScreen');sc.appendChild(el('div','bub','Номер 007 отвечает только на звонки с телефона Макара 📵'));tone(480,.4,'sine',.1);}else{const sc=$('phScreen');sc.appendChild(el('div','bub',phNum?'Номер '+phNum+' не отвечает 📵':'Сначала набери номер'));tone(480,.4,'sine',.1);tone(480,.4,'sine',.1,0,.6);}return;}
   if(phNum.length<12){phNum+=c;tone(700+(+c)*40,.08,'sine',.08);renderPhone();}
 }
 function phSay(text,me){const sc=$('phScreen');const b=el('div','bub'+(me?' me':''),text);sc.appendChild(b);sc.scrollTop=sc.scrollHeight;
@@ -4579,7 +4615,7 @@ function updateHUD(dt){
   else if(P.lv==='bronya')s='Ты в гостях у Брони 🌴';
   else if(FR.game&&P.lv==='flat')s='Макар и Егор жамкают Матвея!';
   else if(SWAP.st)s=SWAP.st==='dressed'?'Ты одет как Макар. Иди на уроки, 3 «Т»':`Макар заперт в шкафу 🔒 · одежда ${swapWorn()} из ${SWAP_CLOTHES.length}`;
-  else if(MS.away&&MS.lv!==P.lv){const t=Math.max(0,Math.ceil(MS.away.t));s=MS.away.kind==='school'?(D.life&&lifeNow().phase==='walk'?'Макар идёт из школы домой':'Макар в школе'):({walk:'Макар гуляет',shop:'Макар в магазине',swing:'Макар на качелях'}[MS.away.kind])+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
+  else if(MS.away&&MS.lv!==P.lv){const t=Math.max(0,Math.ceil(MS.away.t));s=MS.away.kind==='school'?(D.life&&lifeNow().phase==='walk'?'Макар идёт из школы домой':'Макар в школе'):({walk:'Макар гуляет',shop:'Макар в магазине',swing:'Макар на качелях',matvey:'Макар у Матвея'}[MS.away.kind])+` · ${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;if(P.hidden)cls='hid';}
   else if(P.hidden){s='Ты спрятался';cls='hid';if(MS.state==='grab'||MS.state==='check'){s='Макар идёт к укрытию!';cls='alert';}}
   else if(P.lv!=='flat'&&MS.lv!==P.lv&&!MS.away){s='Макар дома и тебя не заметил';}
   else if(P.lv!=='flat'&&MS.lv!==P.lv){s='Макар бежит по лестнице… '+Math.max(0,Math.ceil(yardT));cls=D.blind?'':'alert';}
@@ -4626,6 +4662,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='trip')updateTrip(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={MHM,matveyHome:()=>matveyHome(),repairEgor:()=>repairEgor(),HSMASH,EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={MV,MHM,matveyHome:()=>matveyHome(),repairEgor:()=>repairEgor(),HSMASH,EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
