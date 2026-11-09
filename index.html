@@ -3311,7 +3311,7 @@ INTER.push({lv:'egor',x:6.3,z:4.6,r:1.5,label:()=>'Позвонить в две�
 const YH=-2100,EHOME=new THREE.Group();EHOME.position.y=YH;EHOME.visible=false;scene.add(EHOME);EHOME.add(new THREE.AmbientLight(0xffffff,.35));
 const HCOL=[],HPIECES=[];
 function hb(x0,x1,y0,y1,z0,z1,m,col){const me=blk(x0,x1,y0,y1,z0,z1,m,{parent:EHOME});if(col)HCOL.push({x0,x1,z0,z1,tall:col!=='low'});return me;}
-function hpc(name,acc,x,z,build){const from=EHOME.children.length;build();HPIECES.push({name,acc,x,z,broken:false,parts:EHOME.children.slice(from)});}
+function hpc(name,acc,x,z,build){const from=EHOME.children.length;build();HPIECES.push({name,acc,x,z,broken:false,parts:EHOME.children.slice(from).map(m=>({m,p:m.position.clone(),r:m.rotation.clone(),s:m.scale.clone()}))});}
 {const W=mat(0xf0e6d2),WD=mat(0x8a6236),WL=mat(0xd9b98a),WH=mat(0xf4f4f0),DK=mat(0x22242a),GL=basic(0xcfe8f5);
  {const f=new THREE.Mesh(new THREE.PlaneGeometry(14.4,10.4),mat(0xb98a55));f.rotation.x=-Math.PI/2;f.position.set(7,0,5);EHOME.add(f);
   const c=new THREE.Mesh(new THREE.PlaneGeometry(14.4,10.4),mat(0xfafafa));c.rotation.x=Math.PI/2;c.position.set(7,2.7,5);EHOME.add(c);}
@@ -3347,15 +3347,43 @@ const EFAM={
   leon:homePerson({who:'Леончиком',label:'ЛЕОНЧИК',tag:'Леончик',tagColor:'#c9ff7a',girl:false,s:.55,shirt:0xf2c230,pants:0xffffff,hair:0xd9b26a,x:2.5,z:1.6,pitch:2,lines:['Агу!','Ма-ма-ма!','Хи-хи-хи!','Дай!']})};
 const egorAtHome=()=>schoolPhase()==='closed'&&!frBusy(EGOR)&&!labNight();
 const egorAsleep=()=>{const t=lifeNow().t;return egorAtHome()&&(t>=22*60||t<7*60);};
-for(const k in EFAM){const n=EFAM[k];INTER.push({lv:'ehome',get x(){return n.x;},get z(){return n.z;},r:1.5,prio:.4,on:()=>n.m.g.visible,label:()=>k==='egor'&&egorAsleep()?'Егор спит':'Поговорить с '+n.who,
+for(const k in EFAM){const n=EFAM[k];INTER.push({lv:'ehome',get x(){return n.x;},get z(){return n.z;},r:k==='pasha'?1.1:1.5,prio:.4,on:()=>n.m.g.visible,label:()=>k==='egor'&&egorAsleep()?'Егор спит':'Поговорить с '+n.who,
   act:()=>{if(k==='egor'&&egorAsleep()){talkAs('ЕГОР','Хр-р-р… пс-с-с…',{pitch:1.6});return;}talkAs(n.label,n.lines[n.li++%n.lines.length],{pitch:n.pitch,female:n.girl});n.hold=1.6;}});}
 function ringEgor(){
   if(state!=='play')return;state='door';unlock();showHUD(false);$('prompt').hidden=true;[988,784].forEach((f,i)=>tone(f,.3,'sine',.12,0,i*.3));
+  const fixed=HSMASH.day!==null&&Math.floor(LIFE.min/1440)!==HSMASH.day;if(fixed)repairEgor();const after=fixed?' И добавляет: «Больше ничего не ломайте, дядя Паша всю ночь чинил!»':'';
   const home=egorAtHome(),where=frBusy(EGOR)?'он сейчас в гостях у Макара':labNight()?'он сегодня ночует в школе, у них там какой-то эксперимент':'он ещё в школе и придёт после 17:00';
   const enter=()=>{overlay.hidden=true;lock();Object.assign(EFAM.alina,{x:7,z:2.6,path:[[6.2,7.6],[4.2,7.6],[1.15,7.5]]});goLevel('ehome',7,1.3,Math.PI,home?'Ты в гостях у Егора. Его комната — первая дверь налево.':'Ты в квартире Егора. Самого Егора нет, но можно посмотреть.');};
-  panel('Квартира Егора',egorAsleep()?'Дверь открывает мама Егора, тётя Алина: «Тише! Егор уже спит. Ну, заходи, только не шуми».':home?'Дверь открывает мама Егора, тётя Алина: «Привет! Ты к Егору? Заходи, он у себя в комнате!»':`Дверь открывает мама Егора, тётя Алина: «Привет! А Егора нет дома: ${where}. Но можешь зайти и посмотреть».`,[['Зайти в квартиру',enter],['Уйти',startPlay,'ghost']]);
+  panel('Квартира Егора',egorAsleep()?'Дверь открывает мама Егора, тётя Алина: «Тише! Егор уже спит. Ну, заходи, только не шуми».':home?'Дверь открывает мама Егора, тётя Алина: «Привет! Ты к Егору? Заходи, он у себя в комнате!»'+after:`Дверь открывает мама Егора, тётя Алина: «Привет! А Егора нет дома: ${where}. Но можешь зайти и посмотреть».`+after,[['Зайти в квартиру',enter],['Уйти',startPlay,'ghost']]);
 }
 INTER.push({lv:'ehome',x:7,z:.7,r:1.3,label:()=>'Выйти в подъезд',act:()=>goLevel('egor',6.3,4,0,'Подъезд Егора, 5 этаж.')});
+/* Mischief at Egor's: while he is at home and awake you can smash the flat, piece by piece, and jump on his bed.
+   Egor loves it, his parents don't. By the next day Pasha has mended everything. */
+const HSMASH={day:null};
+const canSmash=()=>egorAtHome()&&!egorAsleep();
+const HBED=HPIECES.find(p=>p.name==='Кровать Егора');
+for(const pc of HPIECES)if(pc!==HBED)INTER.push({lv:'ehome',x:pc.x,z:pc.z,r:1.75,prio:.1,on:()=>canSmash()&&!pc.broken,label:()=>'Сломать '+pc.acc+' 💥',act:()=>smashHome(pc)});
+INTER.push({lv:'ehome',x:12.6,z:.8,r:1.6,prio:.3,on:()=>canSmash()&&!HBED.broken,label:()=>'Кровать Егора: попрыгать или сломать',act:()=>{
+  state='kid';unlock();showHUD(false);const back=f=>()=>{startPlay();f&&f();};
+  panel('Кровать Егора','Что будем делать?',[['Попрыгать на кровати',back(jumpOnBed)],['Сломать кровать 💥',back(()=>smashHome(HBED))],['Ничего',back(),'ghost']]);}});
+function jumpOnBed(){
+  if(state!=='play')return;state='anim';$('prompt').hidden=true;talkAs('ЕГОР','Ура, батут! Прыгай выше!',{pitch:1.6,rate:1.1});
+  let last=0;ANIM={t:0,dur:3.2,step:t=>{const k=Math.abs(Math.sin(t*4.2)),b=Math.floor(t*4.2/Math.PI);if(b!==last){last=b;tone(170,.12,'sawtooth',.05,240);nz(.05,1500,.08);}
+    camera.position.set(12.5,YH+.55+1.05+k*.75,.55);camera.rotation.set(-.1+k*.15,P.yaw,0);},done:()=>{Object.assign(P,{x:12.5,z:1.55,eye:1.15});}};
+}
+function smashHome(pc){
+  if(state!=='play'||pc.broken)return;pc.broken=true;HSMASH.day=Math.floor(LIFE.min/1440);
+  for(const {m} of pc.parts){if(m.geometry&&m.geometry.type==='SphereGeometry'){m.scale.y=.25;m.position.y=.05;continue;}
+    m.rotation.x+=(Math.random()-.5)*1.1;m.rotation.z+=(Math.random()-.5)*1.1;m.position.y=Math.max(.05,m.position.y*(.3+Math.random()*.4));m.position.x+=(Math.random()-.5)*.3;m.position.z+=(Math.random()-.5)*.3;}
+  for(let i=0;i<3;i++){nz(.3,2200,.18,0,i*.16,'bandpass');tone(900-i*180,.22,'square',.05,300,i*.16);}
+  const left=HPIECES.filter(p=>!p.broken).length,E=EFAM.egor;E.hold=1.2;
+  talkAs('ЕГОР',pick(['Ха-ха! Давай ещё!','Бам! Вот это да!','Мама будет ругаться… Но давай ещё!','Круто! Теперь это!']),{pitch:1.6,rate:1.1});
+  toast(left?`Бам! Ты сломал ${pc.acc}. Осталось целых вещей: ${left}.`:'Бам! Вся квартира разгромлена!',3);
+  const kitchen=['Плита','Холодильник','Кухонный стол'].includes(pc.name),n=pc.name==='Телевизор'||pc.name==='Диван'?EFAM.pasha:EFAM.alina,
+    t=!left?'Что вы наделали?! Вся квартира! Паша, неси инструменты!':pc.name==='Телевизор'?'Эй! Там же футбол!':pc.name==='Диван'?'Эй, я тут вообще-то сижу!':kitchen?'Моя кухня! Егор, это что такое?!':pick(['Что там за грохот?!','Егор! Прекратите немедленно!','Дети, вы что там делаете?!']);
+  setTimeout(()=>{if(state==='play'&&P.lv==='ehome')talkAs(n.label,t,{pitch:n.pitch,female:n.girl});},1500);
+}
+function repairEgor(){HSMASH.day=null;for(const pc of HPIECES){pc.broken=false;for(const q of pc.parts){q.m.position.copy(q.p);q.m.rotation.copy(q.r);q.m.scale.copy(q.s);}}}
 function updateEgorHouse(dt){
   const asleep=egorAsleep();EFAM.egor.m.g.visible=egorAtHome();
   for(const k in EFAM){const n=EFAM[k];if(!n.m.g.visible)continue;if(n.hold>0)n.hold-=dt;
@@ -3585,12 +3613,13 @@ function updateExtras(dt,time){
   updateChair();
   if(D.life&&(state==='play'||state==='anim'))updateSchool(dt);
   if(P.lv==='school')for(const pk of PICKS)if(pk.lv==='school'&&!pk.held&&!pk.flying)pk.obj.visible=pk.floor===P.floor;   // things dropped on another floor
-  if(state==='play'&&P.lv==='ehome')updateEgorHouse(dt);
+  if((state==='play'||state==='anim')&&P.lv==='ehome')updateEgorHouse(dt);
   updateLife(dt);updateLab(dt,time);if(state==='play')updateSwap(dt);if(P.lv==='bronya')updateBronya(dt);updateBed(dt);updateNewBed(dt);updateWindows(dt);updateSplashes(dt);
   if(RIVER.visible){texWater.offset.x=(time*.01)%1;texWater.offset.y=(time*.03)%1;}
   if(state==='play'&&policeT>0&&(policeT-=dt)<=0)startCut(POLICE_SCRIPT,updPolice);
 }
 function resetExtras(){
+  repairEgor();
   showFloor(1);
   LIFE.min=7*60+30;LIFE.instant=true;{let day;if(D.life){const n=lifeNow();day=n.t>=7*60&&n.t<20*60;}else{try{day=localStorage.getItem('makar-time')==='day';}catch(e){day=isDay;}}if(day!==isDay){isDay=day;applyTime();}}
   P.driving=false;DRV.where='park';DRV.g.visible=false;dropDrvCol();PARENTS_CAR.g.visible=true;if(!PCOL.includes(PARENTS_CAR.col))PCOL.push(PARENTS_CAR.col);
@@ -4510,6 +4539,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='trip')updateTrip(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={repairEgor:()=>repairEgor(),HSMASH,EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
