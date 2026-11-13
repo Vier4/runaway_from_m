@@ -135,6 +135,8 @@ h1 em{font-style:normal;color:var(--makar)}
 .endc.got>b{background:var(--makar);color:#1a0a06}
 .endc>div{display:flex;flex-direction:column;gap:2px;min-width:0}
 .endc strong{font-size:15px}
+.vipBadge{margin:4px 0 10px;padding:8px 12px;border-radius:10px;background:rgba(242,194,48,.14);border:1px solid #f2c230;color:#f2c230;font-weight:800;font-size:14px}
+.endWatch{align-self:flex-start;margin-top:6px;padding:7px 12px;border-radius:9px;border:1px solid #ff9f43;background:rgba(255,159,67,.12);color:#ffb26b;font-weight:800;font-size:13px;cursor:pointer}
 .endc span{font-size:13px;color:var(--muted)}
 .endc .endSt{font-weight:800;color:var(--makar)}
 .endc.got .endSt{color:var(--safe)}
@@ -205,6 +207,7 @@ h1 em{font-style:normal;color:var(--makar)}
         <button type="button" data-d="life" aria-pressed="false" class="life">Жизнь Макара 📅</button>
       </div>
       <div class="diffNote" id="diffNote"></div>
+      <div class="vipBadge" id="vipBadge" hidden>⭐ Ты VIP-гость: админ панель открыта всегда</div>
       <div class="mrow">
         <button class="play" id="playBtn" type="button">Играть</button>
         <button class="ghost" id="endBtn" type="button">Концовки</button>
@@ -2583,6 +2586,8 @@ function updPolice(dt,t){
 /* ---------- ending: Makar drowned ----------
    Grab Makar's phone off his desk and he chases you. Ride the lift to the 2nd floor and out onto the
    embankment; when he comes running after you, throw his phone into the river: he jumps in after it. */
+INTER.push({lv:'river',x:0,z:.45,r:1.8,label:()=>'Вернуться в подъезд Макара (лифт на 18 этаж)',act:goUp});
+{const sg=new THREE.Mesh(new THREE.PlaneGeometry(2.2,.42),signTex('Подъезд Макара','#1f4fbf','#ffffff',256,48,30));sg.position.set(0,2.75,-.14);RIVER.add(sg);}
 INTER.push({lv:'river',get x(){return clamp(P.x,-27,27);},z:8.15,r:1.2,on:()=>P.items.mphone,label:()=>'Кинуть телефон Макара в реку',act:throwPhone});
 let SPL=[];
 function splash(x,y,z,n=16,up=3){nz(.3,1300,.6,panFor(x,z));for(let i=0;i<n;i++){const m=sph(x,y,z,.06+Math.random()*.06,basic(0xe8f4ff));SPL.push({m,vx:(Math.random()-.5)*2,vy:up*(.5+Math.random()),vz:(Math.random()-.5)*2,y0:y});}}
@@ -3598,6 +3603,13 @@ function updBurn(dt,t){
   for(const n of BF.kids)poseKid(n,dt,false);
   if(BF.yell){const m=VANYA.m;m.armL.rotation.x=m.armR.rotation.x=-2.8;m.g.position.y=Math.abs(Math.sin(t*9))*.12;m.g.scale.setScalar(1+Math.sin(t*20)*.04);}
 }
+// skips everything before it: a new «Жизнь Макара» game at Monday 9:00, a thousand lighters, straight into the
+// classroom of 3 «Т» and the cutscene. Finishing it counts as the ending.
+function watchBurn(){
+  setDiff('life');begin();LIFE.min=9*60;LIFE.instant=false;HS.lighters=1000;renderMoney();
+  const R=classRoom(schoolPhase());P.lv='school';showFloor(R.f);setLevel('school');Object.assign(P,{x:R.i*11+5.5,z:8,yaw:Math.PI,pitch:0,room:null});
+  startBurn();
+}
 function resetBurn(){for(const b of BF.sprites){if(CITY_FIRES.includes(b))b.f.visible=false;else if(b.f.parent)b.f.parent.remove(b.f);}BF.sprites=CITY_FIRES.slice();BF.burn=0;if(BF.tag){SCHOOL.remove(BF.tag);BF.tag=null;}EVAC.visible=false;YARD.add(PCAR);PCAR.rotation.y=0;VANYA.m.g.scale.setScalar(1);}
 
 // the school day: before the first bell, lessons (45 min) and breaks (10 min) until 13:30, then the club until 17:00
@@ -4540,9 +4552,19 @@ const ENDINGS=[
 ];
 let gotEnd={};try{gotEnd=JSON.parse(localStorage.getItem('makar-endings')||'{}')||{};}catch(e){}
 const endCount=()=>ENDINGS.filter(e=>gotEnd[e.id]).length;
-const adminOpen=()=>endCount()===ENDINGS.length;
+/* VIP guest: a link with a secret code (…/?vip=CODE) opens the admin panel straight away, whatever the endings.
+   Only the code's SHA-256 is kept here; once checked, the browser remembers it and the code is taken out of the
+   address bar so it is not passed on by accident. */
+const VIP={on:false,hash:'cf789c2a8a62d0d2a5fc9d3056983dfd534eeb090b95e444bc1724671a54cdb7'};
+try{VIP.on=localStorage.getItem('makar-vip')===VIP.hash;}catch(e){}
+(async()=>{try{const u=new URL(location.href),code=u.searchParams.get('vip');if(!code||!crypto.subtle)return;
+  const h=[...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(code)))].map(b=>b.toString(16).padStart(2,'0')).join('');
+  u.searchParams.delete('vip');history.replaceState(null,'',u.pathname+u.search+u.hash);
+  if(h!==VIP.hash)return;VIP.on=true;try{localStorage.setItem('makar-vip',h);}catch(e){}renderMenuBtns();}catch(e){}})();
+function leaveVip(){VIP.on=false;try{localStorage.removeItem('makar-vip');}catch(e){}renderMenuBtns();}
+const adminOpen=()=>VIP.on||endCount()===ENDINGS.length;
 function saveEndings(){try{localStorage.setItem('makar-endings',JSON.stringify(gotEnd));}catch(e){}renderMenuBtns();}
-function renderMenuBtns(){$('endBtn').textContent=`Концовки ${endCount()}/${ENDINGS.length}`;$('adminBtn').hidden=!adminOpen();}
+function renderMenuBtns(){$('endBtn').textContent=`Концовки ${endCount()}/${ENDINGS.length}`;$('adminBtn').hidden=!adminOpen();$('vipBadge').hidden=!VIP.on;}
 function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
 function endingPanel(id,text){
   const wasOpen=adminOpen(),fresh=!gotEnd[id];gotEnd[id]=true;saveEndings();
@@ -4555,10 +4577,11 @@ function endingPanel(id,text){
 function showEndings(confirmReset){
   const body=document.createDocumentFragment();
   ENDINGS.forEach((e,i)=>{const got=!!gotEnd[e.id],c=el('div','endc'+(got?' got':''));c.appendChild(el('b',null,String(i+1)));
-    const d=el('div');d.appendChild(el('strong',null,e.title+(got?' ✓':'')));d.appendChild(el('span','endSt',got?'Пройдена':'Не пройдена'));d.appendChild(el('span',null,'Как пройти: '+e.hint));c.appendChild(d);body.appendChild(c);});
-  body.appendChild(el('div','endNote'+(adminOpen()?' on':''),adminOpen()?'Все концовки пройдены: админ панель открыта!':'Пройди все концовки, и получишь админ панель.'));
+    const d=el('div');d.appendChild(el('strong',null,e.title+(got?' ✓':'')));d.appendChild(el('span','endSt',got?'Пройдена':'Не пройдена'));d.appendChild(el('span',null,'Как пройти: '+e.hint));
+    if(e.id==='burn'){const w=el('button','endWatch','▶ Посмотреть кат-сцену (для создателя игры)');w.type='button';w.addEventListener('click',watchBurn);d.appendChild(w);}c.appendChild(d);body.appendChild(c);});
+  body.appendChild(el('div','endNote'+(adminOpen()?' on':''),adminOpen()?(VIP.on?'Ты VIP-гость: админ панель открыта всегда!':'Все концовки пройдены: админ панель открыта!'):'Пройди все концовки, и получишь админ панель.'));
   const reset=()=>{if(!confirmReset){showEndings(true);return;}gotEnd={};saveEndings();for(const k in ADMIN)ADMIN[k]=false;P.eye=1.15;showEndings();};
-  panel('Концовки',confirmReset?'Точно сбросить все концовки? Пройденные концовки снова станут не пройденными'+(adminOpen()?', а админ панель закроется.':'.'):`Открыто ${endCount()} из ${ENDINGS.length}.`,
+  panel('Концовки',confirmReset?'Точно сбросить все концовки? Пройденные концовки снова станут не пройденными'+(adminOpen()&&!VIP.on?', а админ панель закроется.':'.'):`Открыто ${endCount()} из ${ENDINGS.length}.`,
     [...(adminOpen()&&!confirmReset?[['Админ панель',()=>showAdmin(false)]]:[]),...(endCount()?[[confirmReset?'Да, сбросить':'Сбросить концовки',reset,'ghost']]:[]),...(confirmReset?[['Отмена',()=>showEndings(),'ghost']]:[]),['В меню',showMenu,'ghost']],body);
 }
 const ADMIN={freeze:false,god:false,fast:false,fly:false};
@@ -4612,8 +4635,9 @@ function showAdmin(inGame,confirmReset){
     const cl=el('button',null,`Убрать созданное (${SPAWNED.length})`);cl.type='button';cl.addEventListener('click',()=>{clearSpawned();showAdmin(true);});body.appendChild(cl);}
   if(newBedKept()){body.appendChild(el('h3',null,'Кровать Макара'));const nb=el('button',null,'Вернуть прежнюю кровать');nb.type='button';
     nb.addEventListener('click',()=>{keepNewBed(false);if(NEWBED.state!=='folded'&&NEWBED.state!=='opening')showNewBed(false);toast('Прежняя кровать вернулась к Макару.',2.5);showAdmin(inGame);});body.appendChild(nb);}
+  if(VIP.on){body.appendChild(el('h3',null,'VIP-гость'));const v=el('button',null,'Выйти из режима VIP-гостя');v.type='button';v.addEventListener('click',()=>{leaveVip();if(inGame)showPause();else showMenu();});body.appendChild(v);}
   body.appendChild(el('h3',null,'Концовки'));
-  const r=el('button','danger',confirmReset?'Точно сбросить? Админ панель закроется':'Сбросить концовки');r.type='button';
+  const r=el('button','danger',confirmReset?(VIP.on?'Точно сбросить концовки?':'Точно сбросить? Админ панель закроется'):'Сбросить концовки');r.type='button';
   r.addEventListener('click',()=>{if(!confirmReset){showAdmin(inGame,true);return;}gotEnd={};saveEndings();for(const k in ADMIN)ADMIN[k]=false;P.eye=1.15;inGame?showPause():showMenu();});body.appendChild(r);
   panel('Админ панель',inGame?'Читы работают сразу. Действие закрывает панель и возвращает в игру. '+(isPhone?'Полёт: держи кнопки ▲ и ▼ справа, летишь сквозь стены.':'Полёт: пробел вверх, C вниз, сквозь стены.'):'Читы будут работать в следующей игре. Действия и спавн объектов есть в паузе во время игры.',
     inGame?[['Вернуться в игру',startPlay],['Назад',showPause,'ghost']]:[['В меню',showMenu,'ghost']],body);
@@ -4742,6 +4766,6 @@ MS.x=1.6;MS.z=2.9;MS.face=Math.PI*.75;MS.state='look';MS.seat=null;MS.sitK=0;
 requestAnimationFrame(frame);
 // test hook: advance the simulation without rendering (used for automated checks)
 function tick(n,dt=1/30){for(let i=0;i<n;i++){if(state==='play'){tPlay+=dt;updatePlayer(dt);updateMakar(dt);updateFocus();}else if(state==='ending')updateEnding(dt);else if(state==='drive')updateDrive(dt);else if(state==='boom')updateBoom(dt);else if(state==='carlson')updateCarlsonScene(dt);else if(state==='vacboom')updateVacScene(dt);else if(state==='haircut')updateHaircutScene(dt);else if(state==='trip')updateTrip(dt);else if(state==='cut')updateCut(dt);else if(state==='anim'){updateAnim(dt);updateMakar(dt);}else break;updateWorld(dt,tPlay);}return state;}
-window.__game={BF,startBurn:()=>startBurn(),burnReady:()=>burnReady(),classRoom2:()=>classRoom(schoolPhase()),HS,TECHN,pickUp:p=>pickUp(p),MV,MHM,matveyHome:()=>matveyHome(),repairEgor:()=>repairEgor(),HSMASH,EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
+window.__game={watchBurn:()=>watchBurn(),BF,startBurn:()=>startBurn(),burnReady:()=>burnReady(),classRoom2:()=>classRoom(schoolPhase()),HS,TECHN,pickUp:p=>pickUp(p),MV,MHM,matveyHome:()=>matveyHome(),repairEgor:()=>repairEgor(),HSMASH,EFAM,HPIECES,egorAtHome:()=>egorAtHome(),F,startFart,checkMix,classRoom:()=>classRoom(schoolPhase()),goLevel:(...a)=>goLevel(...a),FR,TRIP,SIS,PARENTS,sisPose,startTrip,MK,SWAP,SWAP_CLOTHES,swapLock,swapSit,LAB,WR,labNight,labTalk,startWreck,NPCS,EGOR,MATVEY,VANYA,TEACHER,MKN,SCH,schoolPhase:()=>schoolPhase(),showFloor:f=>showFloor(f),SCHOOL_SEATS,DRV,driveToCity:()=>driveToCity(),PARENTS_CAR,LIFE,lifeNow:()=>lifeNow(),showSchedule:()=>showSchedule(),NEWBED,showAdmin:(g)=>showAdmin(g),BED,PLAY,get CUT(){return CUT;},rideDown2:l=>rideDown(l),HC,cutSwing,PARENTS,SIS,TVS:()=>TVS,get CS(){return CS;},GECKO,SWINGS,get anim(){return ANIM;},CAR,rideDown,stealCar,get yardT(){return yardT;},P,MS,DOORS,DOOR,LIFT,ITEMS,VAC,ADMIN,TPL,SPAWNED,INV,PICKS,dropSel,selectSlot,get gotEnd(){return gotEnd;},get state(){return state;},interact,newGame,begin,tick,get focus(){return focus&&focus.label();}};
 })();
 </script>
