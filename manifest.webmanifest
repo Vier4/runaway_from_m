@@ -1,0 +1,29 @@
+{
+  "name": "Побег от Макара",
+  "short_name": "Макар",
+  "description": "3D-игра: спустись с 18-го этажа и убеги от Макара.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "background_color": "#0c0e15",
+  "theme_color": "#0c0e15",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
